@@ -1,0 +1,14 @@
+#!/bin/sh
+# Auto-format staged Java with Spotless before committing.
+# Enable once with:  git config core.hooksPath .githooks
+
+if [ -x ./mvnw ]; then
+  echo "[pre-commit] spotless:apply"
+  ./mvnw -q spotless:apply || {
+    echo "[pre-commit] spotless failed"
+    exit 1
+  }
+  git add -u
+else
+  echo "[pre-commit] ./mvnw not found; skipping spotless"
+fi
