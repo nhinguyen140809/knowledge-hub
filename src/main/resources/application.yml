@@ -24,6 +24,16 @@ spring:
         index-name: knowledge-embeddings
         embedding-dimension: 1536
 
+    # --- MCP server (tools for AI agents, over Streamable HTTP at /mcp) ---
+    mcp:
+      server:
+        name: knowledge-hub-mcp
+        version: 0.0.1
+        protocol: STREAMABLE
+        instructions: >-
+          Knowledge Hub for AI agents in the SDLC. Exposes tools to query a
+          software product's code and documentation knowledge graph.
+
 server:
   port: ${SERVER_PORT:8000}
 

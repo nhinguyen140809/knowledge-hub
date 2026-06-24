@@ -125,6 +125,14 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<executions>
+					<!-- Generate build-info.properties so Actuator /info and /api/v1/system/info report the build version -->
+					<execution>
+						<goals>
+							<goal>build-info</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 
 			<!-- Code formatting: mvn spotless:apply / spotless:check -->
