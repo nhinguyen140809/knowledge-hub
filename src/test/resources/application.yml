@@ -1,0 +1,6 @@
+# Test config: Neo4j comes from the Testcontainers @ServiceConnection bean.
+# A placeholder embedding key keeps the context bootstrapping without a real provider.
+spring:
+  ai:
+    openai:
+      api-key: test-key

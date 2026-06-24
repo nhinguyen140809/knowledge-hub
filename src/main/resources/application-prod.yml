@@ -1,0 +1,15 @@
+spring:
+  neo4j:
+    uri: ${SPRING_NEO4J_URI}
+
+logging:
+  level:
+    root: INFO
+  # Structured JSON logs (Elastic Common Schema) for log aggregators / containers.
+  structured:
+    format:
+      console: ecs
+
+app:
+  vectorstore:
+    mode: ${APP_VECTORSTORE_MODE:neo4j}
