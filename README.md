@@ -91,7 +91,7 @@ open http://localhost:8000/docs # Swagger UI
 ├── docs/                                 # SRS, design notes, diagrams
 ├── Dockerfile                            # multi-stage build → runtime image
 ├── docker-compose.yml                    # app + Neo4j (+ Qdrant when scaling)
-├── Makefile                              # dev task runner (npm-scripts style)
+├── justfile                              # dev task runner (npm-scripts style)
 ├── .githooks/pre-commit                  # auto-format on commit
 └── .github/workflows/ci.yml              # CI: format check + build + tests
 ```
@@ -140,7 +140,7 @@ Secrets (`OPENAI_API_KEY`, DB password) come from env / secret manager — **nev
 ## Testing
 
 ```bash
-make test       # JUnit 5 + Testcontainers (spins a real Neo4j container; needs Docker)
+just test       # JUnit 5 + Testcontainers (spins a real Neo4j container; needs Docker)
 ```
 
 The context test boots the full Spring context against a throwaway Neo4j container, so it exercises
