@@ -1,0 +1,11 @@
+spring:
+  neo4j:
+    uri: ${SPRING_NEO4J_URI}
+
+logging:
+  level:
+    root: INFO
+
+app:
+  vectorstore:
+    mode: ${APP_VECTORSTORE_MODE:neo4j+qdrant}
