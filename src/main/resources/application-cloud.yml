@@ -5,6 +5,10 @@ spring:
 logging:
   level:
     root: INFO
+  # Structured JSON logs (Elastic Common Schema) for log aggregators / containers.
+  structured:
+    format:
+      console: ecs
 
 app:
   vectorstore:
