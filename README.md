@@ -16,7 +16,7 @@ team. Knowledge is shared across the team; access is controlled per source via a
 - **Processing & indexing** — AST-aware chunking for code, structure-aware chunking for docs,
   embeddings via an external API, stored as vectors + a knowledge graph.
 - **Knowledge linking** — structural code relations (calls, imports, inheritance…) and cross-artifact
-  links (doc ↔ code, requirement ↔ code, commit ↔ code), including cross-source links.
+  links (doc $\leftrightarrow$ code, requirement $\leftrightarrow$ code, commit $\leftrightarrow$ code), including cross-source links.
 - **Hybrid retrieval** — semantic + keyword + graph traversal, fused into a single ranked result.
 - **Sync & update** — incremental, content-hash based; evicts stale knowledge.
 - **Access control** — authentication on every endpoint; per-source authorization (ACL).
@@ -65,8 +65,8 @@ cp .env.example .env            # set NEO4J_PASSWORD and OPENAI_API_KEY
 # 2a. run the whole stack (app + Neo4j) in containers
 just up                         # = docker compose up -d --build
 
-# 2b. or run just the app locally against a local/compose Neo4j
-just dev                        # = ./mvnw spring-boot:run
+# 2b. or run just the app locally against a local/compose Neo4j — hot-reloads on save
+just dev                        # = ./mvnw spring-boot:run  (Spring Boot DevTools)
 
 # verify
 curl http://localhost:8000/actuator/health
@@ -91,33 +91,37 @@ open http://localhost:8000/docs # Swagger UI
 ├── docs/                                 # SRS, design notes, diagrams
 ├── Dockerfile                            # multi-stage build → runtime image
 ├── docker-compose.yml                    # app + Neo4j (+ Qdrant when scaling)
-├── justfile                              # dev task runner (npm-scripts style)
+├── justfile                              # dev task runner
 ├── .githooks/pre-commit                  # auto-format on commit
 └── .github/workflows/ci.yml              # CI: format check + build + tests
 ```
 
 ## Dev scripts
 
-Run `just` to list tasks. Coming from npm, here is the mapping:
+Run `just` to list tasks.
 
-| npm | just | Runs |
-|---|---|---|
-| `npm run dev` | `just dev` | `./mvnw spring-boot:run` |
-| `npm run build` | `just build` | `./mvnw -DskipTests package` |
-| `npm test` | `just test` | `./mvnw test` (Testcontainers) |
-| `npm run lint` | `just lint` | Spotless check + Checkstyle |
-| `npm run format` | `just format` | `./mvnw spotless:apply` |
-| — | `just verify` | format check + build + tests |
-| — | `just deps` | print dependency tree |
-| — | `just up` / `just down` | start / stop the docker-compose stack |
-| — | `just logs` | tail app logs |
-| — | `just hooks` | enable the pre-commit format hook |
+| just | What it does |
+|---|---|
+| `just dev` | run the app locally with hot reload (auto-restart on code change) |
+| `just build` | package the app (skips tests) |
+| `just test` | run the test suite (Testcontainers) |
+| `just lint` | check formatting + style (Spotless + Checkstyle) |
+| `just format` | auto-format the code |
+| `just verify` | format check + build + tests |
+| `just deps` | print the dependency tree |
+| `just up` / `just down` | start / stop the docker-compose stack |
+| `just logs` | tail app logs |
+| `just hooks` | enable the pre-commit format hook |
 
 > `.env` is auto-loaded by `just` (via `dotenv-load`), so tasks pick up `OPENAI_API_KEY` etc.
 
-> Note: Maven is **declarative** — dependencies live in `pom.xml` (the `package.json` equivalent) and
-> `./mvnw` resolves them on build. There is no `npm install <x>` CLI; add deps by editing `pom.xml`
-> (or via Spring Initializr / your IDE).
+> **Hot reload:** `just dev` runs the app on the host with Spring Boot **DevTools** — saving a source
+> file triggers a fast in-JVM restart (~1s, not a container or full-JVM restart), so changes apply
+> without a manual rerun. This covers the host run only; the app running *inside* a container
+> (`just up`) needs `docker compose up --build` to pick up code changes.
+
+> Note: Maven is **declarative** — dependencies live in `pom.xml` and `./mvnw` resolves them on build.
+> Add a dependency by editing `pom.xml` (or via Spring Initializr / your IDE), not via a CLI command.
 
 ## Configuration
 
