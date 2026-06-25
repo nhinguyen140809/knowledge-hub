@@ -33,3 +33,10 @@ logs/
 
 # --- Docker volumes (bind mounts) ---
 /data/
+
+# --- Docs ---
+docs/design/
+docs/notes/
+docs/research/
+docs/development/
+docs/plan/
