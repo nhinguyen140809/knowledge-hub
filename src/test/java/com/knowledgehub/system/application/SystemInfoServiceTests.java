@@ -18,7 +18,8 @@ class SystemInfoServiceTests {
     MockEnvironment environment = new MockEnvironment();
     environment.setProperty("spring.application.name", "knowledge-hub");
     environment.setActiveProfiles("dev");
-    AppProperties properties = new AppProperties(new AppProperties.VectorStore("neo4j+qdrant"));
+    AppProperties properties =
+        new AppProperties(new AppProperties.VectorStore("neo4j+qdrant"), null, null, null);
 
     @SuppressWarnings("unchecked")
     ObjectProvider<BuildProperties> noBuildInfo = mock(ObjectProvider.class);

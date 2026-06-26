@@ -55,3 +55,10 @@ springdoc:
 app:
   vectorstore:
     mode: ${APP_VECTORSTORE_MODE:neo4j}   # neo4j | neo4j+qdrant
+  embedding:
+    provider: ${APP_EMBEDDING_PROVIDER:api}   # api | local (OpenAI-compatible endpoint)
+  chunk:
+    max-tokens: ${APP_CHUNK_MAX_TOKENS:512}
+    overlap: ${APP_CHUNK_OVERLAP:64}
+  retrieval:
+    top-k: ${APP_RETRIEVAL_TOP_K:10}
