@@ -20,7 +20,9 @@ spring:
           model: ${EMBEDDING_MODEL:text-embedding-3-small}
     vectorstore:
       neo4j:
-        initialize-schema: true
+        # Schema is owned by our SchemaInitializer (vector index on :Chunk), not Spring AI's
+        # default Document index — keep this false to avoid a duplicate, unused index.
+        initialize-schema: false
         index-name: knowledge-embeddings
         embedding-dimension: 1536
 
