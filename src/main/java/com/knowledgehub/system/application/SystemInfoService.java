@@ -1,6 +1,5 @@
 package com.knowledgehub.system.application;
 
-import com.knowledgehub.shared.config.AppProperties;
 import com.knowledgehub.system.domain.SystemInfo;
 import java.util.List;
 import org.slf4j.Logger;
@@ -16,16 +15,15 @@ public class SystemInfoService {
 
   private static final Logger log = LoggerFactory.getLogger(SystemInfoService.class);
 
+  /** Storage topology is fixed: the graph lives in Neo4j and vectors in Qdrant, at every scale. */
+  private static final String VECTOR_STORE = "neo4j+qdrant";
+
   private final Environment environment;
-  private final AppProperties appProperties;
   private final ObjectProvider<BuildProperties> buildProperties;
 
   public SystemInfoService(
-      Environment environment,
-      AppProperties appProperties,
-      ObjectProvider<BuildProperties> buildProperties) {
+      Environment environment, ObjectProvider<BuildProperties> buildProperties) {
     this.environment = environment;
-    this.appProperties = appProperties;
     this.buildProperties = buildProperties;
   }
 
@@ -35,15 +33,14 @@ public class SystemInfoService {
     BuildProperties build = buildProperties.getIfAvailable();
     String version = build != null ? build.getVersion() : "unknown";
     List<String> profiles = List.of(environment.getActiveProfiles());
-    String vectorStoreMode = appProperties.vectorstore().mode();
 
     log.debug(
-        "Reporting system info: application={}, version={}, profiles={}, vectorStoreMode={}",
+        "Reporting system info: application={}, version={}, profiles={}, vectorStore={}",
         application,
         version,
         profiles,
-        vectorStoreMode);
+        VECTOR_STORE);
 
-    return new SystemInfo(application, version, profiles, vectorStoreMode);
+    return new SystemInfo(application, version, profiles, VECTOR_STORE);
   }
 }

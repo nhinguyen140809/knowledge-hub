@@ -20,17 +20,11 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties(prefix = "app")
 public record AppProperties(
-    @Valid VectorStore vectorstore,
-    @Valid Embedding embedding,
-    @Valid Chunk chunk,
-    @Valid Retrieval retrieval) {
+    @Valid Embedding embedding, @Valid Chunk chunk, @Valid Retrieval retrieval) {
 
   public AppProperties {
-    if (vectorstore == null) {
-      vectorstore = new VectorStore(null);
-    }
     if (embedding == null) {
-      embedding = new Embedding(null);
+      embedding = new Embedding(null, null);
     }
     if (chunk == null) {
       chunk = new Chunk(null, null);
@@ -41,29 +35,22 @@ public record AppProperties(
   }
 
   /**
-   * Vector store wiring.
-   *
-   * @param mode {@code neo4j} (default) or {@code neo4j+qdrant} when scaling the vector index out
-   *     to a dedicated engine.
-   */
-  public record VectorStore(@Pattern(regexp = "neo4j|neo4j\\+qdrant") String mode) {
-    public VectorStore {
-      if (mode == null || mode.isBlank()) {
-        mode = "neo4j";
-      }
-    }
-  }
-
-  /**
-   * Embedding provider selection (FR-7.1).
+   * Embedding provider selection and vector dimension (FR-7.1). Vectors always live in Qdrant
+   * (there is no single-store mode); the dimension here sizes the Qdrant collection and must match
+   * the embedding model.
    *
    * @param provider {@code api} (default, hosted/OpenAI-compatible) or {@code local} (self-hosted
    *     OpenAI-compatible endpoint).
+   * @param dimension embedding vector dimension (default 1536 for {@code text-embedding-3-small}).
    */
-  public record Embedding(@Pattern(regexp = "api|local") String provider) {
+  public record Embedding(
+      @Pattern(regexp = "api|local") String provider, @Positive Integer dimension) {
     public Embedding {
       if (provider == null || provider.isBlank()) {
         provider = "api";
+      }
+      if (dimension == null) {
+        dimension = 1536;
       }
     }
   }

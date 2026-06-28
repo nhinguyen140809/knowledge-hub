@@ -14,36 +14,33 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.neo4j.core.Neo4jClient;
 
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
-class Neo4jVectorAdapterTests {
+class QdrantVectorAdapterTests {
 
-  @Autowired private Neo4jVectorAdapter adapter;
-  @Autowired private Neo4jClient neo4jClient;
+  @Autowired private QdrantVectorAdapter adapter;
 
   @BeforeEach
   void clean() {
-    neo4jClient.query("MATCH (c:Chunk) DETACH DELETE c").run();
+    adapter.deleteByChunkIds(List.of("chunk-a", "chunk-b"));
   }
 
   @Test
-  void upsertThenSearchReturnsTheNearestChunkFirst() throws InterruptedException {
+  void upsertThenSearchReturnsTheNearestChunkFirst() {
     adapter.upsert(
         List.of(
             new ChunkVector("chunk-a", unit(0), Map.of("source_id", "src-1")),
             new ChunkVector("chunk-b", unit(1), Map.of("source_id", "src-1"))));
 
-    List<ScoredId> hits = searchUntilFound(unit(0), 2, Filter.unrestricted());
+    List<ScoredId> hits = adapter.search(unit(0), 2, Filter.unrestricted());
 
-    assertThat(hits.get(0).chunkId()).isEqualTo("chunk-a");
+    assertThat(hits).extracting(ScoredId::chunkId).containsExactly("chunk-a", "chunk-b");
   }
 
   @Test
-  void aclPreFilterExcludesDisallowedSources() throws InterruptedException {
+  void aclPreFilterExcludesDisallowedSources() {
     adapter.upsert(List.of(new ChunkVector("chunk-a", unit(0), Map.of("source_id", "src-1"))));
-    searchUntilFound(unit(0), 5, Filter.unrestricted()); // ensure indexed
 
     List<ScoredId> hits = adapter.search(unit(0), 5, Filter.ofSources(Set.of("src-2")));
 
@@ -51,32 +48,28 @@ class Neo4jVectorAdapterTests {
   }
 
   @Test
-  void deleteByChunkIdsRemovesTheVector() throws InterruptedException {
+  void emptyAllowListReadsNothing() {
     adapter.upsert(List.of(new ChunkVector("chunk-a", unit(0), Map.of("source_id", "src-1"))));
-    searchUntilFound(unit(0), 5, Filter.unrestricted());
+
+    List<ScoredId> hits = adapter.search(unit(0), 5, Filter.ofSources(Set.of()));
+
+    assertThat(hits).isEmpty();
+  }
+
+  @Test
+  void deleteByChunkIdsRemovesTheVector() {
+    adapter.upsert(List.of(new ChunkVector("chunk-a", unit(0), Map.of("source_id", "src-1"))));
+    assertThat(adapter.search(unit(0), 5, Filter.unrestricted())).isNotEmpty();
 
     adapter.deleteByChunkIds(List.of("chunk-a"));
 
     assertThat(adapter.search(unit(0), 5, Filter.unrestricted())).isEmpty();
   }
 
-  /** A 1536-dim unit vector with 1.0 at the given index (matches the index dimension). */
+  /** A 1536-dim unit vector with 1.0 at the given index (matches the collection dimension). */
   private static float[] unit(int index) {
     float[] vector = new float[1536];
     vector[index] = 1f;
     return vector;
-  }
-
-  /** The vector index may lag the write briefly; poll until results appear. */
-  private List<ScoredId> searchUntilFound(float[] query, int k, Filter filter)
-      throws InterruptedException {
-    for (int attempt = 0; attempt < 25; attempt++) {
-      List<ScoredId> hits = adapter.search(query, k, filter);
-      if (!hits.isEmpty()) {
-        return hits;
-      }
-      Thread.sleep(200);
-    }
-    return adapter.search(query, k, filter);
   }
 }

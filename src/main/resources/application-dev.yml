@@ -5,7 +5,3 @@ spring:
 logging:
   level:
     com.knowledgehub: DEBUG
-
-app:
-  vectorstore:
-    mode: neo4j

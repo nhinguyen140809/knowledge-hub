@@ -12,11 +12,16 @@ services:
       NEO4J_USERNAME: neo4j
       NEO4J_PASSWORD: ${NEO4J_PASSWORD:-knowledgehub}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Qdrant holds the vectors (always); gRPC on 6334
+      SPRING_AI_VECTORSTORE_QDRANT_HOST: qdrant
+      SPRING_AI_VECTORSTORE_QDRANT_PORT: "6334"
       # cap app heap for small / local hosts
       JAVA_TOOL_OPTIONS: "-Xmx512m"
     depends_on:
       neo4j:
         condition: service_healthy
+      qdrant:
+        condition: service_started
     restart: unless-stopped
 
   neo4j:
@@ -41,17 +46,17 @@ services:
       start_period: 40s
     restart: unless-stopped
 
-  # Enable when scaling out (set APP_VECTORSTORE_MODE=neo4j+qdrant)
-  # qdrant:
-  #   image: qdrant/qdrant:latest
-  #   ports:
-  #     - "6333:6333"
-  #     - "6334:6334"
-  #   volumes:
-  #     - qdrant-data:/qdrant/storage
-  #   restart: unless-stopped
+  # Vector store (always on — the graph lives in Neo4j, vectors in Qdrant)
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    ports:
+      - "6333:6333"   # REST / dashboard
+      - "6334:6334"   # gRPC
+    volumes:
+      - qdrant-data:/qdrant/storage
+    restart: unless-stopped
 
 volumes:
   neo4j-data:
   neo4j-logs:
-  # qdrant-data:
+  qdrant-data:

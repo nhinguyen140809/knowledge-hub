@@ -3,9 +3,12 @@ package com.knowledgehub.knowledge.infrastructure.persistence;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.knowledgehub.TestcontainersConfiguration;
+import io.qdrant.client.QdrantClient;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.neo4j.core.Neo4jClient;
@@ -15,6 +18,10 @@ import org.springframework.data.neo4j.core.Neo4jClient;
 class SchemaInitializerTests {
 
   @Autowired private Neo4jClient neo4jClient;
+  @Autowired private QdrantClient qdrantClient;
+
+  @Value("${spring.ai.vectorstore.qdrant.collection-name:knowledge-embeddings}")
+  private String collectionName;
 
   @Test
   void createsUniquenessConstraints() {
@@ -25,11 +32,15 @@ class SchemaInitializerTests {
   }
 
   @Test
-  void createsFullTextPropertyAndVectorIndexes() {
+  void createsFullTextAndPropertyIndexes() {
     List<String> names = names("SHOW INDEXES YIELD name RETURN name");
 
-    assertThat(names)
-        .contains("chunk_text", "entity_name", "chunk_hash", "file_hash", "chunk_embedding");
+    assertThat(names).contains("chunk_text", "entity_name", "chunk_hash", "file_hash");
+  }
+
+  @Test
+  void createsTheQdrantCollection() throws ExecutionException, InterruptedException {
+    assertThat(qdrantClient.collectionExistsAsync(collectionName).get()).isTrue();
   }
 
   private List<String> names(String cypher) {

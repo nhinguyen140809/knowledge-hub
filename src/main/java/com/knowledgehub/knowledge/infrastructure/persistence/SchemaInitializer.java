@@ -1,6 +1,10 @@
 package com.knowledgehub.knowledge.infrastructure.persistence;
 
+import io.qdrant.client.QdrantClient;
+import io.qdrant.client.grpc.Collections.Distance;
+import io.qdrant.client.grpc.Collections.VectorParams;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,10 +14,12 @@ import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Component;
 
 /**
- * Creates the Neo4j schema on startup: uniqueness constraints, full-text (BM25) indexes, property
- * indexes for content-hash dedup, and the vector index on {@code :Chunk(embedding)}. All statements
- * are idempotent ({@code IF NOT EXISTS}); there is no separate migration tool — schema setup is
- * just idempotent Cypher (see {@code docs/plan/00-foundation-and-schema.md} §3.3).
+ * Creates the storage schema on startup. Neo4j holds the graph + keyword index: uniqueness
+ * constraints, full-text (BM25) indexes, and property indexes for content-hash dedup. Vectors live
+ * in Qdrant (always), so this also ensures the Qdrant collection exists with the right dimension
+ * and cosine distance. All steps are idempotent ({@code IF NOT EXISTS} on Neo4j;
+ * create-collection-if-absent on Qdrant) — there is no separate migration tool (see {@code
+ * docs/plan/00-foundation-and-schema.md} §3.3).
  */
 @Component
 public class SchemaInitializer implements ApplicationRunner {
@@ -43,12 +49,19 @@ public class SchemaInitializer implements ApplicationRunner {
           "CREATE INDEX file_hash IF NOT EXISTS FOR (f:File) ON (f.content_hash)");
 
   private final Neo4jClient neo4jClient;
+  private final QdrantClient qdrantClient;
+  private final String collectionName;
   private final int embeddingDimension;
 
   public SchemaInitializer(
       Neo4jClient neo4jClient,
-      @Value("${spring.ai.vectorstore.neo4j.embedding-dimension:1536}") int embeddingDimension) {
+      QdrantClient qdrantClient,
+      @Value("${spring.ai.vectorstore.qdrant.collection-name:knowledge-embeddings}")
+          String collectionName,
+      @Value("${app.embedding.dimension:1536}") int embeddingDimension) {
     this.neo4jClient = neo4jClient;
+    this.qdrantClient = qdrantClient;
+    this.collectionName = collectionName;
     this.embeddingDimension = embeddingDimension;
   }
 
@@ -57,23 +70,33 @@ public class SchemaInitializer implements ApplicationRunner {
     for (String statement : CONSTRAINTS_AND_INDEXES) {
       neo4jClient.query(statement).run();
     }
-    neo4jClient.query(vectorIndexStatement()).run();
+    ensureQdrantCollection();
     log.info(
-        "Neo4j schema initialized: {} constraints/indexes + chunk vector index (dim {})",
+        "Schema initialized: {} Neo4j constraints/indexes + Qdrant collection '{}' (dim {}, cosine)",
         CONSTRAINTS_AND_INDEXES.size(),
+        collectionName,
         embeddingDimension);
   }
 
-  /**
-   * Vector index on {@code :Chunk(embedding)}. The dimension is inlined (not a query parameter)
-   * because Neo4j index OPTIONS do not accept parameters; the value is a trusted int from config.
-   */
-  private String vectorIndexStatement() {
-    return "CREATE VECTOR INDEX chunk_embedding IF NOT EXISTS"
-        + " FOR (c:Chunk) ON (c.embedding)"
-        + " OPTIONS { indexConfig: {"
-        + " `vector.dimensions`: "
-        + embeddingDimension
-        + ", `vector.similarity_function`: 'cosine' } }";
+  /** Creates the Qdrant collection (cosine, configured dimension) if it does not exist yet. */
+  private void ensureQdrantCollection() {
+    try {
+      if (Boolean.TRUE.equals(qdrantClient.collectionExistsAsync(collectionName).get())) {
+        return;
+      }
+      qdrantClient
+          .createCollectionAsync(
+              collectionName,
+              VectorParams.newBuilder()
+                  .setSize(embeddingDimension)
+                  .setDistance(Distance.Cosine)
+                  .build())
+          .get();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException("Interrupted while ensuring Qdrant collection", e);
+    } catch (ExecutionException e) {
+      throw new IllegalStateException("Failed to ensure Qdrant collection " + collectionName, e);
+    }
   }
 }
