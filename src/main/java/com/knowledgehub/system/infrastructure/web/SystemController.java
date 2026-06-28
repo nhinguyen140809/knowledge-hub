@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** REST endpoints exposing service status and runtime information. */
 @RestController
-@RequestMapping("/api/v1/system")
+@RequestMapping("/system") // /api/v1 prefix added centrally by WebConfig
 @Tag(name = "System", description = "Service status and runtime information")
 public class SystemController {
 
