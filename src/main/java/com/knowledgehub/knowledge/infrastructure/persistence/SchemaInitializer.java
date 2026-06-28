@@ -35,8 +35,18 @@ public class SchemaInitializer implements ApplicationRunner {
           "CREATE CONSTRAINT chunk_id IF NOT EXISTS FOR (c:Chunk) REQUIRE c.chunk_id IS UNIQUE",
           "CREATE CONSTRAINT entity_id IF NOT EXISTS"
               + " FOR (e:CodeEntity) REQUIRE e.entity_id IS UNIQUE",
+          "CREATE CONSTRAINT document_id IF NOT EXISTS"
+              + " FOR (d:Document) REQUIRE d.document_id IS UNIQUE",
+          "CREATE CONSTRAINT requirement_id IF NOT EXISTS"
+              + " FOR (r:Requirement) REQUIRE r.requirement_id IS UNIQUE",
+          "CREATE CONSTRAINT commit_sha IF NOT EXISTS"
+              + " FOR (c:Commit) REQUIRE c.commit_sha IS UNIQUE",
           "CREATE CONSTRAINT principal_id IF NOT EXISTS"
               + " FOR (p:Principal) REQUIRE p.principal_id IS UNIQUE",
+          "CREATE CONSTRAINT credential_id IF NOT EXISTS"
+              + " FOR (c:Credential) REQUIRE c.credential_id IS UNIQUE",
+          "CREATE CONSTRAINT system_config_key IF NOT EXISTS"
+              + " FOR (s:SystemConfig) REQUIRE s.key IS UNIQUE",
           // O(1) credential lookup per request during authentication
           "CREATE CONSTRAINT cred_hash IF NOT EXISTS"
               + " FOR (c:Credential) REQUIRE c.hash IS UNIQUE",

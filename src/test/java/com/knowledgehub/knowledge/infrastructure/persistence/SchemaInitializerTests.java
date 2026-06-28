@@ -28,7 +28,18 @@ class SchemaInitializerTests {
     List<String> names = names("SHOW CONSTRAINTS YIELD name RETURN name");
 
     assertThat(names)
-        .contains("source_id", "file_id", "chunk_id", "entity_id", "principal_id", "cred_hash");
+        .contains(
+            "source_id",
+            "file_id",
+            "chunk_id",
+            "entity_id",
+            "document_id",
+            "requirement_id",
+            "commit_sha",
+            "principal_id",
+            "credential_id",
+            "system_config_key",
+            "cred_hash");
   }
 
   @Test
