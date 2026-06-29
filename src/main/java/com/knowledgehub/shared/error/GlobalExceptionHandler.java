@@ -36,6 +36,12 @@ public class GlobalExceptionHandler {
     return problem(ErrorCode.VALIDATION_FAILED, detail);
   }
 
+  /** Invalid arguments (e.g. a domain invariant rejected the input) map to a 400. */
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ProblemDetail handleIllegalArgument(IllegalArgumentException ex) {
+    return problem(ErrorCode.VALIDATION_FAILED, ex.getMessage());
+  }
+
   /** Anything unmapped is an internal error; log the cause, never leak it to the client. */
   @ExceptionHandler(Exception.class)
   public ProblemDetail handleUnexpected(Exception ex) {
