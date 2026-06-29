@@ -37,7 +37,7 @@ final class ChunkBuilder {
         type,
         text,
         contentHash,
-        TokenEstimator.estimate(text),
+        TokenCounter.count(text),
         lineStart,
         lineEnd,
         entityId,

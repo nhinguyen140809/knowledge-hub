@@ -100,7 +100,7 @@ public class DocChunker implements Chunker {
   private static Block block(List<String> lines, int startLine, int endLine) {
     String text = String.join("\n", lines);
     boolean heading = HEADING.matcher(lines.get(0)).matches();
-    return new Block(text, startLine, endLine, TokenEstimator.estimate(text), heading);
+    return new Block(text, startLine, endLine, TokenCounter.count(text), heading);
   }
 
   /** Carries trailing blocks whose combined tokens fit the overlap budget into the next chunk. */
@@ -126,7 +126,7 @@ public class DocChunker implements Chunker {
     String[] words = block.text().split("\\s+");
     StringBuilder buffer = new StringBuilder();
     for (String word : words) {
-      if (buffer.length() > 0 && TokenEstimator.estimate(buffer + " " + word) > maxTokens) {
+      if (buffer.length() > 0 && TokenCounter.count(buffer + " " + word) > maxTokens) {
         pieces.add(block.withText(buffer.toString()));
         buffer.setLength(0);
       }
@@ -159,7 +159,7 @@ public class DocChunker implements Chunker {
   /** A paragraph (or heading) with its 1-based, inclusive source line range. */
   private record Block(String text, int startLine, int endLine, int tokens, boolean heading) {
     Block withText(String newText) {
-      return new Block(newText, startLine, endLine, TokenEstimator.estimate(newText), heading);
+      return new Block(newText, startLine, endLine, TokenCounter.count(newText), heading);
     }
   }
 }
