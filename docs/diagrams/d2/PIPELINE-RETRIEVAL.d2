@@ -1,0 +1,36 @@
+# Data Processing — 3 · Retrieval pipeline (where processed data is served)
+# Hybrid search with a hard ACL filter
+# Parallel (scatter-gather) PIPES & FILTERS: the 3 search stages fan out, the RRF
+# fusion stage fans in. Code structure in LOGICAL-ARCHITECTURE.d2.
+# Render:  d2 PIPELINE-RETRIEVAL.d2 PIPELINE-RETRIEVAL.svg
+vars: {
+  d2-config: {
+    layout-engine: elk
+    pad: 4
+  }
+}
+direction: right
+
+q: "Free-text \nquery"
+eq: "Embed \nquery"
+kwx: "Extract \nkeywords"
+sem: "Semantic search\n(vector)"
+key: "Keyword search\n(BM25)"
+gt: "Graph traversal\n(Neo4j relations)"
+fuse: "Fusion \nRRF"
+acl: "ACL hard filter \nacross every \npath" {shape: diamond}
+res: "Ranked JSON\n+\n relevance score \n+\n metadata"
+x: "Removed \n(no leak)"
+
+q -> eq
+q -> kwx
+eq -> sem
+kwx -> key
+sem -> gt
+key -> gt
+sem -> fuse
+key -> fuse
+gt -> fuse
+fuse -> acl
+acl -> res: "sources principal \nmay read"
+acl -> x: "drop disallowed \nsources" {style.stroke-dash: 4}

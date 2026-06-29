@@ -1,0 +1,164 @@
+# Entity-Relationship Diagram — Knowledge Hub (data model)
+#
+# Neo4j holds the knowledge graph + keyword index AND the ACL. Vectors live in Qdrant
+# (always — every scale), linked back to the graph by chunk_id (see TECH-STACK §3/§6).
+# `Source` is the BRIDGE — it is both the provenance root of all knowledge
+# and the unit of authorization in the ACL.
+# A Chunk's embedding is NOT stored in Neo4j; the Qdrant vector point shares its chunk_id.
+#
+# Edges are labelled with the Neo4j relationship TYPE in its traversal direction
+# (e.g. (:Principal)-[:GRANTED]->(:Source)). sql_table columns document the join keys.
+# Render:  d2 ERD.d2 ERD.svg     (or ERD.pdf for LaTeX)
+
+vars: {
+  d2-config: {
+    layout-engine: elk
+    pad: 16
+  }
+}
+direction: up
+
+# ----------------------------------------------------------------------------
+# KNOWLEDGE GRAPH — in Neo4j; vectors live in Qdrant
+# ----------------------------------------------------------------------------
+knowledge: "Knowledge graph (Neo4j) · vectors in Qdrant" {
+  style.fill: "#f8fafc"
+  style.stroke: "#94a3b8"
+
+  Source: {
+    shape: sql_table
+    source_id: string {constraint: primary_key}
+    type: "git | fs"
+    uri_or_path: string
+    ref: "string (git only)"
+    default_branch: "string (git)"
+    include_ignore: "globs"
+    style.fill: "#d47100"
+    style.stroke: "#ffe0c6"
+  }
+
+  File: {
+    shape: sql_table
+    file_id: string {constraint: primary_key}
+    source_id: string {constraint: foreign_key}
+    path: string
+    language: string
+    content_hash: "string"
+    indexed_at: "datetime"
+    commit_sha: "string (git)"
+    ref: "string (git)"
+  }
+
+  CodeEntity: {
+    shape: sql_table
+    entity_id: string {constraint: primary_key}
+    file_id: string {constraint: foreign_key}
+    level: "constant|field|function|class|file|module|package|project"
+    name: string
+    signature: string
+    line_start: int
+    line_end: int
+  }
+
+  Chunk: {
+    shape: sql_table
+    chunk_id: string {constraint: primary_key}
+    source_id: string {constraint: foreign_key}
+    file_id: string {constraint: foreign_key}
+    content_hash: "string"
+    text: string
+    embedding: "float[] - Qdrant"
+    token_count: int
+    line_start: int
+    line_end: int
+    indexed_at: datetime
+  }
+
+  Document: {
+    shape: sql_table
+    document_id: string {constraint: primary_key}
+    source_id: string {constraint: foreign_key}
+    path: string
+    doc_type: "markdown | pdf"
+    title: string
+    content_hash: string
+  }
+
+  Requirement: {
+    shape: sql_table
+    requirement_id: string {constraint: primary_key}
+    source_id: string {constraint: foreign_key}
+    code: "requirement code"
+    text: string
+  }
+
+  Commit: {
+    shape: sql_table
+    commit_sha: string {constraint: primary_key}
+    source_id: string {constraint: foreign_key}
+    author: string
+    message: string
+    committed_at: datetime
+  }
+}
+
+# ----------------------------------------------------------------------------
+# ACCESS CONTROL  — also in Neo4j, never in Qdrant
+# ----------------------------------------------------------------------------
+access: "Access control (ACL)" {
+  style.fill: "#f0fdf4"
+  style.stroke: "#16a34a"
+
+  Principal: {
+    shape: sql_table
+    principal_id: string {constraint: primary_key}
+    type: "subject | group"
+    role: "admin | member"
+  }
+
+  Credential: {
+    shape: sql_table
+    credential_id: string {constraint: primary_key}
+    principal_id: string {constraint: foreign_key}
+    hash: "string"
+    revoked: "boolean"
+    created_at: datetime
+    last_used_at: datetime
+  }
+
+  SystemConfig: {
+    shape: sql_table
+    key: string {constraint: primary_key}
+    default_policy: "deny | allow"
+  }
+}
+
+# --- Provenance: every knowledge entity traces back to a Source -----
+knowledge.Source.source_id -> knowledge.File.source_id: CONTAINS
+knowledge.Source.source_id -> knowledge.Commit.source_id: HAS_COMMIT
+knowledge.Source.source_id -> knowledge.Document.source_id: CONTAINS
+
+# --- Structural code relations -------------------------------------
+knowledge.File.file_id -> knowledge.CodeEntity.file_id: DECLARES
+knowledge.CodeEntity -> knowledge.CodeEntity: "CONTAINS · CALLS · IMPORTS\nEXTENDS / IMPLEMENTS / OVERRIDES"
+
+# --- Chunk = embedded unit, tied to its source artifact ----
+knowledge.Chunk.file_id -> knowledge.File.file_id: PART_OF
+knowledge.Chunk -> knowledge.CodeEntity: CHUNK_OF
+knowledge.Chunk -> knowledge.Document: CHUNK_OF
+
+# --- Cross-artifact links, heuristic + confidence ------------------
+knowledge.Document -> knowledge.CodeEntity: "DESCRIBES \n{confidence}" {style.stroke-dash: 4}
+knowledge.Requirement -> knowledge.CodeEntity: "IMPLEMENTED_BY \n{confidence}" {style.stroke-dash: 4}
+knowledge.Requirement -> knowledge.CodeEntity: "VERIFIED_BY \n{confidence}" {style.stroke-dash: 4}
+knowledge.Document -> knowledge.Requirement.requirement_id: DEFINES {style.stroke-dash: 4}
+knowledge.Commit -> knowledge.File: MODIFIES {style.stroke-dash: 4}
+knowledge.CodeEntity -> knowledge.CodeEntity: "CONSUMES (cross-source)" {style.stroke-dash: 4}
+knowledge.Document -> knowledge.Document: LINKS_TO {style.stroke-dash: 4}
+
+# --- ACL relations ----------------------------------------
+access.Principal.principal_id -> access.Credential.principal_id: HAS_CREDENTIAL
+access.Principal -> access.Principal: "MEMBER_OF \n(group nesting)"
+
+# --- THE BRIDGE: a grant connects a Principal to a Source ----------
+access.Principal -> knowledge.Source: "GRANTED (read)"
