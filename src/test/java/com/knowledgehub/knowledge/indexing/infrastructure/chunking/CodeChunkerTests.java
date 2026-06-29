@@ -114,6 +114,25 @@ class CodeChunkerTests {
   }
 
   @Test
+  void extractsEveryVariableOfAMultiDeclaratorField() {
+    String source =
+        """
+        package com.example;
+
+        public class Coords {
+          private int x, y, z;
+        }
+        """;
+
+    ChunkingResult result = chunker.chunk(java("Coords.java", source), new ChunkConfig(512, 0));
+
+    assertThat(result.codeEntities())
+        .filteredOn(e -> e.level() == CodeEntityLevel.FIELD)
+        .extracting(CodeEntity::name)
+        .containsExactlyInAnyOrder("x", "y", "z");
+  }
+
+  @Test
   void throwsOnUnparseableJava() {
     assertThatThrownBy(
             () -> chunker.chunk(java("Bad.java", "this is not java {{{"), new ChunkConfig(512, 0)))

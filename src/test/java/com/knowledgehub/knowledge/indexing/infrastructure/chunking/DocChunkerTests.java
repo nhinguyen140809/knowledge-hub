@@ -64,23 +64,43 @@ class DocChunkerTests {
   }
 
   @Test
-  void overlapRepeatsTrailingBlockInNextChunk() {
+  void overlapCarriesTokensIntoTheNextChunk() {
     String text =
         """
-        aaaa bbbb.
+        alpha words one two three four five.
 
-        cccc dddd.
+        beta words six seven eight nine ten.
 
-        eeee ffff.
+        gamma words again and again and again.
         """;
 
-    ChunkingResult withOverlap = chunker.chunk(markdown(text), new ChunkConfig(8, 4));
+    ChunkingResult none = chunker.chunk(markdown(text), new ChunkConfig(20, 0));
+    ChunkingResult overlapping = chunker.chunk(markdown(text), new ChunkConfig(20, 10));
 
-    assertThat(withOverlap.chunks()).hasSizeGreaterThan(1);
-    // The carried block makes a paragraph appear in two adjacent chunks.
-    long timesMiddleAppears =
-        withOverlap.chunks().stream().filter(c -> c.text().contains("cccc dddd.")).count();
-    assertThat(timesMiddleAppears).isGreaterThanOrEqualTo(2);
+    assertThat(none.chunks()).hasSizeGreaterThan(1);
+    // Overlap duplicates trailing tokens, so the total text covered grows and chunk count does not
+    // drop.
+    assertThat(overlapping.chunks().size()).isGreaterThanOrEqualTo(none.chunks().size());
+    assertThat(totalLength(overlapping)).isGreaterThan(totalLength(none));
+  }
+
+  @Test
+  void tracksExactLineNumbers() {
+    String text =
+        """
+        # Heading
+        first line.
+
+        second paragraph line three.
+        """;
+
+    ChunkingResult result = chunker.chunk(markdown(text), new ChunkConfig(512, 0));
+
+    // One section (single heading); the chunk spans from the heading (line 1) to the last content
+    // line (line 4).
+    Chunk chunk = result.chunks().get(0);
+    assertThat(chunk.lineStart()).isEqualTo(1);
+    assertThat(chunk.lineEnd()).isEqualTo(4);
   }
 
   @Test
@@ -93,5 +113,9 @@ class DocChunkerTests {
     assertThat(chunk.lineStart()).isEqualTo(1);
     assertThat(chunk.lineEnd()).isGreaterThanOrEqualTo(chunk.lineStart());
     assertThat(chunk.entityId()).isNull();
+  }
+
+  private static int totalLength(ChunkingResult result) {
+    return result.chunks().stream().mapToInt(c -> c.text().length()).sum();
   }
 }

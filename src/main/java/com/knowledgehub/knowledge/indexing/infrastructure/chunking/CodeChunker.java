@@ -11,6 +11,7 @@ import com.github.javaparser.ast.body.ConstructorDeclaration;
 import com.github.javaparser.ast.body.EnumDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
+import com.github.javaparser.ast.body.VariableDeclarator;
 import com.knowledgehub.knowledge.indexing.domain.Chunk;
 import com.knowledgehub.knowledge.indexing.domain.ChunkConfig;
 import com.knowledgehub.knowledge.indexing.domain.ChunkType;
@@ -23,6 +24,9 @@ import com.knowledgehub.shared.id.IdFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -41,6 +45,8 @@ import org.springframework.stereotype.Component;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class CodeChunker implements Chunker {
 
+  private static final Logger log = LoggerFactory.getLogger(CodeChunker.class);
+
   @Override
   public boolean supports(RawArtifact artifact) {
     return artifact.text() != null && artifact.path().toLowerCase(Locale.ROOT).endsWith(".java");
@@ -58,7 +64,7 @@ public class CodeChunker implements Chunker {
     List<Chunk> chunks = new ArrayList<>();
     List<CodeEntity> entities = new ArrayList<>();
     for (TypeDeclaration<?> type : cu.getTypes()) {
-      processType(artifact, lines, packageName, null, type, chunks, entities);
+      processType(artifact, lines, packageName, null, type, config.maxTokens(), chunks, entities);
     }
     return new ChunkingResult(chunks, entities);
   }
@@ -73,6 +79,7 @@ public class CodeChunker implements Chunker {
       String enclosingQualifier,
       String parentEntityId,
       TypeDeclaration<?> type,
+      int maxTokens,
       List<Chunk> chunks,
       List<CodeEntity> entities) {
     String sourceId = artifact.provenance().sourceId();
@@ -123,37 +130,59 @@ public class CodeChunker implements Chunker {
               signature,
               range.begin.line,
               range.end.line));
-      chunks.add(
+      Chunk chunk =
           ChunkBuilder.build(
               artifact,
               ChunkType.CODE,
               slice(lines, range),
               range.begin.line,
               range.end.line,
-              memberId));
+              memberId);
+      if (chunk.tokenCount() > maxTokens) {
+        log.warn(
+            "{} {} in {} is {} tokens, over the {}-token budget — kept as one chunk to avoid"
+                + " splitting a function; it may exceed the embedding model's input limit",
+            memberLevel,
+            memberName,
+            path,
+            chunk.tokenCount(),
+            maxTokens);
+      }
+      chunks.add(chunk);
     }
 
     for (FieldDeclaration field : type.getFields()) {
       Range range = field.getRange().orElseThrow();
-      String fieldName = field.getVariable(0).getNameAsString();
-      entities.add(
-          new CodeEntity(
-              IdFactory.entityId(sourceId, path, qualifiedName + "#" + fieldName),
-              sourceId,
-              fileId,
-              entityId,
-              CodeEntityLevel.FIELD,
-              fieldName,
-              field.toString(),
-              range.begin.line,
-              range.end.line));
+      String modifiers =
+          field.getModifiers().stream()
+              .map(modifier -> modifier.getKeyword().asString())
+              .collect(Collectors.joining(" "));
+      for (VariableDeclarator variable : field.getVariables()) {
+        String fieldName = variable.getNameAsString();
+        String signature =
+            (modifiers.isEmpty() ? "" : modifiers + " ")
+                + variable.getTypeAsString()
+                + " "
+                + fieldName;
+        entities.add(
+            new CodeEntity(
+                IdFactory.entityId(sourceId, path, qualifiedName + "#" + fieldName),
+                sourceId,
+                fileId,
+                entityId,
+                CodeEntityLevel.FIELD,
+                fieldName,
+                signature,
+                range.begin.line,
+                range.end.line));
+      }
     }
 
     for (Node member : type.getMembers()) {
       if (member instanceof TypeDeclaration<?> nested) {
         Range range = nested.getRange().orElseThrow();
         mark(excluded, range);
-        processType(artifact, lines, qualifiedName, entityId, nested, chunks, entities);
+        processType(artifact, lines, qualifiedName, entityId, nested, maxTokens, chunks, entities);
       }
     }
 

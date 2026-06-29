@@ -14,11 +14,12 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
- * Structure-aware chunker for documents (Markdown, PDF/Office text, plain text). It splits the text
- * into paragraph blocks, forces a chunk boundary at every Markdown heading so chunks stay aligned
- * to sections, and greedily packs blocks up to {@code maxTokens} carrying a configurable token
- * overlap between adjacent chunks. A single block larger than the budget is split by words so no
- * chunk runs far past the target.
+ * Structure-aware chunker for documents (Markdown, PDF/Office text, plain text). It first splits
+ * the text into sections at every Markdown heading so a chunk never crosses a heading, then fills
+ * each section with chunks up to {@code maxTokens} using a recursive boundary preference (paragraph
+ * → line → sentence → word → character) and a configurable token-level overlap carried between
+ * adjacent chunks. Splitting works on character offsets into the original text, so every chunk
+ * keeps an exact 1-based source line range.
  *
  * <p>Lowest precedence so it acts as the fallback once language-specific chunkers have had their
  * say (it accepts any artifact that carries text).
@@ -36,130 +37,204 @@ public class DocChunker implements Chunker {
 
   @Override
   public ChunkingResult chunk(RawArtifact artifact, ChunkConfig config) {
-    List<Block> blocks = toBlocks(artifact.text());
     List<Chunk> chunks = new ArrayList<>();
-
-    List<Block> current = new ArrayList<>();
-    int currentTokens = 0;
-    for (Block block : blocks) {
-      boolean boundary = block.heading() || currentTokens + block.tokens() > config.maxTokens();
-      if (boundary && !current.isEmpty()) {
-        chunks.add(emit(artifact, current));
-        current = carryOverlap(current, config.overlap());
-        currentTokens = sumTokens(current);
-      }
-      if (block.tokens() > config.maxTokens()) {
-        // Indivisible-by-paragraph but too big: split this block by words.
-        if (!current.isEmpty()) {
-          chunks.add(emit(artifact, current));
-          current = new ArrayList<>();
-          currentTokens = 0;
+    for (Section section : sections(artifact.text())) {
+      for (int[] span : split(section.text(), config.maxTokens(), config.overlap())) {
+        int[] trimmed = trim(section.text(), span[0], span[1]);
+        if (trimmed == null) {
+          continue;
         }
-        for (Block piece : splitOversized(block, config.maxTokens())) {
-          chunks.add(emit(artifact, List.of(piece)));
-        }
-        continue;
+        int lineStart = section.startLine() + countNewlines(section.text(), 0, trimmed[0]);
+        int lineEnd = lineStart + countNewlines(section.text(), trimmed[0], trimmed[1]);
+        chunks.add(
+            ChunkBuilder.build(
+                artifact,
+                ChunkType.DOC,
+                section.text().substring(trimmed[0], trimmed[1]),
+                lineStart,
+                lineEnd,
+                null));
       }
-      current.add(block);
-      currentTokens += block.tokens();
-    }
-    if (!current.isEmpty()) {
-      chunks.add(emit(artifact, current));
     }
     return ChunkingResult.ofChunks(chunks);
   }
 
-  /** Groups lines into paragraph blocks (separated by blank lines or a heading line). */
-  private static List<Block> toBlocks(String text) {
+  /**
+   * Splits the document into sections, each starting at a Markdown heading (or the document head).
+   */
+  private static List<Section> sections(String text) {
     String[] lines = text.split("\n", -1);
-    List<Block> blocks = new ArrayList<>();
-    List<String> buffer = new ArrayList<>();
-    int blockStart = 0;
-    for (int i = 0; i < lines.length; i++) {
-      String line = stripCarriageReturn(lines[i]);
-      boolean blank = line.isBlank();
-      boolean heading = HEADING.matcher(line).matches();
-      if ((blank || heading) && !buffer.isEmpty()) {
-        blocks.add(block(buffer, blockStart, i));
-        buffer = new ArrayList<>();
+    List<Integer> starts = new ArrayList<>();
+    starts.add(0);
+    for (int i = 1; i < lines.length; i++) {
+      if (HEADING.matcher(stripCarriageReturn(lines[i])).matches()) {
+        starts.add(i);
       }
-      if (blank) {
-        continue;
-      }
-      if (buffer.isEmpty()) {
-        blockStart = i + 1; // 1-based first content line of this block
-      }
-      buffer.add(line);
     }
-    if (!buffer.isEmpty()) {
-      blocks.add(block(buffer, blockStart, lines.length));
+    List<Section> sections = new ArrayList<>();
+    for (int s = 0; s < starts.size(); s++) {
+      int from = starts.get(s);
+      int to = s + 1 < starts.size() ? starts.get(s + 1) : lines.length;
+      StringBuilder sb = new StringBuilder();
+      for (int i = from; i < to; i++) {
+        if (i > from) {
+          sb.append('\n');
+        }
+        sb.append(stripCarriageReturn(lines[i]));
+      }
+      if (!sb.toString().isBlank()) {
+        sections.add(new Section(from + 1, sb.toString()));
+      }
     }
-    return blocks;
+    return sections;
   }
 
-  private static Block block(List<String> lines, int startLine, int endLine) {
-    String text = String.join("\n", lines);
-    boolean heading = HEADING.matcher(lines.get(0)).matches();
-    return new Block(text, startLine, endLine, TokenCounter.count(text), heading);
-  }
-
-  /** Carries trailing blocks whose combined tokens fit the overlap budget into the next chunk. */
-  private static List<Block> carryOverlap(List<Block> emitted, int overlap) {
-    List<Block> carried = new ArrayList<>();
-    if (overlap <= 0) {
-      return carried;
+  /** Returns chunk spans {@code [start, end)} over the section text, with token-level overlap. */
+  private static List<int[]> split(String text, int maxTokens, int overlap) {
+    List<int[]> spans = new ArrayList<>();
+    int n = text.length();
+    if (TokenCounter.count(text) <= maxTokens) {
+      spans.add(new int[] {0, n});
+      return spans;
     }
-    int tokens = 0;
-    for (int i = emitted.size() - 1; i >= 0; i--) {
-      Block block = emitted.get(i);
-      if (tokens + block.tokens() > overlap) {
+    int[] paragraph = breaks(text, BreakType.PARAGRAPH);
+    int[] line = breaks(text, BreakType.LINE);
+    int[] sentence = breaks(text, BreakType.SENTENCE);
+    int[] word = breaks(text, BreakType.WORD);
+
+    int start = 0;
+    while (start < n) {
+      if (TokenCounter.count(text.substring(start, n)) <= maxTokens) {
+        spans.add(new int[] {start, n});
         break;
       }
-      carried.add(0, block);
-      tokens += block.tokens();
-    }
-    return carried;
-  }
-
-  private static List<Block> splitOversized(Block block, int maxTokens) {
-    List<Block> pieces = new ArrayList<>();
-    String[] words = block.text().split("\\s+");
-    StringBuilder buffer = new StringBuilder();
-    for (String word : words) {
-      if (buffer.length() > 0 && TokenCounter.count(buffer + " " + word) > maxTokens) {
-        pieces.add(block.withText(buffer.toString()));
-        buffer.setLength(0);
+      int end = farthest(text, paragraph, start, n, maxTokens);
+      if (end <= start) {
+        end = farthest(text, line, start, n, maxTokens);
       }
-      if (buffer.length() > 0) {
-        buffer.append(' ');
+      if (end <= start) {
+        end = farthest(text, sentence, start, n, maxTokens);
       }
-      buffer.append(word);
+      if (end <= start) {
+        end = farthest(text, word, start, n, maxTokens);
+      }
+      if (end <= start) {
+        end = charCut(text, start, n, maxTokens);
+      }
+      spans.add(new int[] {start, end});
+      if (end >= n) {
+        break;
+      }
+      int next = overlapStart(text, word, start, end, overlap);
+      start = next > start ? next : end;
     }
-    if (buffer.length() > 0) {
-      pieces.add(block.withText(buffer.toString()));
-    }
-    return pieces;
+    return spans;
   }
 
-  private static Chunk emit(RawArtifact artifact, List<Block> blocks) {
-    String text = String.join("\n\n", blocks.stream().map(Block::text).toList());
-    int lineStart = blocks.get(0).startLine();
-    int lineEnd = blocks.get(blocks.size() - 1).endLine();
-    return ChunkBuilder.build(artifact, ChunkType.DOC, text, lineStart, lineEnd, null);
+  /** The largest break index after {@code start} whose span still fits the token budget, or -1. */
+  private static int farthest(String text, int[] breaks, int start, int n, int maxTokens) {
+    int best = -1;
+    for (int b : breaks) {
+      if (b <= start) {
+        continue;
+      }
+      if (b > n || TokenCounter.count(text.substring(start, b)) > maxTokens) {
+        break; // token count grows with b, so nothing further fits either
+      }
+      best = b;
+    }
+    return best;
   }
 
-  private static int sumTokens(List<Block> blocks) {
-    return blocks.stream().mapToInt(Block::tokens).sum();
+  /** Last resort when a single unbroken unit exceeds the budget: cut on a character boundary. */
+  private static int charCut(String text, int start, int n, int maxTokens) {
+    int best = start + 1;
+    for (int e = start + 1; e <= n; e++) {
+      if (TokenCounter.count(text.substring(start, e)) > maxTokens) {
+        break;
+      }
+      best = e;
+    }
+    return best;
+  }
+
+  /** The earliest word boundary whose tail up to {@code end} fits the overlap budget. */
+  private static int overlapStart(String text, int[] word, int start, int end, int overlap) {
+    if (overlap <= 0) {
+      return end;
+    }
+    for (int b : word) {
+      if (b <= start) {
+        continue;
+      }
+      if (b >= end) {
+        break;
+      }
+      if (TokenCounter.count(text.substring(b, end)) <= overlap) {
+        return b;
+      }
+    }
+    return end;
+  }
+
+  private enum BreakType {
+    PARAGRAPH,
+    LINE,
+    SENTENCE,
+    WORD
+  }
+
+  /** Candidate cut indices of the given kind (the index just after the boundary character). */
+  private static int[] breaks(String text, BreakType type) {
+    List<Integer> positions = new ArrayList<>();
+    for (int i = 1; i <= text.length(); i++) {
+      char prev = text.charAt(i - 1);
+      boolean isBreak =
+          switch (type) {
+            case PARAGRAPH -> prev == '\n' && i >= 2 && text.charAt(i - 2) == '\n';
+            case LINE -> prev == '\n';
+            case SENTENCE ->
+                Character.isWhitespace(prev) && i >= 2 && isSentenceEnd(text.charAt(i - 2));
+            case WORD -> Character.isWhitespace(prev);
+          };
+      if (isBreak) {
+        positions.add(i);
+      }
+    }
+    return positions.stream().mapToInt(Integer::intValue).toArray();
+  }
+
+  private static boolean isSentenceEnd(char c) {
+    return c == '.' || c == '!' || c == '?';
+  }
+
+  /** Trims whitespace inward; returns {@code null} when the span is all whitespace. */
+  private static int[] trim(String text, int start, int end) {
+    int s = start;
+    int e = end;
+    while (s < e && Character.isWhitespace(text.charAt(s))) {
+      s++;
+    }
+    while (e > s && Character.isWhitespace(text.charAt(e - 1))) {
+      e--;
+    }
+    return s < e ? new int[] {s, e} : null;
+  }
+
+  private static int countNewlines(String text, int from, int to) {
+    int count = 0;
+    for (int i = from; i < to; i++) {
+      if (text.charAt(i) == '\n') {
+        count++;
+      }
+    }
+    return count;
   }
 
   private static String stripCarriageReturn(String line) {
     return line.endsWith("\r") ? line.substring(0, line.length() - 1) : line;
   }
 
-  /** A paragraph (or heading) with its 1-based, inclusive source line range. */
-  private record Block(String text, int startLine, int endLine, int tokens, boolean heading) {
-    Block withText(String newText) {
-      return new Block(newText, startLine, endLine, TokenCounter.count(newText), heading);
-    }
-  }
+  /** A heading-delimited section with its 1-based first source line. */
+  private record Section(int startLine, String text) {}
 }
