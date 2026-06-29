@@ -3,7 +3,7 @@
 ### FR-1 — Thu thập dữ liệu (Data ingestion)
 
 - **FR-1.1** Hệ thống phải thu thập được dữ liệu từ mã nguồn (source code), tài liệu (SRS, v.v), và git log.
-- **FR-1.2** Hệ thống phải đọc và ingest được các định dạng tài liệu phổ biến: Markdown, PDF và ảnh (trích xuất văn bản từ ảnh).
+- **FR-1.2** Hệ thống phải đọc và ingest được các định dạng tài liệu phổ biến: Markdown và PDF.
 - **FR-1.3** Hệ thống phải nạp dữ liệu từ các source được cấu hình, mỗi source thuộc một trong hai loại: (a) một Git repository (qua remote URL hoặc đường dẫn tới một repo trên đĩa) tại một ref cấu hình được, mặc định là default branch; và (b) một thư mục filesystem không yêu cầu version control. Source loại (a) cung cấp thêm `ref` và `commit_sha` cho provenance (FR-1.4); loại (b) định danh phiên bản qua `content_hash`.
 - **FR-1.4** Hệ thống phải gắn metadata nguồn gốc cho mỗi đơn vị dữ liệu được nạp. Provenance bắt buộc gồm `source_id`, đường dẫn file, `content_hash` và thời điểm index (`indexed_at`); riêng nguồn Git bổ sung `ref` (branch) và `commit_sha`.
 - **FR-1.5** Hệ thống phải cho phép cấu hình danh sách nguồn cần nạp, bao gồm việc loại trừ (ignore) các file hoặc thư mục không cần index.
