@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 /**
  * First filter: picks the first {@link Chunker} that supports the artifact (Strategy by {@code
  * supports}/order) and cuts it into chunks plus code entities. An artifact no chunker handles, or
- * that fails to chunk, is marked skipped so the rest of the run continues (NFR-6.1).
+ * that fails to chunk, is marked skipped so the rest of the run continues.
  */
 @Component
 class ChunkStage implements Stage<IndexingContext> {

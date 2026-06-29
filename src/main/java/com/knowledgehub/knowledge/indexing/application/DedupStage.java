@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * Second filter: drops chunks whose {@code content_hash} is already indexed for the source, so
- * unchanged content is neither re-embedded nor re-stored (the content-hash cache, FR-6.3). What
- * survives is the new/changed work the rest of the pipeline acts on.
+ * unchanged content is neither re-embedded nor re-stored (the content-hash cache). What survives is
+ * the new/changed work the rest of the pipeline acts on.
  */
 @Component
 class DedupStage implements Stage<IndexingContext> {

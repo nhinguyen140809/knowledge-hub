@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
  * pipeline. This service is only wiring: it pulls artifacts from ingestion, builds a per-artifact
  * context, runs the pipeline, and tallies the result. All real work lives in the stages, so sync
  * can reuse them on a delta. A failure on one artifact is isolated and the rest of the run
- * continues (NFR-6.1); the embedding call is never inside a database transaction.
+ * continues; the embedding call is never inside a database transaction.
  */
 @Service
 public class IndexingService {
