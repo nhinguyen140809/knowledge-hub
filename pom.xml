@@ -89,6 +89,14 @@
 			<optional>true</optional>
 		</dependency>
 
+		<!-- Generates config metadata for our @ConfigurationProperties (app.*) so the IDE
+		     recognizes them (autocomplete, no "Unknown property" warning); not needed at runtime -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-configuration-processor</artifactId>
+			<optional>true</optional>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
