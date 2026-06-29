@@ -1,0 +1,101 @@
+package com.knowledgehub.knowledge.indexing.application;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.knowledgehub.knowledge.domain.EmbeddingPort;
+import com.knowledgehub.knowledge.domain.VectorStorePort;
+import com.knowledgehub.knowledge.indexing.domain.ChunkRepository;
+import com.knowledgehub.knowledge.indexing.domain.CodeEntityRepository;
+import com.knowledgehub.knowledge.indexing.infrastructure.chunking.CodeChunker;
+import com.knowledgehub.knowledge.indexing.infrastructure.chunking.DocChunker;
+import com.knowledgehub.knowledge.ingestion.application.IngestionService;
+import com.knowledgehub.knowledge.ingestion.domain.FsProvenance;
+import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
+import com.knowledgehub.knowledge.ingestion.infrastructure.MediaTypes;
+import com.knowledgehub.shared.config.AppProperties;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
+
+class IndexingServiceTests {
+
+  private final IngestionService ingestion = mock(IngestionService.class);
+  private final EmbeddingPort embedding = mock(EmbeddingPort.class);
+  private final VectorStorePort vectorStore = mock(VectorStorePort.class);
+  private final ChunkRepository chunks = mock(ChunkRepository.class);
+  private final CodeEntityRepository entities = mock(CodeEntityRepository.class);
+
+  private IndexingService service() {
+    return new IndexingService(
+        ingestion,
+        new AppProperties(null, null, null),
+        new ChunkStage(List.of(new CodeChunker(), new DocChunker())),
+        new DedupStage(chunks),
+        new EmbedStage(embedding),
+        new StoreStage(vectorStore, chunks, entities));
+  }
+
+  private static RawArtifact markdown() {
+    String text = "# Title\n\nbody paragraph.\n";
+    return RawArtifact.raw(
+            "doc.md",
+            MediaTypes.MARKDOWN,
+            text.getBytes(StandardCharsets.UTF_8),
+            new FsProvenance("s", "doc.md", "h1", Instant.EPOCH))
+        .withText(text);
+  }
+
+  private static RawArtifact brokenJava() {
+    String text = "this is not valid java {{{";
+    return RawArtifact.raw(
+            "Bad.java",
+            MediaTypes.PLAIN_TEXT,
+            text.getBytes(StandardCharsets.UTF_8),
+            new FsProvenance("s", "Bad.java", "h2", Instant.EPOCH))
+        .withText(text);
+  }
+
+  @Test
+  void indexesGoodArtifactsAndSkipsBrokenOnesWithoutAborting() {
+    when(ingestion.ingest("s")).thenReturn(Stream.of(markdown(), brokenJava()));
+    when(chunks.existingContentHashes(eq("s"), any())).thenReturn(Set.of());
+    when(embedding.embedBatch(anyList()))
+        .thenAnswer(
+            inv ->
+                ((List<String>) inv.getArgument(0)).stream().map(t -> new float[] {1f}).toList());
+
+    IndexResult result = service().index("s");
+
+    assertThat(result.filesRead()).isEqualTo(1);
+    assertThat(result.filesSkipped()).isEqualTo(1); // the broken Java file
+    assertThat(result.chunksIndexed()).isGreaterThanOrEqualTo(1);
+    assertThat(result.chunksCached()).isZero();
+    verify(vectorStore, times(1)).upsert(anyList());
+    verify(chunks, times(1)).upsertAll(anyList());
+  }
+
+  @Test
+  void skipsEmbeddingAndStoreWhenContentIsAlreadyIndexed() {
+    when(ingestion.ingest("s")).thenReturn(Stream.of(markdown()));
+    when(chunks.existingContentHashes(eq("s"), any()))
+        .thenAnswer(inv -> Set.copyOf(inv.getArgument(1)));
+
+    IndexResult result = service().index("s");
+
+    assertThat(result.chunksIndexed()).isZero();
+    assertThat(result.chunksCached()).isGreaterThanOrEqualTo(1);
+    verify(embedding, never()).embedBatch(anyList());
+    verify(vectorStore, never()).upsert(anyList());
+  }
+}
