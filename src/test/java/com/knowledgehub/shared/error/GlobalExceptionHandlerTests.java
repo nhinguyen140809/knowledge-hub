@@ -29,6 +29,16 @@ class GlobalExceptionHandlerTests {
   }
 
   @Test
+  void illegalArgumentBecomesValidationError() {
+    ProblemDetail pd =
+        handler.handleIllegalArgument(new IllegalArgumentException("ref only for GIT"));
+
+    assertThat(pd.getStatus()).isEqualTo(400);
+    assertThat(pd.getProperties()).containsEntry("code", "VALIDATION_FAILED");
+    assertThat(pd.getDetail()).isEqualTo("ref only for GIT");
+  }
+
+  @Test
   void unexpectedExceptionBecomesInternalErrorWithoutLeakingTheCause() {
     ProblemDetail pd = handler.handleUnexpected(new RuntimeException("DB password = s3cret"));
 
