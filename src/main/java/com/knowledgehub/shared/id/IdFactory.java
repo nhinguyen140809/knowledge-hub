@@ -25,6 +25,11 @@ public final class IdFactory {
     return Hashing.sha256(String.join(SEP, parts));
   }
 
+  /** Stable file id from its source and file path. */
+  public static String fileId(String sourceId, String path) {
+    return stableId(sourceId, path);
+  }
+
   /** Stable chunk id from its source, file path, and content hash. */
   public static String chunkId(String sourceId, String path, String contentHash) {
     return stableId(sourceId, path, contentHash);
