@@ -19,10 +19,14 @@ spring:
         options:
           model: ${EMBEDDING_MODEL:text-embedding-3-small}
     vectorstore:
-      neo4j:
-        initialize-schema: true
-        index-name: knowledge-embeddings
-        embedding-dimension: 1536
+      # Vectors live in Qdrant (always). gRPC on 6334; collection owned by our SchemaInitializer.
+      qdrant:
+        host: ${SPRING_AI_VECTORSTORE_QDRANT_HOST:localhost}
+        port: ${SPRING_AI_VECTORSTORE_QDRANT_PORT:6334}
+        use-tls: ${SPRING_AI_VECTORSTORE_QDRANT_USE_TLS:false}
+        api-key: ${QDRANT_API_KEY:}
+        collection-name: ${QDRANT_COLLECTION:knowledge-embeddings}
+        initialize-schema: false
 
     # --- MCP server (tools for AI agents, over Streamable HTTP at /mcp) ---
     mcp:
@@ -53,5 +57,11 @@ springdoc:
 
 # --- Application toggles (config-as-a-feature) ---
 app:
-  vectorstore:
-    mode: ${APP_VECTORSTORE_MODE:neo4j}   # neo4j | neo4j+qdrant
+  embedding:
+    provider: ${APP_EMBEDDING_PROVIDER:api}   # api | local (OpenAI-compatible endpoint)
+    dimension: ${APP_EMBEDDING_DIMENSION:1536}   # must match the model (1536 for text-embedding-3-small)
+  chunk:
+    max-tokens: ${APP_CHUNK_MAX_TOKENS:512}
+    overlap: ${APP_CHUNK_OVERLAP:64}
+  retrieval:
+    top-k: ${APP_RETRIEVAL_TOP_K:10}

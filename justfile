@@ -12,6 +12,10 @@ default:
 dev:
     {{mvn}} spring-boot:run
 
+# compile sources (regenerates @ConfigurationProperties metadata)
+compile:
+    {{mvn}} -B compile
+
 # compile & package (skip tests)
 build:
     {{mvn}} -B -DskipTests package
