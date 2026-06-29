@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
  * Fetches a source's raw artifacts and attaches extracted text, ready for chunking. Picks the
  * {@link Connector} for the source type and, per artifact, the first {@link DocumentReader} that
  * supports its media type. An artifact whose text cannot be extracted is skipped and logged, never
- * aborting the run (NFR-6.1). Does not chunk or embed — that is the indexing phase.
+ * aborting the run. Does not chunk or embed — that is the indexing phase.
  */
 @Service
 public class IngestionService {
