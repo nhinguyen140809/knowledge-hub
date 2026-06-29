@@ -101,6 +101,7 @@ public class CodeChunker implements Chunker {
             parentEntityId,
             level,
             type.getNameAsString(),
+            qualifiedName,
             keyword(level) + " " + type.getNameAsString(),
             typeRange.begin.line,
             typeRange.end.line));
@@ -118,7 +119,8 @@ public class CodeChunker implements Chunker {
           callable instanceof ConstructorDeclaration
               ? CodeEntityLevel.CONSTRUCTOR
               : CodeEntityLevel.METHOD;
-      String memberId = IdFactory.entityId(sourceId, path, qualifiedName + "#" + signature);
+      String memberQualifiedName = qualifiedName + "#" + signature;
+      String memberId = IdFactory.entityId(sourceId, path, memberQualifiedName);
       entities.add(
           new CodeEntity(
               memberId,
@@ -127,6 +129,7 @@ public class CodeChunker implements Chunker {
               entityId,
               memberLevel,
               memberName,
+              memberQualifiedName,
               signature,
               range.begin.line,
               range.end.line));
@@ -164,14 +167,16 @@ public class CodeChunker implements Chunker {
                 + variable.getTypeAsString()
                 + " "
                 + fieldName;
+        String fieldQualifiedName = qualifiedName + "#" + fieldName;
         entities.add(
             new CodeEntity(
-                IdFactory.entityId(sourceId, path, qualifiedName + "#" + fieldName),
+                IdFactory.entityId(sourceId, path, fieldQualifiedName),
                 sourceId,
                 fileId,
                 entityId,
                 CodeEntityLevel.FIELD,
                 fieldName,
+                fieldQualifiedName,
                 signature,
                 range.begin.line,
                 range.end.line));

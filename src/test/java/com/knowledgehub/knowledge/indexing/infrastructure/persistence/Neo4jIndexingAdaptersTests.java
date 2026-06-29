@@ -82,6 +82,7 @@ class Neo4jIndexingAdaptersTests {
                 null,
                 CodeEntityLevel.CLASS,
                 "Greeter",
+                "Greeter",
                 "class Greeter",
                 1,
                 20),
@@ -92,6 +93,7 @@ class Neo4jIndexingAdaptersTests {
                 typeId,
                 CodeEntityLevel.METHOD,
                 "greet",
+                "Greeter#greet",
                 "String greet()",
                 10,
                 14)));

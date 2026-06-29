@@ -16,6 +16,8 @@ import java.util.Objects;
  *     declares it directly
  * @param level the entity's granularity
  * @param name simple name
+ * @param qualifiedName fully-qualified name (package + enclosing types + member), used to resolve
+ *     references from other files/sources to this entity
  * @param signature a human-readable signature, or {@code null} when not applicable
  * @param lineStart first source line (1-based, inclusive)
  * @param lineEnd last source line (1-based, inclusive)
@@ -27,6 +29,7 @@ public record CodeEntity(
     String parentEntityId,
     CodeEntityLevel level,
     String name,
+    String qualifiedName,
     String signature,
     int lineStart,
     int lineEnd) {
@@ -37,6 +40,7 @@ public record CodeEntity(
     Objects.requireNonNull(fileId, "fileId");
     Objects.requireNonNull(level, "level");
     Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(qualifiedName, "qualifiedName");
     if (lineStart < 1 || lineEnd < lineStart) {
       throw new IllegalArgumentException("invalid line range: " + lineStart + ".." + lineEnd);
     }
