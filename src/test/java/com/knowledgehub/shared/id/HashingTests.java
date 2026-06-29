@@ -20,4 +20,10 @@ class HashingTests {
   void producesLowercaseHexOf64Chars() {
     assertThat(Hashing.sha256("anything")).hasSize(64).matches("[0-9a-f]{64}");
   }
+
+  @Test
+  void byteAndStringOverloadsAgreeForUtf8() {
+    assertThat(Hashing.sha256("hello".getBytes(java.nio.charset.StandardCharsets.UTF_8)))
+        .isEqualTo(Hashing.sha256("hello"));
+  }
 }
