@@ -19,19 +19,22 @@ import org.springframework.stereotype.Component;
 
 /**
  * Proposes {@code DESCRIBES} links from a document chunk to the code it names. A fully-qualified
- * reference resolved to one entity is strong evidence; a bare type name matched to a single entity is
- * weaker; a name that matches several entities is ambiguous and scored low so the confidence
+ * reference resolved to one entity is strong evidence; a bare type name matched to a single entity
+ * is weaker; a name that matches several entities is ambiguous and scored low so the confidence
  * threshold drops it. The linker only scores — keeping or dropping is the caller's policy.
  */
 @Component
 class IdentifierMatchLinker implements CrossArtifactLinker {
 
-  /** A qualified reference like {@code com.example.Greeter} (lowercase packages, capitalised type). */
+  /**
+   * A qualified reference like {@code com.example.Greeter} (lowercase packages, capitalised type).
+   */
   private static final Pattern QUALIFIED =
       Pattern.compile("\\b(?:[a-z][\\w]*\\.)+[A-Z][A-Za-z0-9]*\\b");
 
   /** A bare CamelCase type name like {@code Greeter} (capitalised, contains a lowercase letter). */
-  private static final Pattern CAMEL_CASE = Pattern.compile("\\b[A-Z][A-Za-z0-9]*[a-z][A-Za-z0-9]*\\b");
+  private static final Pattern CAMEL_CASE =
+      Pattern.compile("\\b[A-Z][A-Za-z0-9]*[a-z][A-Za-z0-9]*\\b");
 
   private static final double QUALIFIED_CONFIDENCE = 0.9;
   private static final double UNIQUE_NAME_CONFIDENCE = 0.7;
@@ -75,7 +78,11 @@ class IdentifierMatchLinker implements CrossArtifactLinker {
               toId ->
                   out.add(
                       new LinkCandidate(
-                          chunk.chunkId(), toId, RelationType.DESCRIBES, QUALIFIED_CONFIDENCE, fqn)));
+                          chunk.chunkId(),
+                          toId,
+                          RelationType.DESCRIBES,
+                          QUALIFIED_CONFIDENCE,
+                          fqn)));
     }
   }
 

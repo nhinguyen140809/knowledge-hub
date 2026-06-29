@@ -30,8 +30,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
  * End-to-end knowledge-linking acceptance across two sources of the same product. Source A holds a
- * base class; source B holds a subclass and a document that both point at A's code. After indexing A
- * then B, the graph must carry the structural relations within A, a cross-source EXTENDS and a
+ * base class; source B holds a subclass and a document that both point at A's code. After indexing
+ * A then B, the graph must carry the structural relations within A, a cross-source EXTENDS and a
  * confident cross-artifact DESCRIBES from B into A, and re-linking must not duplicate edges. The
  * embedding provider is mocked deterministically so the test is offline.
  */
@@ -88,8 +88,7 @@ class LinkingIntegrationTests {
         }
         """);
     Files.writeString(
-        b.resolve("README.md"),
-        "# Guide\n\nThe com.example.Base class is the core entry point.\n");
+        b.resolve("README.md"), "# Guide\n\nThe com.example.Base class is the core entry point.\n");
 
     sources.save(
         new Source(SOURCE_A, SourceType.FS, a.toString(), null, List.of("**/*.java"), List.of()));

@@ -30,13 +30,13 @@ import org.springframework.stereotype.Component;
 
 /**
  * Reads structural relationships out of Java source via JavaParser. It emits {@code IMPORTS} (file
- * imports resolved to entities), {@code EXTENDS}/{@code IMPLEMENTS} (inheritance), and {@code CALLS}
- * for calls to a sibling method of the same type. All edges are deterministic (confidence 1); a
- * reference that does not resolve to an indexed entity is dropped rather than guessed.
+ * imports resolved to entities), {@code EXTENDS}/{@code IMPLEMENTS} (inheritance), and {@code
+ * CALLS} for calls to a sibling method of the same type. All edges are deterministic (confidence
+ * 1); a reference that does not resolve to an indexed entity is dropped rather than guessed.
  *
- * <p>Targets are resolved through the {@link EntityResolver}, so an import or supertype that lives in
- * another source links across source boundaries. Calls across types (which need full type inference)
- * and {@code OVERRIDES} are intentionally left to a later, symbol-solver-backed pass.
+ * <p>Targets are resolved through the {@link EntityResolver}, so an import or supertype that lives
+ * in another source links across source boundaries. Calls across types (which need full type
+ * inference) and {@code OVERRIDES} are intentionally left to a later, symbol-solver-backed pass.
  */
 @Component
 public class JavaStructuralExtractor implements StructuralExtractor {
@@ -88,7 +88,9 @@ public class JavaStructuralExtractor implements StructuralExtractor {
     return imports;
   }
 
-  /** A file's imports become IMPORTS edges from its first top-level type to the imported entities. */
+  /**
+   * A file's imports become IMPORTS edges from its first top-level type to the imported entities.
+   */
   private void emitImports(
       CompilationUnit cu,
       String sourceId,
@@ -176,20 +178,30 @@ public class JavaStructuralExtractor implements StructuralExtractor {
         .ifPresent(toId -> out.add(Relationship.structural(fromId, toId, type)));
   }
 
-  /** Calls to a sibling method of the same type, where the callee resolves unambiguously by name. */
+  /**
+   * Calls to a sibling method of the same type, where the callee resolves unambiguously by name.
+   */
   private void emitSameTypeCalls(
-      TypeDeclaration<?> type, String sourceId, String path, String qualifiedName, List<Relationship> out) {
+      TypeDeclaration<?> type,
+      String sourceId,
+      String path,
+      String qualifiedName,
+      List<Relationship> out) {
     Map<String, List<String>> methodsByName = new HashMap<>();
     for (MethodDeclaration method : type.getMethods()) {
       String id =
           IdFactory.entityId(
-              sourceId, path, qualifiedName + "#" + method.getDeclarationAsString(false, false, false));
+              sourceId,
+              path,
+              qualifiedName + "#" + method.getDeclarationAsString(false, false, false));
       methodsByName.computeIfAbsent(method.getNameAsString(), k -> new ArrayList<>()).add(id);
     }
     for (MethodDeclaration method : type.getMethods()) {
       String fromId =
           IdFactory.entityId(
-              sourceId, path, qualifiedName + "#" + method.getDeclarationAsString(false, false, false));
+              sourceId,
+              path,
+              qualifiedName + "#" + method.getDeclarationAsString(false, false, false));
       for (MethodCallExpr call : method.findAll(MethodCallExpr.class)) {
         if (call.getScope().isPresent() && !(call.getScope().get() instanceof ThisExpr)) {
           continue; // qualified call on another object — needs type inference, deferred

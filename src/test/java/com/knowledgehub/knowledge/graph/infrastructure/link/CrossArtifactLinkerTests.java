@@ -27,7 +27,9 @@ class CrossArtifactLinkerTests {
       new EntityResolver() {
         @Override
         public Optional<String> resolve(String qualifiedName, ResolutionScope scope) {
-          return "com.example.Greeter".equals(qualifiedName) ? Optional.of("E:greeter") : Optional.empty();
+          return "com.example.Greeter".equals(qualifiedName)
+              ? Optional.of("E:greeter")
+              : Optional.empty();
         }
 
         @Override

@@ -6,9 +6,9 @@ import java.util.List;
 
 /**
  * Proposes heuristic relationships from an artifact's chunks to the code they refer to (a document
- * mentioning a class, a path reference). Each implementation looks for one kind of signal and scores
- * its confidence; several run together and the caller keeps only candidates above a threshold. They
- * never write — they only propose — so the accept/reject policy stays in one place.
+ * mentioning a class, a path reference). Each implementation looks for one kind of signal and
+ * scores its confidence; several run together and the caller keeps only candidates above a
+ * threshold. They never write — they only propose — so the accept/reject policy stays in one place.
  */
 public interface CrossArtifactLinker {
 

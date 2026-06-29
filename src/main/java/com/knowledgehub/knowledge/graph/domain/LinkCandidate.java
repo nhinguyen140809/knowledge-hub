@@ -22,7 +22,8 @@ public record LinkCandidate(
     Objects.requireNonNull(toId, "toId");
     Objects.requireNonNull(type, "type");
     if (type.deterministic()) {
-      throw new IllegalArgumentException("structural relation " + type + " is not a link candidate");
+      throw new IllegalArgumentException(
+          "structural relation " + type + " is not a link candidate");
     }
     if (score < 0.0 || score > 1.0) {
       throw new IllegalArgumentException("score out of range [0,1]: " + score);

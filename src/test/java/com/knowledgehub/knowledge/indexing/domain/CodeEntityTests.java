@@ -11,7 +11,16 @@ class CodeEntityTests {
   void buildsATopLevelType() {
     CodeEntity type =
         new CodeEntity(
-            "eid", "src", "fid", null, CodeEntityLevel.CLASS, "Foo", "com.x.Foo", "class Foo", 1, 20);
+            "eid",
+            "src",
+            "fid",
+            null,
+            CodeEntityLevel.CLASS,
+            "Foo",
+            "com.x.Foo",
+            "class Foo",
+            1,
+            20);
     assertThat(type.parentEntityId()).isNull();
     assertThat(type.level()).isEqualTo(CodeEntityLevel.CLASS);
   }

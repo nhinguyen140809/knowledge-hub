@@ -11,10 +11,10 @@ import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Component;
 
 /**
- * Neo4j-backed {@link RelationshipRepository}. The source end of a relationship is matched by either
- * its {@code entity_id} (structural, code-to-code) or {@code chunk_id} (cross-artifact, a document
- * chunk pointing at code); the target end is always a {@code :CodeEntity}. Writes are idempotent
- * {@code MERGE}s keyed by {@code (from, to, type)}.
+ * Neo4j-backed {@link RelationshipRepository}. The source end of a relationship is matched by
+ * either its {@code entity_id} (structural, code-to-code) or {@code chunk_id} (cross-artifact, a
+ * document chunk pointing at code); the target end is always a {@code :CodeEntity}. Writes are
+ * idempotent {@code MERGE}s keyed by {@code (from, to, type)}.
  *
  * <p>The relationship type cannot be a Cypher parameter, so relationships are grouped by type and
  * the type name is interpolated into the query. This is safe because {@link RelationType} is a
@@ -59,10 +59,18 @@ class Neo4jRelationshipAdapter implements RelationshipRepository {
 
   @Override
   public void deleteBySource(String sourceId) {
-    client.query(DELETE_BY_SOURCE).bind(MANAGED_TYPES).to("types").bind(sourceId).to("sourceId").run();
+    client
+        .query(DELETE_BY_SOURCE)
+        .bind(MANAGED_TYPES)
+        .to("types")
+        .bind(sourceId)
+        .to("sourceId")
+        .run();
   }
 
-  /** Builds the type-specific MERGE; {@code type.name()} is a closed enum value, so safe to inline. */
+  /**
+   * Builds the type-specific MERGE; {@code type.name()} is a closed enum value, so safe to inline.
+   */
   private static String upsert(RelationType type) {
     return """
         UNWIND $rows AS row

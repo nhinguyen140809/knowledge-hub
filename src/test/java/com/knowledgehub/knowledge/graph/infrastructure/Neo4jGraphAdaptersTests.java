@@ -131,8 +131,7 @@ class Neo4jGraphAdaptersTests {
             4);
     entities.upsertAll(List.of(parent, child));
     relationships.upsertAll(
-        List.of(
-            Relationship.structural(child.entityId(), parent.entityId(), RelationType.CALLS)));
+        List.of(Relationship.structural(child.entityId(), parent.entityId(), RelationType.CALLS)));
 
     relationships.deleteBySource(SOURCE_A);
 

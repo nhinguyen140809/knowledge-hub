@@ -2,8 +2,8 @@ package com.knowledgehub.knowledge.graph.domain;
 
 /**
  * Every relationship type the knowledge graph can hold, grouped by {@link RelationCategory}. The
- * enum name is the Neo4j relationship type written to the graph (e.g. {@code CALLS}). A
- * {@code deterministic} type is read directly from syntax and is always stored with confidence 1; a
+ * enum name is the Neo4j relationship type written to the graph (e.g. {@code CALLS}). A {@code
+ * deterministic} type is read directly from syntax and is always stored with confidence 1; a
  * non-deterministic type is inferred and must carry a heuristic confidence.
  */
 public enum RelationType {
