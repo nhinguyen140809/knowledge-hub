@@ -189,29 +189,27 @@ public class JavaStructuralExtractor implements StructuralExtractor {
       List<Relationship> out) {
     Map<String, List<String>> methodsByName = new HashMap<>();
     for (MethodDeclaration method : type.getMethods()) {
-      String id =
-          IdFactory.entityId(
-              sourceId,
-              path,
-              qualifiedName + "#" + method.getDeclarationAsString(false, false, false));
+      String id = methodEntityId(sourceId, path, qualifiedName, method);
       methodsByName.computeIfAbsent(method.getNameAsString(), k -> new ArrayList<>()).add(id);
     }
     for (MethodDeclaration method : type.getMethods()) {
-      String fromId =
-          IdFactory.entityId(
-              sourceId,
-              path,
-              qualifiedName + "#" + method.getDeclarationAsString(false, false, false));
+      String fromId = methodEntityId(sourceId, path, qualifiedName, method);
       for (MethodCallExpr call : method.findAll(MethodCallExpr.class)) {
         if (call.getScope().isPresent() && !(call.getScope().get() instanceof ThisExpr)) {
-          continue; // qualified call on another object — needs type inference, deferred
+          continue; // qualified call on another object - needs type inference, deferred
         }
         List<String> candidates = methodsByName.get(call.getNameAsString());
-        if (candidates != null && candidates.size() == 1) {
+        if (candidates != null && candidates.size() == 1 && !candidates.get(0).equals(fromId)) {
           out.add(Relationship.structural(fromId, candidates.get(0), RelationType.CALLS));
         }
       }
     }
+  }
+
+  private static String methodEntityId(
+      String sourceId, String path, String qualifiedName, MethodDeclaration method) {
+    return IdFactory.entityId(
+        sourceId, path, qualifiedName + "#" + method.getDeclarationAsString(false, false, false));
   }
 
   private static String qualified(String enclosingQualifier, String name) {

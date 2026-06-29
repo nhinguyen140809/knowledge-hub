@@ -3,6 +3,7 @@ package com.knowledgehub.knowledge.graph.infrastructure.persistence;
 import com.knowledgehub.knowledge.graph.domain.RelationType;
 import com.knowledgehub.knowledge.graph.domain.Relationship;
 import com.knowledgehub.knowledge.graph.domain.RelationshipRepository;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +29,7 @@ class Neo4jRelationshipAdapter implements RelationshipRepository {
    * {@code DECLARES}, which the indexing entity hierarchy owns.
    */
   private static final List<String> MANAGED_TYPES =
-      java.util.Arrays.stream(RelationType.values())
+      Arrays.stream(RelationType.values())
           .filter(t -> t != RelationType.CONTAINS && t != RelationType.DECLARES)
           .map(Enum::name)
           .toList();
