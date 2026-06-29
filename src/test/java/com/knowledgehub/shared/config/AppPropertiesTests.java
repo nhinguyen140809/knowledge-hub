@@ -39,7 +39,8 @@ class AppPropertiesTests {
 
   @Test
   void unknownEmbeddingProviderFailsValidation() {
-    AppProperties properties = new AppProperties(new Embedding("anthropic", null), null, null);
+    AppProperties properties =
+        new AppProperties(new Embedding("anthropic", null, null, null), null, null);
 
     assertThat(validator.validate(properties)).isNotEmpty();
   }
