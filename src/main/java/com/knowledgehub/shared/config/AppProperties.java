@@ -24,7 +24,7 @@ public record AppProperties(
 
   public AppProperties {
     if (embedding == null) {
-      embedding = new Embedding(null, null);
+      embedding = new Embedding(null, null, null, null);
     }
     if (chunk == null) {
       chunk = new Chunk(null, null);
@@ -42,15 +42,28 @@ public record AppProperties(
    * @param provider {@code api} (default, hosted/OpenAI-compatible) or {@code local} (self-hosted
    *     OpenAI-compatible endpoint).
    * @param dimension embedding vector dimension (default 1536 for {@code text-embedding-3-small}).
+   * @param retryMaxAttempts how many times an embedding call is attempted before failing (default
+   *     3, including the first try).
+   * @param retryBackoffMs initial backoff between embedding retries in milliseconds; doubles each
+   *     attempt (default 500).
    */
   public record Embedding(
-      @Pattern(regexp = "api|local") String provider, @Positive Integer dimension) {
+      @Pattern(regexp = "api|local") String provider,
+      @Positive Integer dimension,
+      @Positive Integer retryMaxAttempts,
+      @Positive Integer retryBackoffMs) {
     public Embedding {
       if (provider == null || provider.isBlank()) {
         provider = "api";
       }
       if (dimension == null) {
         dimension = 1536;
+      }
+      if (retryMaxAttempts == null) {
+        retryMaxAttempts = 3;
+      }
+      if (retryBackoffMs == null) {
+        retryBackoffMs = 500;
       }
     }
   }
