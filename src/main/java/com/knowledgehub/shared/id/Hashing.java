@@ -7,7 +7,7 @@ import java.util.HexFormat;
 
 /**
  * Deterministic SHA-256 content hashing. Used both for the {@code content_hash} that powers dedup
- * (FR-6.3) and as the basis for stable, idempotent ids (see {@link IdFactory}).
+ * and as the basis for stable, idempotent ids (see {@link IdFactory}).
  */
 public final class Hashing {
 

@@ -5,8 +5,8 @@ import java.util.List;
 /**
  * Optional capability interface for stores with native dense+sparse hybrid search (e.g. Qdrant).
  * The application opts in via {@code instanceof} and falls back to application-side RRF fusion
- * otherwise, so behaviour stays identical across adapters by default (NFR-2 reproducibility). Use
- * sparingly — see {@code docs/development/ARCHITECTURE.md} on capability interfaces.
+ * otherwise, so behaviour stays identical across adapters by default (reproducibility). Use
+ * sparingly.
  */
 public interface HybridVectorStore extends VectorStorePort {
 

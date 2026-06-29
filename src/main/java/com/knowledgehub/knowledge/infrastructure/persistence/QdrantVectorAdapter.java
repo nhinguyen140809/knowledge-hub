@@ -21,11 +21,14 @@ import io.qdrant.client.grpc.Points.ScoredPoint;
 import io.qdrant.client.grpc.Points.SearchPoints;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import javax.annotation.Nonnull;
 import org.springframework.stereotype.Component;
 
 /**
@@ -38,7 +41,7 @@ import org.springframework.stereotype.Component;
  * string, so each point's id is a deterministic UUID derived from {@code chunk_id} and the original
  * {@code chunk_id} is kept in the payload (also used as the value returned by searches and to
  * delete by id). The ACL filter is pushed into the query as a hard {@code must} pre-filter so
- * disallowed sources are never returned (FR-8.6).
+ * disallowed sources are never returned.
  */
 @Component
 public class QdrantVectorAdapter implements HybridVectorStore {
@@ -77,7 +80,7 @@ public class QdrantVectorAdapter implements HybridVectorStore {
 
   @Override
   public List<ScoredId> search(float[] query, int k, Filter filter) {
-    // Empty allow-list means nothing is readable — skip the round-trip (FR-8.6).
+    // Empty allow-list means nothing is readable — skip the round-trip.
     if (!filter.isUnrestricted() && filter.allowedSources().isEmpty()) {
       return List.of();
     }
@@ -131,12 +134,14 @@ public class QdrantVectorAdapter implements HybridVectorStore {
   }
 
   /** Deterministic UUID for a chunk id, so re-upserting the same chunk overwrites its point. */
+  @Nonnull
+  @SuppressWarnings("null") // UUID.nameUUIDFromBytes never returns null
   private static UUID pointId(String chunkId) {
     return UUID.nameUUIDFromBytes(chunkId.getBytes(StandardCharsets.UTF_8));
   }
 
   private static Map<String, Value> payload(ChunkVector chunk) {
-    Map<String, Value> payload = new java.util.HashMap<>();
+    Map<String, Value> payload = new HashMap<>();
     payload.put(CHUNK_ID, ValueFactory.value(chunk.chunkId()));
     chunk.metadata().forEach((key, value) -> payload.put(key, toValue(value)));
     return payload;
@@ -155,13 +160,12 @@ public class QdrantVectorAdapter implements HybridVectorStore {
     };
   }
 
-  private static java.util.Optional<io.qdrant.client.grpc.Points.Filter> aclFilter(Filter filter) {
+  private static Optional<io.qdrant.client.grpc.Points.Filter> aclFilter(Filter filter) {
     if (filter.isUnrestricted()) {
-      return java.util.Optional.empty();
+      return Optional.empty();
     }
     Condition condition = matchKeywords(SOURCE_ID, List.copyOf(filter.allowedSources()));
-    return java.util.Optional.of(
-        io.qdrant.client.grpc.Points.Filter.newBuilder().addMust(condition).build());
+    return Optional.of(io.qdrant.client.grpc.Points.Filter.newBuilder().addMust(condition).build());
   }
 
   private static <T> T await(Future<T> future) {

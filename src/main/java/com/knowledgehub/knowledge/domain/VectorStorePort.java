@@ -5,9 +5,8 @@ import java.util.List;
 /**
  * Stores and searches chunk embeddings. The contract is <em>what</em> (upsert/search/delete), not
  * <em>how</em> — quantization, on-disk vs in-memory, and the exact filter strategy live below this
- * line in the adapter, so swapping {@code neo4j} ↔ {@code neo4j+qdrant} needs no application change
- * (NFR-10.1). The {@code filter} carries {@code allowedSources} for the ACL hard pre-filter
- * (FR-8.6).
+ * line in the adapter, so the vector store can be swapped with no application change. The {@code
+ * filter} carries {@code allowedSources} for the ACL hard pre-filter.
  */
 public interface VectorStorePort {
 
@@ -23,9 +22,9 @@ public interface VectorStorePort {
    */
   List<ScoredId> search(float[] query, int k, Filter filter);
 
-  /** Removes vectors for the given chunk ids (eviction on update, FR-6.4). */
+  /** Removes vectors for the given chunk ids (eviction on update). */
   void deleteByChunkIds(List<String> chunkIds);
 
-  /** Removes all vectors belonging to a source (eviction on source delete, FR-6.4). */
+  /** Removes all vectors belonging to a source (eviction on source delete). */
   void deleteBySource(String sourceId);
 }

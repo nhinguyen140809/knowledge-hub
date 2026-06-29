@@ -7,7 +7,7 @@ package com.knowledgehub.shared.pipeline;
  * stage. Implementations must be <strong>stateless across runs</strong> — all per-run state flows
  * through the context, never instance fields — and depend only on the domain ports they need, never
  * on another stage. This is what lets stages be reordered, reused (e.g. by sync), run in parallel,
- * and unit-tested in isolation. See {@code docs/development/CODING-STANDARDS.md}.
+ * and unit-tested in isolation.
  *
  * @param <C> the pipeline context type carried between stages
  */

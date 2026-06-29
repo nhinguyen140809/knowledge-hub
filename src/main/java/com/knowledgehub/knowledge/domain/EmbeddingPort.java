@@ -4,8 +4,8 @@ import java.util.List;
 
 /**
  * Turns text into embedding vectors. One embedding model is used for both indexing and querying —
- * changing it requires a full re-index (FR-2.2). The implementation lives in infrastructure and is
- * selected by config (FR-7.1).
+ * changing it requires a full re-index. The implementation lives in infrastructure and is selected
+ * by config.
  */
 public interface EmbeddingPort {
 

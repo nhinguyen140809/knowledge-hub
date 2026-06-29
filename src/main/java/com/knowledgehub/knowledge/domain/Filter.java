@@ -8,9 +8,8 @@ import java.util.Set;
  *
  * @param allowedSources the source ids the caller may read; {@code null} means
  *     <em>unrestricted</em> (no ACL applied yet), an empty set means <em>nothing readable</em>
- *     (FR-8.6)
- * @param ref optional version/branch filter, or {@code null} for none (FR-4.4)
- * @param type optional data-type filter (code|doc|requirement|commit), or {@code null} (FR-4.4)
+ * @param ref optional version/branch filter, or {@code null} for none
+ * @param type optional data-type filter (code|doc|requirement|commit), or {@code null}
  */
 public record Filter(Set<String> allowedSources, String ref, String type) {
 

@@ -18,8 +18,7 @@ import org.springframework.stereotype.Component;
  * constraints, full-text (BM25) indexes, and property indexes for content-hash dedup. Vectors live
  * in Qdrant (always), so this also ensures the Qdrant collection exists with the right dimension
  * and cosine distance. All steps are idempotent ({@code IF NOT EXISTS} on Neo4j;
- * create-collection-if-absent on Qdrant) — there is no separate migration tool (see {@code
- * docs/plan/00-foundation-and-schema.md} §3.3).
+ * create-collection-if-absent on Qdrant) — there is no separate migration tool.
  */
 @Component
 public class SchemaInitializer implements ApplicationRunner {
@@ -50,11 +49,11 @@ public class SchemaInitializer implements ApplicationRunner {
           // O(1) credential lookup per request during authentication
           "CREATE CONSTRAINT cred_hash IF NOT EXISTS"
               + " FOR (c:Credential) REQUIRE c.hash IS UNIQUE",
-          // full-text (BM25 keyword search, FR-4.2)
+          // full-text (BM25 keyword search)
           "CREATE FULLTEXT INDEX chunk_text IF NOT EXISTS FOR (c:Chunk) ON EACH [c.text]",
           "CREATE FULLTEXT INDEX entity_name IF NOT EXISTS"
               + " FOR (e:CodeEntity) ON EACH [e.name, e.signature]",
-          // fast dedup by content hash (FR-6.3)
+          // fast dedup by content hash
           "CREATE INDEX chunk_hash IF NOT EXISTS FOR (c:Chunk) ON (c.content_hash)",
           "CREATE INDEX file_hash IF NOT EXISTS FOR (f:File) ON (f.content_hash)");
 

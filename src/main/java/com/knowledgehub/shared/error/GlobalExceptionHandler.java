@@ -10,9 +10,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
  * Single place that turns exceptions into RFC 7807 {@link ProblemDetail} responses, so every REST
- * error shares one shape: {@code { type, title, status, detail, code, traceId }} (FR-5.4). The
- * {@code code} comes from {@link ErrorCode}; MCP tools reuse the same code/message at their
- * boundary.
+ * error shares one shape: {@code { type, title, status, detail, code, traceId }}. The {@code code}
+ * comes from {@link ErrorCode}; MCP tools reuse the same code/message at their boundary.
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {

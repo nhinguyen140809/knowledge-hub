@@ -10,7 +10,7 @@ import org.springframework.validation.annotation.Validated;
 /**
  * Application-level toggles bound from the {@code app.*} configuration namespace. Centralizes
  * config-as-a-feature switches so they are typed and validated instead of read ad-hoc via
- * {@code @Value} (FR-7).
+ * {@code @Value}.
  *
  * <p>{@code @Validated} makes Spring Boot validate these at startup (fail fast). The hybrid
  * contract is: a <em>missing</em> key falls back to a sensible default (compact constructors
@@ -35,9 +35,9 @@ public record AppProperties(
   }
 
   /**
-   * Embedding provider selection and vector dimension (FR-7.1). Vectors always live in Qdrant
-   * (there is no single-store mode); the dimension here sizes the Qdrant collection and must match
-   * the embedding model.
+   * Embedding provider selection and vector dimension. Vectors always live in Qdrant (there is no
+   * single-store mode); the dimension here sizes the Qdrant collection and must match the embedding
+   * model.
    *
    * @param provider {@code api} (default, hosted/OpenAI-compatible) or {@code local} (self-hosted
    *     OpenAI-compatible endpoint).
@@ -56,7 +56,7 @@ public record AppProperties(
   }
 
   /**
-   * Chunking tunables (FR-2.1).
+   * Chunking tunables.
    *
    * @param maxTokens target maximum tokens per chunk (default 512)
    * @param overlap token overlap between adjacent chunks (default 64)
@@ -73,7 +73,7 @@ public record AppProperties(
   }
 
   /**
-   * Retrieval tunables (FR-4.4).
+   * Retrieval tunables.
    *
    * @param topK default number of results when the caller does not specify (default 10)
    */

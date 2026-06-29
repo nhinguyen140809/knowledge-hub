@@ -3,7 +3,7 @@ package com.knowledgehub.shared.id;
 /**
  * Derives <strong>stable, idempotent</strong> ids by hashing the identity (and content) of an
  * entity. Re-running ingestion/indexing on unchanged input produces the same id, so writes upsert
- * instead of creating duplicates (FR-6.3, NFR-4.1).
+ * instead of creating duplicates.
  */
 public final class IdFactory {
 
