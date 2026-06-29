@@ -1,0 +1,57 @@
+# Deployment / Physical Architecture
+# Render:  d2 DEPLOYMENT-ARCHITECTURE.d2 deployment.svg   (or .pdf for LaTeX)
+vars: {
+  d2-config: {
+    layout-engine: elk
+    pad: 4
+  }
+}
+direction: up
+
+client: "Client side" {
+  label.near: top-center
+  agent: "AI Agent" {shape: person; width: 100; height: 120}
+  admin: "Admin" {shape: person; width: 100; height: 120}
+  dev: "Developer" {shape: person; width: 100; height: 120}
+}
+
+host: "Deployment host \nPrivate network (VM / cloud, docker-compose)" {
+  app: "Knowledge Hub app \n(Spring Boot)" {
+    label.near: top-center
+    icon: https://cdn.simpleicons.org/springboot
+    rest: "REST API\n/api/v1 \n /docs"
+    mcp: "MCP server\n/mcp \n 2 tools"
+    ingest: "Ingestion\nGit / FS · parse (AST)"
+    index: "Indexing\nchunk · embed · store"
+    retrieval: "Retrieval\nhybrid + RRF"
+    sec: "Auth + ACL\nbearer token · fail-closed"
+  }
+  neo: "" {
+    shape: cylinder
+    logo: "Neo4j\ngraph + keyword\n" {shape: image; icon: https://cdn.simpleicons.org/neo4j; width: 72; height: 72}
+  }
+  qdrant: "" {
+    shape: cylinder
+    logo: "Qdrant\nvectors\n" {shape: image; icon: https://cdn.simpleicons.org/qdrant; width: 72; height: 72}
+  }
+}
+
+external: "External services" {
+  label.near: top-center
+  emb: "Embedding API" {
+    shape: cloud
+    icon: https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/openai.svg
+    icon.near: top-center
+    label.near: bottom-center
+  }
+}
+
+client.dev -> client.agent: "owns source data\nuses via agent" {style.stroke-dash: 4}
+client.dev -> client.admin: "may also \nact as admin" {style.stroke-dash: 4}
+
+client.agent -> host.app.mcp: "MCP / HTTPS \n credential token\nquery + trigger sync"
+client.admin -> host.app.rest: "REST admin / HTTPS \n admin token\nmanage ACL / credential / source"
+
+host.app -> host.neo: "Bolt (7687) \ncreds · internal"
+host.app -> host.qdrant: "gRPC (6334) \nAPI key · internal"
+host.app -> external.emb: "HTTPS \nAPI key"
