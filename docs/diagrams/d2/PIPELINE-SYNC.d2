@@ -1,0 +1,32 @@
+# Data Processing — 2 · Incremental sync & eviction (insert / update / delete)
+# Triggered on demand via REST or an MCP tool; idempotent + incremental
+# Reuses the same indexing filters (PIPELINE-INGESTION) on the changed delta; emits the
+# IndexCompleted domain event on finish (retrieval cache invalidate + freshness update).
+# Render:  d2 PIPELINE-SYNC.d2 PIPELINE-SYNC.svg
+vars: {
+  d2-config: {
+    layout-engine: elk
+    pad: 16
+  }
+}
+direction: right
+
+t: "Trigger sync\n\n(REST / \nMCP tool / \ndomain event)"
+scan: "Diff source \nagainst index"
+diff: "Per file: status?" {shape: diamond}
+add: "Run \ningestion pipeline"
+re: "Re-chunk changed parts;\ndedup unchanged chunks"
+ev: "Evict stale knowledge:\nvectors \n+\n graph nodes/edges"
+noop: "No-op \n(idempotent)"
+idx: "Vector store \n+\n Knowledge Graph" {shape: cylinder}
+fresh: "Update freshness\nindexed_at, commit_sha"
+
+t -> scan -> diff
+diff -> add: new
+diff -> re: modified
+diff -> ev: deleted
+diff -> noop: unchanged
+add -> idx
+re -> idx
+ev -> idx
+idx -> fresh
