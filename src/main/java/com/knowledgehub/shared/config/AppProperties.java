@@ -1,6 +1,8 @@
 package com.knowledgehub.shared.config;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -20,7 +22,10 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties(prefix = "app")
 public record AppProperties(
-    @Valid Embedding embedding, @Valid Chunk chunk, @Valid Retrieval retrieval) {
+    @Valid Embedding embedding,
+    @Valid Chunk chunk,
+    @Valid Retrieval retrieval,
+    @Valid Linking linking) {
 
   public AppProperties {
     if (embedding == null) {
@@ -31,6 +36,9 @@ public record AppProperties(
     }
     if (retrieval == null) {
       retrieval = new Retrieval(null);
+    }
+    if (linking == null) {
+      linking = new Linking(null);
     }
   }
 
@@ -94,6 +102,21 @@ public record AppProperties(
     public Retrieval {
       if (topK == null) {
         topK = 10;
+      }
+    }
+  }
+
+  /**
+   * Knowledge-linking tunables.
+   *
+   * @param confidenceThreshold lowest confidence a cross-artifact link must reach to be written;
+   *     candidates below it are dropped (default 0.5). Structural relations are deterministic and
+   *     unaffected.
+   */
+  public record Linking(@DecimalMin("0.0") @DecimalMax("1.0") Double confidenceThreshold) {
+    public Linking {
+      if (confidenceThreshold == null) {
+        confidenceThreshold = 0.5;
       }
     }
   }

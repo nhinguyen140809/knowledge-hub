@@ -34,10 +34,12 @@ public class IndexingService {
       ChunkStage chunkStage,
       DedupStage dedupStage,
       EmbedStage embedStage,
-      StoreStage storeStage) {
+      StoreStage storeStage,
+      LinkStage linkStage) {
     this.ingestion = ingestion;
     this.properties = properties;
-    this.pipeline = new Pipeline<>(List.of(chunkStage, dedupStage, embedStage, storeStage));
+    this.pipeline =
+        new Pipeline<>(List.of(chunkStage, dedupStage, embedStage, storeStage, linkStage));
   }
 
   /**
@@ -54,6 +56,7 @@ public class IndexingService {
     AtomicInteger filesSkipped = new AtomicInteger();
     AtomicInteger chunksIndexed = new AtomicInteger();
     AtomicInteger chunksCached = new AtomicInteger();
+    AtomicInteger relationshipsLinked = new AtomicInteger();
 
     try (Stream<RawArtifact> artifacts = ingestion.ingest(sourceId)) {
       artifacts.forEach(
@@ -66,6 +69,7 @@ public class IndexingService {
                 filesRead.incrementAndGet();
                 chunksIndexed.addAndGet(context.newChunks().size());
                 chunksCached.addAndGet(context.cached());
+                relationshipsLinked.addAndGet(context.relationshipsLinked());
               }
             } catch (RuntimeException e) {
               filesSkipped.incrementAndGet();
@@ -77,11 +81,17 @@ public class IndexingService {
 
     IndexResult result =
         new IndexResult(
-            sourceId, filesRead.get(), filesSkipped.get(), chunksIndexed.get(), chunksCached.get());
+            sourceId,
+            filesRead.get(),
+            filesSkipped.get(),
+            chunksIndexed.get(),
+            chunksCached.get(),
+            relationshipsLinked.get());
     log.info(
-        "Indexed {} chunks ({} cached) from {} files ({} skipped) for {}",
+        "Indexed {} chunks ({} cached) and {} relationships from {} files ({} skipped) for {}",
         result.chunksIndexed(),
         result.chunksCached(),
+        result.relationshipsLinked(),
         result.filesRead(),
         result.filesSkipped(),
         sourceId);

@@ -67,3 +67,5 @@ app:
     overlap: ${APP_CHUNK_OVERLAP:64}
   retrieval:
     top-k: ${APP_RETRIEVAL_TOP_K:10}
+  linking:
+    confidence-threshold: ${APP_LINKING_CONFIDENCE_THRESHOLD:0.5}   # min confidence to keep a cross-artifact link
