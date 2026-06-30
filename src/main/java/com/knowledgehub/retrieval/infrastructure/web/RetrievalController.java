@@ -1,5 +1,6 @@
 package com.knowledgehub.retrieval.infrastructure.web;
 
+import com.knowledgehub.access.infrastructure.security.AclFilterProvider;
 import com.knowledgehub.retrieval.application.RetrievalService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,8 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Query API: free text in, a ranked JSON result out. The {@code /api/v1} prefix is added by
- * WebConfig. Access control is not yet wired in, so every query runs unrestricted (the {@code
- * allowedSources} pre-filter is threaded through as "all sources").
+ * WebConfig. Every query is scoped to the sources the authenticated caller may read, supplied by
+ * {@link AclFilterProvider} and applied as a hard pre-filter on every search path.
  */
 @RestController
 @RequestMapping("/query")
@@ -20,14 +21,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class RetrievalController {
 
   private final RetrievalService retrievalService;
+  private final AclFilterProvider aclFilterProvider;
 
-  public RetrievalController(RetrievalService retrievalService) {
+  public RetrievalController(
+      RetrievalService retrievalService, AclFilterProvider aclFilterProvider) {
     this.retrievalService = retrievalService;
+    this.aclFilterProvider = aclFilterProvider;
   }
 
   @PostMapping
   @Operation(summary = "Run a hybrid (semantic + keyword + graph) query")
   public RankedResultResponse query(@Valid @RequestBody QueryRequest request) {
-    return RankedResultResponse.from(retrievalService.retrieve(request.toQuery(), null));
+    return RankedResultResponse.from(
+        retrievalService.retrieve(request.toQuery(), aclFilterProvider.currentAllowedSources()));
   }
 }
