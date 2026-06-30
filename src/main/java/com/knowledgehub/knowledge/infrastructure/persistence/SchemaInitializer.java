@@ -46,6 +46,8 @@ public class SchemaInitializer implements ApplicationRunner {
               + " FOR (c:Credential) REQUIRE c.credential_id IS UNIQUE",
           "CREATE CONSTRAINT system_config_key IF NOT EXISTS"
               + " FOR (s:SystemConfig) REQUIRE s.key IS UNIQUE",
+          "CREATE CONSTRAINT source_freshness_id IF NOT EXISTS"
+              + " FOR (s:SourceFreshness) REQUIRE s.source_id IS UNIQUE",
           // O(1) credential lookup per request during authentication
           "CREATE CONSTRAINT cred_hash IF NOT EXISTS"
               + " FOR (c:Credential) REQUIRE c.hash IS UNIQUE",
