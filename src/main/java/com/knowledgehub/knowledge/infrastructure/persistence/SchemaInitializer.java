@@ -55,7 +55,13 @@ public class SchemaInitializer implements ApplicationRunner {
               + " FOR (e:CodeEntity) ON EACH [e.name, e.signature]",
           // fast dedup by content hash
           "CREATE INDEX chunk_hash IF NOT EXISTS FOR (c:Chunk) ON (c.content_hash)",
-          "CREATE INDEX file_hash IF NOT EXISTS FOR (f:File) ON (f.content_hash)");
+          "CREATE INDEX file_hash IF NOT EXISTS FOR (f:File) ON (f.content_hash)",
+          // entity resolution lookups during knowledge linking
+          "CREATE INDEX entity_qualified_name IF NOT EXISTS"
+              + " FOR (e:CodeEntity) ON (e.qualified_name)",
+          "CREATE INDEX entity_name_lookup IF NOT EXISTS FOR (e:CodeEntity) ON (e.name)",
+          "CREATE INDEX entity_source IF NOT EXISTS FOR (e:CodeEntity) ON (e.source_id)",
+          "CREATE INDEX file_path IF NOT EXISTS FOR (f:File) ON (f.path)");
 
   private final Neo4jClient neo4jClient;
   private final QdrantClient qdrantClient;

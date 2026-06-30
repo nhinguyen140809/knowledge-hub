@@ -23,7 +23,8 @@ class Neo4jCodeEntityAdapter implements CodeEntityRepository {
       MERGE (f:File {file_id: row.file_id})
       MERGE (e:CodeEntity {entity_id: row.entity_id})
         SET e.source_id = row.source_id, e.file_id = row.file_id, e.level = row.level,
-            e.name = row.name, e.signature = row.signature, e.line_start = row.line_start,
+            e.name = row.name, e.qualified_name = row.qualified_name,
+            e.signature = row.signature, e.line_start = row.line_start,
             e.line_end = row.line_end
       FOREACH (_ IN CASE WHEN row.parent_entity_id IS NULL THEN [1] ELSE [] END |
         MERGE (f)-[:DECLARES]->(e))
@@ -63,6 +64,7 @@ class Neo4jCodeEntityAdapter implements CodeEntityRepository {
     row.put("parent_entity_id", entity.parentEntityId());
     row.put("level", entity.level().name());
     row.put("name", entity.name());
+    row.put("qualified_name", entity.qualifiedName());
     row.put("signature", entity.signature());
     row.put("line_start", entity.lineStart());
     row.put("line_end", entity.lineEnd());

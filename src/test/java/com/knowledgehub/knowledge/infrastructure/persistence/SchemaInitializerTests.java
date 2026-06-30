@@ -46,7 +46,16 @@ class SchemaInitializerTests {
   void createsFullTextAndPropertyIndexes() {
     List<String> names = names("SHOW INDEXES YIELD name RETURN name");
 
-    assertThat(names).contains("chunk_text", "entity_name", "chunk_hash", "file_hash");
+    assertThat(names)
+        .contains(
+            "chunk_text",
+            "entity_name",
+            "chunk_hash",
+            "file_hash",
+            "entity_qualified_name",
+            "entity_name_lookup",
+            "entity_source",
+            "file_path");
   }
 
   @Test

@@ -8,6 +8,12 @@ package com.knowledgehub.knowledge.indexing.application;
  * @param filesSkipped artifacts skipped (no chunker, or a failure isolated to that artifact)
  * @param chunksIndexed new/changed chunks embedded and stored
  * @param chunksCached chunks skipped because their content was already indexed
+ * @param relationshipsLinked relationships written into the knowledge graph across all files
  */
 public record IndexResult(
-    String sourceId, int filesRead, int filesSkipped, int chunksIndexed, int chunksCached) {}
+    String sourceId,
+    int filesRead,
+    int filesSkipped,
+    int chunksIndexed,
+    int chunksCached,
+    int relationshipsLinked) {}

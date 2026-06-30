@@ -10,7 +10,17 @@ class CodeEntityTests {
   @Test
   void buildsATopLevelType() {
     CodeEntity type =
-        new CodeEntity("eid", "src", "fid", null, CodeEntityLevel.CLASS, "Foo", "class Foo", 1, 20);
+        new CodeEntity(
+            "eid",
+            "src",
+            "fid",
+            null,
+            CodeEntityLevel.CLASS,
+            "Foo",
+            "com.x.Foo",
+            "class Foo",
+            1,
+            20);
     assertThat(type.parentEntityId()).isNull();
     assertThat(type.level()).isEqualTo(CodeEntityLevel.CLASS);
   }
@@ -20,7 +30,16 @@ class CodeEntityTests {
     assertThatThrownBy(
             () ->
                 new CodeEntity(
-                    "eid", "src", "fid", null, CodeEntityLevel.METHOD, "m", "void m()", 9, 3))
+                    "eid",
+                    "src",
+                    "fid",
+                    null,
+                    CodeEntityLevel.METHOD,
+                    "m",
+                    "com.x.Foo#m",
+                    "void m()",
+                    9,
+                    3))
         .isInstanceOf(IllegalArgumentException.class);
   }
 }

@@ -22,6 +22,7 @@ class IndexingContext {
   private List<Chunk> newChunks = List.of();
   private List<ChunkVector> vectors = List.of();
   private int cached;
+  private int relationshipsLinked;
   private boolean skipped;
   private String skipReason;
 
@@ -62,6 +63,10 @@ class IndexingContext {
     return cached;
   }
 
+  int relationshipsLinked() {
+    return relationshipsLinked;
+  }
+
   boolean isSkipped() {
     return skipped;
   }
@@ -82,6 +87,10 @@ class IndexingContext {
 
   void setVectors(List<ChunkVector> vectors) {
     this.vectors = List.copyOf(vectors);
+  }
+
+  void setRelationshipsLinked(int relationshipsLinked) {
+    this.relationshipsLinked = relationshipsLinked;
   }
 
   void markSkipped(String reason) {

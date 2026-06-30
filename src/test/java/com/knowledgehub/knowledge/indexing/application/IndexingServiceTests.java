@@ -12,6 +12,8 @@ import static org.mockito.Mockito.when;
 
 import com.knowledgehub.knowledge.domain.EmbeddingPort;
 import com.knowledgehub.knowledge.domain.VectorStorePort;
+import com.knowledgehub.knowledge.graph.application.LinkSummary;
+import com.knowledgehub.knowledge.graph.application.LinkingService;
 import com.knowledgehub.knowledge.indexing.domain.ChunkRepository;
 import com.knowledgehub.knowledge.indexing.domain.CodeEntityRepository;
 import com.knowledgehub.knowledge.indexing.infrastructure.chunking.CodeChunker;
@@ -35,15 +37,21 @@ class IndexingServiceTests {
   private final VectorStorePort vectorStore = mock(VectorStorePort.class);
   private final ChunkRepository chunks = mock(ChunkRepository.class);
   private final CodeEntityRepository entities = mock(CodeEntityRepository.class);
+  private final LinkingService linking = mock(LinkingService.class);
+
+  {
+    when(linking.link(any(), anyList())).thenReturn(LinkSummary.NONE);
+  }
 
   private IndexingService service() {
     return new IndexingService(
         ingestion,
-        new AppProperties(null, null, null),
+        new AppProperties(null, null, null, null),
         new ChunkStage(List.of(new CodeChunker(), new DocChunker())),
         new DedupStage(chunks),
         new EmbedStage(embedding),
-        new StoreStage(vectorStore, chunks, entities));
+        new StoreStage(vectorStore, chunks, entities),
+        new LinkStage(linking));
   }
 
   private static RawArtifact markdown() {
