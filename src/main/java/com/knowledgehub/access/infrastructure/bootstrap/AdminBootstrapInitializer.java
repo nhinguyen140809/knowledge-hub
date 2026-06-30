@@ -19,9 +19,9 @@ import org.springframework.stereotype.Component;
 /**
  * Seeds the first admin so the system can be administered before any credential exists in the
  * graph. On startup, if no admin principal is present and a bootstrap key is configured, it creates
- * an admin principal and registers the hash of that key as its credential. Idempotent: once an admin
- * exists it does nothing, so a restart never re-seeds. Every later credential lives in Neo4j, not in
- * config. Runs after the schema is created.
+ * an admin principal and registers the hash of that key as its credential. Idempotent: once an
+ * admin exists it does nothing, so a restart never re-seeds. Every later credential lives in Neo4j,
+ * not in config. Runs after the schema is created.
  */
 @Component
 @Order(100)
@@ -36,9 +36,7 @@ class AdminBootstrapInitializer implements ApplicationRunner {
   private final AppProperties properties;
 
   AdminBootstrapInitializer(
-      PrincipalRepository principals,
-      CredentialRepository credentials,
-      AppProperties properties) {
+      PrincipalRepository principals, CredentialRepository credentials, AppProperties properties) {
     this.principals = principals;
     this.credentials = credentials;
     this.properties = properties;
@@ -55,8 +53,7 @@ class AdminBootstrapInitializer implements ApplicationRunner {
       return;
     }
     principals.save(new Principal(ADMIN_ID, PrincipalType.SUBJECT, Role.ADMIN));
-    credentials.save(
-        UUID.randomUUID().toString(), ADMIN_ID, Sha256.hex(apiKey), Instant.now());
+    credentials.save(UUID.randomUUID().toString(), ADMIN_ID, Sha256.hex(apiKey), Instant.now());
     log.info("Seeded bootstrap admin principal '{}' from the configured API key", ADMIN_ID);
   }
 }

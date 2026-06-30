@@ -30,7 +30,7 @@ class AppPropertiesTests {
 
   @Test
   void missingValuesFallBackToDefaultsAndPassValidation() {
-    AppProperties properties = new AppProperties(null, null, null, null);
+    AppProperties properties = new AppProperties(null, null, null, null, null);
 
     assertThat(properties.embedding().provider()).isEqualTo("api");
     assertThat(properties.embedding().dimension()).isEqualTo(1536);
@@ -42,21 +42,21 @@ class AppPropertiesTests {
   @Test
   void unknownEmbeddingProviderFailsValidation() {
     AppProperties properties =
-        new AppProperties(new Embedding("anthropic", null, null, null), null, null, null);
+        new AppProperties(new Embedding("anthropic", null, null, null), null, null, null, null);
 
     assertThat(validator.validate(properties)).isNotEmpty();
   }
 
   @Test
   void negativeChunkSizeFailsValidation() {
-    AppProperties properties = new AppProperties(null, new Chunk(-1, 0), null, null);
+    AppProperties properties = new AppProperties(null, new Chunk(-1, 0), null, null, null);
 
     assertThat(validator.validate(properties)).isNotEmpty();
   }
 
   @Test
   void confidenceThresholdOutOfRangeFailsValidation() {
-    AppProperties properties = new AppProperties(null, null, null, new Linking(1.5));
+    AppProperties properties = new AppProperties(null, null, null, new Linking(1.5), null);
 
     assertThat(validator.validate(properties)).isNotEmpty();
   }

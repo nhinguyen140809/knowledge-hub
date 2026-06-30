@@ -54,7 +54,9 @@ class Neo4jGrantAdapter implements GrantRepository {
     if (sourceIds.isEmpty()) {
       return;
     }
-    client.query(GRANT).bindAll(Map.of("id", principalId, "sourceIds", List.copyOf(sourceIds)))
+    client
+        .query(GRANT)
+        .bindAll(Map.of("id", principalId, "sourceIds", List.copyOf(sourceIds)))
         .run();
   }
 
@@ -63,20 +65,33 @@ class Neo4jGrantAdapter implements GrantRepository {
     if (sourceIds.isEmpty()) {
       return;
     }
-    client.query(REVOKE).bindAll(Map.of("id", principalId, "sourceIds", List.copyOf(sourceIds)))
+    client
+        .query(REVOKE)
+        .bindAll(Map.of("id", principalId, "sourceIds", List.copyOf(sourceIds)))
         .run();
   }
 
   @Override
   public List<String> grantedSources(String principalId) {
-    return client.query(GRANTED_SOURCES).bind(principalId).to("id").fetchAs(String.class)
+    return client
+        .query(GRANTED_SOURCES)
+        .bind(principalId)
+        .to("id")
+        .fetchAs(String.class)
         .mappedBy((t, row) -> row.get("id").asString())
-        .all().stream().toList();
+        .all()
+        .stream()
+        .toList();
   }
 
   @Override
   public Set<String> readableSourcesFor(String principalId) {
-    return client.query(READABLE_FOR).bind(principalId).to("id").fetch().one()
+    return client
+        .query(READABLE_FOR)
+        .bind(principalId)
+        .to("id")
+        .fetch()
+        .one()
         .<Set<String>>map(row -> new LinkedHashSet<>(asStrings(row.get("ids"))))
         .orElseGet(LinkedHashSet::new);
   }
@@ -99,7 +114,10 @@ class Neo4jGrantAdapter implements GrantRepository {
 
   @Override
   public Set<String> allGrantedSources() {
-    return client.query(ALL_GRANTED).fetch().one()
+    return client
+        .query(ALL_GRANTED)
+        .fetch()
+        .one()
         .<Set<String>>map(row -> new LinkedHashSet<>(asStrings(row.get("ids"))))
         .orElseGet(LinkedHashSet::new);
   }

@@ -32,8 +32,7 @@ public class PrincipalController {
   private final PrincipalAdminService principals;
   private final CredentialService credentials;
 
-  public PrincipalController(
-      PrincipalAdminService principals, CredentialService credentials) {
+  public PrincipalController(PrincipalAdminService principals, CredentialService credentials) {
     this.principals = principals;
     this.credentials = credentials;
   }
@@ -86,8 +85,7 @@ public class PrincipalController {
 
   @DeleteMapping("/{id}/members/{memberId}")
   @Operation(summary = "Remove a member from a group")
-  public ResponseEntity<Void> removeMember(
-      @PathVariable String id, @PathVariable String memberId) {
+  public ResponseEntity<Void> removeMember(@PathVariable String id, @PathVariable String memberId) {
     principals.removeMember(id, memberId);
     return ResponseEntity.noContent().build();
   }

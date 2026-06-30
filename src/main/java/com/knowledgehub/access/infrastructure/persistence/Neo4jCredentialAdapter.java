@@ -10,15 +10,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.neo4j.driver.Record;
 import org.neo4j.driver.Value;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Component;
 
 /**
  * Neo4j-backed {@link CredentialRepository}. A credential is the SHA-256 hash of its secret on a
- * {@code :Credential} node linked to its principal; timestamps are epoch millis so the retention job
- * can range-scan them. The raw secret never reaches this layer.
+ * {@code :Credential} node linked to its principal; timestamps are epoch millis so the retention
+ * job can range-scan them. The raw secret never reaches this layer.
  */
 @Component
 class Neo4jCredentialAdapter implements CredentialRepository {
@@ -99,7 +98,10 @@ class Neo4jCredentialAdapter implements CredentialRepository {
 
   @Override
   public List<Credential> listByPrincipal(String principalId) {
-    return client.query(LIST_BY_PRINCIPAL).bind(principalId).to("principalId")
+    return client
+        .query(LIST_BY_PRINCIPAL)
+        .bind(principalId)
+        .to("principalId")
         .fetchAs(Credential.class)
         .mappedBy(
             (t, row) ->
@@ -108,7 +110,9 @@ class Neo4jCredentialAdapter implements CredentialRepository {
                     row.get("revoked").asBoolean(),
                     Instant.ofEpochMilli(row.get("createdAt").asLong()),
                     instantOrNull(row.get("lastUsedAt"))))
-        .all().stream().toList();
+        .all()
+        .stream()
+        .toList();
   }
 
   @Override

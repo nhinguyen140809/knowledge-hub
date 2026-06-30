@@ -14,7 +14,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
@@ -22,9 +21,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * principal placed in the security context with a {@code ROLE_*} authority for method security. A
  * header that is present but invalid fails the request immediately (fail-closed); a missing header
  * is left for the authorization rules to reject on protected endpoints. Applies to every HTTP
- * request, REST and {@code /mcp} alike, since both run through this chain.
+ * request, REST and {@code /mcp} alike, since both run through this chain. Wired as a bean by
+ * {@link SecurityConfig} rather than component-scanned, so it loads only with the full security
+ * context.
  */
-@Component
 class BearerAuthFilter extends OncePerRequestFilter {
 
   private static final String PREFIX = "Bearer ";

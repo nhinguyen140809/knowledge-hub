@@ -11,7 +11,9 @@ import org.neo4j.driver.Record;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Component;
 
-/** Neo4j-backed {@link PrincipalRepository}. Principals and group membership live as nodes/edges. */
+/**
+ * Neo4j-backed {@link PrincipalRepository}. Principals and group membership live as nodes/edges.
+ */
 @Component
 class Neo4jPrincipalAdapter implements PrincipalRepository {
 
@@ -78,8 +80,13 @@ class Neo4jPrincipalAdapter implements PrincipalRepository {
 
   @Override
   public List<Principal> findAll() {
-    return client.query(FIND_ALL).fetchAs(Principal.class).mappedBy((t, row) -> toPrincipal(row))
-        .all().stream().toList();
+    return client
+        .query(FIND_ALL)
+        .fetchAs(Principal.class)
+        .mappedBy((t, row) -> toPrincipal(row))
+        .all()
+        .stream()
+        .toList();
   }
 
   @Override
@@ -111,9 +118,15 @@ class Neo4jPrincipalAdapter implements PrincipalRepository {
 
   @Override
   public List<String> membersOf(String groupId) {
-    return client.query(MEMBERS_OF).bind(groupId).to("groupId").fetchAs(String.class)
+    return client
+        .query(MEMBERS_OF)
+        .bind(groupId)
+        .to("groupId")
+        .fetchAs(String.class)
         .mappedBy((t, row) -> row.get("id").asString())
-        .all().stream().toList();
+        .all()
+        .stream()
+        .toList();
   }
 
   private static Principal toPrincipal(Record row) {

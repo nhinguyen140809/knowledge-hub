@@ -12,7 +12,9 @@ public final class ProblemDetails {
 
   private ProblemDetails() {}
 
-  /** A problem detail for an {@link ErrorCode}, using {@code detail} or the code's default message. */
+  /**
+   * A problem detail for an {@link ErrorCode}, using {@code detail} or the code's default message.
+   */
   public static ProblemDetail of(ErrorCode code, String detail) {
     ProblemDetail pd = ProblemDetail.forStatus(code.status());
     pd.setTitle(code.status().getReasonPhrase());

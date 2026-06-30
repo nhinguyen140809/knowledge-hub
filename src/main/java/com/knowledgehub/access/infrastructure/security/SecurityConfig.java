@@ -2,6 +2,7 @@ package com.knowledgehub.access.infrastructure.security;
 
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
+import com.knowledgehub.access.domain.Authenticator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -12,8 +13,8 @@ import org.springframework.security.web.access.intercept.AuthorizationFilter;
 /**
  * Stateless token security for the whole application. There are no sessions, CSRF tokens or login
  * forms — this is a bearer-token API. Health and API docs are public; every other request, REST and
- * {@code /mcp} alike, must authenticate. A {@link BearerAuthFilter} runs before authorization to set
- * the principal, and unauthenticated/forbidden responses share the application's problem-detail
+ * {@code /mcp} alike, must authenticate. A {@link BearerAuthFilter} runs before authorization to
+ * set the principal, and unauthenticated/forbidden responses share the application's problem-detail
  * shape. {@code @EnableMethodSecurity} turns on {@code @PreAuthorize} for admin endpoints.
  */
 @Configuration
@@ -32,17 +33,19 @@ class SecurityConfig {
         .authorizeHttpRequests(
             auth ->
                 auth.requestMatchers(
-                        "/actuator/health/**",
-                        "/docs/**",
-                        "/swagger-ui/**",
-                        "/v3/api-docs/**")
+                        "/actuator/health/**", "/docs/**", "/swagger-ui/**", "/v3/api-docs/**")
                     .permitAll()
                     .anyRequest()
                     .authenticated())
         .addFilterBefore(bearerAuthFilter, AuthorizationFilter.class)
         .exceptionHandling(
-            ex ->
-                ex.authenticationEntryPoint(problemHandler).accessDeniedHandler(problemHandler));
+            ex -> ex.authenticationEntryPoint(problemHandler).accessDeniedHandler(problemHandler));
     return http.build();
+  }
+
+  @Bean
+  BearerAuthFilter bearerAuthFilter(
+      Authenticator authenticator, ProblemSecurityHandler problemHandler) {
+    return new BearerAuthFilter(authenticator, problemHandler);
   }
 }

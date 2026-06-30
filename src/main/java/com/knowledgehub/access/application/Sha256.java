@@ -7,8 +7,8 @@ import java.util.HexFormat;
 
 /**
  * Deterministic SHA-256 hashing of a credential secret. Deterministic (no salt) on purpose: the
- * secret is a system-generated 256-bit token, so brute-force is infeasible without a slow KDF, and a
- * stable hash lets credentials be looked up by an indexed column in O(1) per request.
+ * secret is a system-generated 256-bit token, so brute-force is infeasible without a slow KDF, and
+ * a stable hash lets credentials be looked up by an indexed column in O(1) per request.
  */
 public final class Sha256 {
 

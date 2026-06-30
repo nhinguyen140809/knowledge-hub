@@ -15,11 +15,9 @@ class Neo4jSystemConfigAdapter implements SystemConfigRepository {
 
   private static final String KEY = "default_policy";
 
-  private static final String READ =
-      "MATCH (s:SystemConfig {key: $key}) RETURN s.value AS value";
+  private static final String READ = "MATCH (s:SystemConfig {key: $key}) RETURN s.value AS value";
 
-  private static final String WRITE =
-      "MERGE (s:SystemConfig {key: $key}) SET s.value = $value";
+  private static final String WRITE = "MERGE (s:SystemConfig {key: $key}) SET s.value = $value";
 
   private final Neo4jClient client;
 

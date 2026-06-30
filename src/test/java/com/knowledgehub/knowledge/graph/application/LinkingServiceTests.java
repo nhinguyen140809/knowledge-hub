@@ -53,7 +53,7 @@ class LinkingServiceTests {
             List.of(extractor),
             List.of(linker),
             repository,
-            new AppProperties(null, null, null, null));
+            new AppProperties(null, null, null, null, null));
 
     LinkSummary summary = service.link(DOC, List.of());
 
@@ -77,7 +77,7 @@ class LinkingServiceTests {
             List.of(extractor),
             List.of(linker),
             repository,
-            new AppProperties(null, null, null, null));
+            new AppProperties(null, null, null, null, null));
 
     LinkSummary summary = service.link(DOC, List.of());
 

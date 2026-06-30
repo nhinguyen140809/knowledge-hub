@@ -46,7 +46,7 @@ class IndexingServiceTests {
   private IndexingService service() {
     return new IndexingService(
         ingestion,
-        new AppProperties(null, null, null, null),
+        new AppProperties(null, null, null, null, null),
         new ChunkStage(List.of(new CodeChunker(), new DocChunker())),
         new DedupStage(chunks),
         new EmbedStage(embedding),

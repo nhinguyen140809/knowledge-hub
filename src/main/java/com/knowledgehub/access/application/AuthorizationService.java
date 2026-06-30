@@ -40,7 +40,9 @@ public class AuthorizationService implements Authorizer {
       return granted;
     }
     Set<String> readable =
-        sources.findAll().stream().map(Source::sourceId).collect(Collectors.toCollection(LinkedHashSet::new));
+        sources.findAll().stream()
+            .map(Source::sourceId)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
     readable.removeAll(grants.allGrantedSources());
     readable.addAll(granted);
     return readable;
