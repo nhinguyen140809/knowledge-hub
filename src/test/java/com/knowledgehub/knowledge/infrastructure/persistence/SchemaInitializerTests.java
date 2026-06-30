@@ -39,6 +39,7 @@ class SchemaInitializerTests {
             "principal_id",
             "credential_id",
             "system_config_key",
+            "source_freshness_id",
             "cred_hash");
   }
 

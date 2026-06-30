@@ -71,5 +71,6 @@ public class SourceService {
     }
     repository.deleteById(sourceId);
     log.info("Removed source {}", sourceId);
+    events.publishEvent(new SourceDeleted(sourceId));
   }
 }
