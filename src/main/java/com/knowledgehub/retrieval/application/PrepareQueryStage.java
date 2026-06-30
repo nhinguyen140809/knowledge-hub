@@ -1,6 +1,5 @@
 package com.knowledgehub.retrieval.application;
 
-import com.knowledgehub.knowledge.domain.EmbeddingPort;
 import com.knowledgehub.shared.pipeline.Stage;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -11,9 +10,12 @@ import java.util.regex.Pattern;
 import org.springframework.stereotype.Component;
 
 /**
- * Turns the free-text query into the two inputs the search paths need: one embedding (for semantic
- * search) and a list of keywords (for BM25). It does not interpret intent - tokenizing is just
- * lower-casing, splitting on non-word characters, and dropping very short tokens and stop words.
+ * Tokenizes the free-text query into keywords for the keyword path. It does not interpret intent -
+ * tokenizing is just lower-casing, splitting on non-word characters, and dropping very short tokens
+ * and stop words.
+ *
+ * <p>Embedding is deliberately not done here: it belongs to the semantic path, so an embedding
+ * provider outage degrades only that path rather than failing the whole query.
  */
 @Component
 class PrepareQueryStage implements Stage<RetrievalContext> {
@@ -25,17 +27,9 @@ class PrepareQueryStage implements Stage<RetrievalContext> {
           "the", "a", "an", "of", "to", "in", "and", "or", "is", "are", "for", "on", "how", "what",
           "do", "does", "with", "that", "this", "it", "be", "as", "by", "at", "from");
 
-  private final EmbeddingPort embeddingPort;
-
-  PrepareQueryStage(EmbeddingPort embeddingPort) {
-    this.embeddingPort = embeddingPort;
-  }
-
   @Override
   public RetrievalContext apply(RetrievalContext context) {
-    String text = context.query().text();
-    context.setEmbedding(embeddingPort.embed(text));
-    context.setKeywords(keywords(text));
+    context.setKeywords(keywords(context.query().text()));
     return context;
   }
 

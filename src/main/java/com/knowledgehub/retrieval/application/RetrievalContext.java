@@ -9,9 +9,9 @@ import java.util.List;
 
 /**
  * Mutable state carried through the retrieval pipeline: the query and its resolved restrictions in,
- * then each path's hits, the fused ranking, the assembled hits, and finally the {@link
- * RankedResult}. Every per-run value lives here so the stages stay stateless and the three search
- * stages can fan out in parallel - each writes only its own hit list.
+ * then the prepared keywords, each path's hits, the fused ranking, the assembled hits, and finally
+ * the {@link RankedResult}. Every per-run value lives here so the stages stay stateless and the
+ * search stages can fan out in parallel - each writes only its own hit list.
  *
  * <p>{@code aclFilter} carries {@code allowedSources} (the hard pre-filter pushed into every search
  * path). {@code effectiveRef} is the ref to filter by after the canonical-ref fallback has run
@@ -28,7 +28,6 @@ class RetrievalContext {
   private String typeFilter;
   private boolean servedFromCanonicalRef;
 
-  private float[] embedding = new float[0];
   private List<String> keywords = List.of();
   private List<ScoredId> semanticHits = List.of();
   private List<ScoredId> keywordHits = List.of();
@@ -80,14 +79,6 @@ class RetrievalContext {
 
   void setServedFromCanonicalRef(boolean servedFromCanonicalRef) {
     this.servedFromCanonicalRef = servedFromCanonicalRef;
-  }
-
-  float[] embedding() {
-    return embedding;
-  }
-
-  void setEmbedding(float[] embedding) {
-    this.embedding = embedding;
   }
 
   List<String> keywords() {

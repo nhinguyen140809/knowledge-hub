@@ -49,8 +49,8 @@ class RetrievalServiceTests {
     AppProperties properties = new AppProperties(null, null, null, null);
     service =
         new RetrievalService(
-            new PrepareQueryStage(embeddingPort),
-            new SemanticSearchStage(vectorStore, properties),
+            new PrepareQueryStage(),
+            new SemanticSearchStage(vectorStore, embeddingPort, properties),
             new KeywordSearchStage(keywordSearch, properties),
             new GraphTraversalStage(graphTraversal, properties),
             new RrfFusionStage(new RrfFusion(), properties),
@@ -92,6 +92,20 @@ class RetrievalServiceTests {
 
     RankedResult result = service.retrieve(Query.of("find the greeter"), null);
 
+    assertThat(result.hits()).extracting(Hit::id).containsExactly("c");
+  }
+
+  @Test
+  void degradesSemanticWhenEmbeddingFailsButStillServesKeyword() {
+    when(embeddingPort.embed(any()))
+        .thenThrow(new IllegalStateException("embedding provider down"));
+    when(keywordSearch.search(anyList(), anyInt(), any()))
+        .thenReturn(List.of(new ScoredId("c", 4)));
+    when(reader.loadMetadata(anyCollection(), any())).thenReturn(Map.of("c", meta()));
+
+    RankedResult result = service.retrieve(Query.of("find the greeter"), null);
+
+    // Embedding lives in the semantic path now, so its outage drops only that path.
     assertThat(result.hits()).extracting(Hit::id).containsExactly("c");
   }
 
