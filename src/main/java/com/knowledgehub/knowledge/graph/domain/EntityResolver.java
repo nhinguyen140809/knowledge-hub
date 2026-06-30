@@ -1,43 +1,47 @@
 package com.knowledgehub.knowledge.graph.domain;
 
+import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 /**
- * Turns a textual reference (from a call site, an import, or prose in a document) into the id of an
- * existing {@link com.knowledgehub.knowledge.indexing.domain.CodeEntity} in the graph. This is what
- * keeps the graph from fragmenting: a name at a use site is mapped back to the one node that
- * declares it, preferring the requesting source and widening to other sources for cross-source
- * links.
+ * Turns textual references (from call sites, imports, or prose in a document) into the ids of
+ * existing {@link com.knowledgehub.knowledge.indexing.domain.CodeEntity} nodes. This is what keeps
+ * the graph from fragmenting: a name at a use site is mapped back to the node that declares it,
+ * preferring the requesting source and widening to other sources for cross-source links.
+ *
+ * <p>All lookups are batched - a caller collects the references it found and resolves them in one
+ * round-trip - so linking a file or document stays a couple of queries rather than one per token.
  */
 public interface EntityResolver {
 
   /**
-   * Resolves an exact fully-qualified name to a single entity (used for deterministic structural
-   * relations).
+   * Resolves exact fully-qualified names to a single entity each (used for deterministic structural
+   * relations). A name that does not resolve, or that resolves ambiguously, is simply absent from
+   * the result rather than guessed.
    *
-   * @param qualifiedName the fully-qualified name to resolve
+   * @param qualifiedNames the fully-qualified names to resolve
    * @param scope the lookup preference
-   * @return the entity id, or empty when nothing (or nothing unambiguous) matches
+   * @return a map from each resolved name to its entity id
    */
-  Optional<String> resolve(String qualifiedName, ResolutionScope scope);
+  Map<String, String> resolve(Collection<String> qualifiedNames, ResolutionScope scope);
 
   /**
    * Finds entities whose simple name matches (used by heuristic cross-artifact linking, which only
    * sees informal names in prose).
    *
-   * @param simpleName the simple name to match
+   * @param simpleNames the simple names to match
    * @param scope the lookup preference
-   * @return ids of matching entities, source-preferred first; empty when none match
+   * @return a map from each name to its matching entity ids, source-preferred first
    */
-  List<String> findByName(String simpleName, ResolutionScope scope);
+  Map<String, List<String>> findByName(Collection<String> simpleNames, ResolutionScope scope);
 
   /**
-   * Finds entities declared in a referenced file path (used when a document points at a path).
+   * Finds entities declared in referenced file paths (used when a document points at a path).
    *
-   * @param path the file path mentioned
+   * @param paths the file paths mentioned
    * @param scope the lookup preference
-   * @return ids of entities declared in that file, source-preferred first; empty when none match
+   * @return a map from each path to the ids of entities declared in it, source-preferred first
    */
-  List<String> findByPath(String path, ResolutionScope scope);
+  Map<String, List<String>> findByPath(Collection<String> paths, ResolutionScope scope);
 }

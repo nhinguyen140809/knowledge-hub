@@ -13,7 +13,7 @@ import com.knowledgehub.knowledge.indexing.domain.CodeEntityLevel;
 import com.knowledgehub.knowledge.indexing.domain.CodeEntityRepository;
 import com.knowledgehub.shared.id.IdFactory;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -97,10 +97,10 @@ class Neo4jGraphAdaptersTests {
     entities.upsertAll(List.of(inB));
 
     // A reference seen in source A resolves to the entity that lives in source B.
-    Optional<String> resolved =
-        resolver.resolve("com.shared.Shared", new ResolutionScope(SOURCE_A));
+    Map<String, String> resolved =
+        resolver.resolve(List.of("com.shared.Shared"), new ResolutionScope(SOURCE_A));
 
-    assertThat(resolved).contains(inB.entityId());
+    assertThat(resolved).containsEntry("com.shared.Shared", inB.entityId());
   }
 
   @Test
@@ -109,9 +109,10 @@ class Neo4jGraphAdaptersTests {
     CodeEntity inB = type(SOURCE_B, "Dup.java", "Dup", "com.b.Dup");
     entities.upsertAll(List.of(inA, inB));
 
-    List<String> byName = resolver.findByName("Dup", new ResolutionScope(SOURCE_A));
+    Map<String, List<String>> byName =
+        resolver.findByName(List.of("Dup"), new ResolutionScope(SOURCE_A));
 
-    assertThat(byName).startsWith(inA.entityId());
+    assertThat(byName.get("Dup")).startsWith(inA.entityId());
   }
 
   @Test

@@ -10,6 +10,11 @@ import org.springframework.stereotype.Component;
  * plus accepted cross-artifact links). It runs after the nodes are stored, so the relationship
  * targets already exist, and delegates the actual linking to the graph layer's {@link
  * LinkingService} — the indexing pipeline only supplies the artifact and its chunks.
+ *
+ * <p>Linking runs for every non-skipped artifact, including one whose chunks were all cached: a
+ * reference can point at a file indexed later, so re-linking unchanged content is how those
+ * references eventually resolve. It stays cheap because the upsert is idempotent and the resolver
+ * batches its lookups.
  */
 @Component
 class LinkStage implements Stage<IndexingContext> {

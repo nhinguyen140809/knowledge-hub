@@ -13,9 +13,10 @@ import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import com.knowledgehub.knowledge.ingestion.infrastructure.MediaTypes;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class CrossArtifactLinkerTests {
@@ -23,26 +24,42 @@ class CrossArtifactLinkerTests {
   private static final String SOURCE = "src";
   private static final String DOC_PATH = "README.md";
 
+  private static final Map<String, String> QUALIFIED = Map.of("com.example.Greeter", "E:greeter");
+  private static final Map<String, List<String>> BY_NAME =
+      Map.of("Greeter", List.of("E:greeter"), "Foo", List.of("F1", "F2"));
+  private static final Map<String, List<String>> BY_PATH =
+      Map.of("src/Greeter.java", List.of("E:greeter"));
+
   private final EntityResolver resolver =
       new EntityResolver() {
         @Override
-        public Optional<String> resolve(String qualifiedName, ResolutionScope scope) {
-          return "com.example.Greeter".equals(qualifiedName)
-              ? Optional.of("E:greeter")
-              : Optional.empty();
+        public Map<String, String> resolve(Collection<String> names, ResolutionScope scope) {
+          return filter(names, QUALIFIED);
         }
 
         @Override
-        public List<String> findByName(String simpleName, ResolutionScope scope) {
-          return Map.of("Greeter", List.of("E:greeter"), "Foo", List.of("F1", "F2"))
-              .getOrDefault(simpleName, List.of());
+        public Map<String, List<String>> findByName(
+            Collection<String> names, ResolutionScope scope) {
+          return filter(names, BY_NAME);
         }
 
         @Override
-        public List<String> findByPath(String path, ResolutionScope scope) {
-          return "src/Greeter.java".equals(path) ? List.of("E:greeter") : List.of();
+        public Map<String, List<String>> findByPath(
+            Collection<String> paths, ResolutionScope scope) {
+          return filter(paths, BY_PATH);
         }
       };
+
+  /** Returns only the catalogue entries whose key was actually asked for. */
+  private static <V> Map<String, V> filter(Collection<String> keys, Map<String, V> catalogue) {
+    Map<String, V> out = new HashMap<>();
+    for (String key : keys) {
+      if (catalogue.containsKey(key)) {
+        out.put(key, catalogue.get(key));
+      }
+    }
+    return out;
+  }
 
   private static RawArtifact doc() {
     return RawArtifact.raw(

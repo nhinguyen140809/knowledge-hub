@@ -1,17 +1,16 @@
 package com.knowledgehub.knowledge.graph.infrastructure.link;
 
-import com.knowledgehub.knowledge.graph.domain.CrossArtifactLinker;
 import com.knowledgehub.knowledge.graph.domain.EntityResolver;
 import com.knowledgehub.knowledge.graph.domain.LinkCandidate;
 import com.knowledgehub.knowledge.graph.domain.RelationType;
 import com.knowledgehub.knowledge.graph.domain.ResolutionScope;
 import com.knowledgehub.knowledge.indexing.domain.Chunk;
-import com.knowledgehub.knowledge.indexing.domain.ChunkType;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,10 +20,13 @@ import org.springframework.stereotype.Component;
  * Proposes {@code DESCRIBES} links from a document chunk to the code it names. A fully-qualified
  * reference resolved to one entity is strong evidence; a bare type name matched to a single entity
  * is weaker; a name that matches several entities is ambiguous and scored low so the confidence
- * threshold drops it. The linker only scores — keeping or dropping is the caller's policy.
+ * threshold drops it. The linker only scores - keeping or dropping is the caller's policy.
+ *
+ * <p>All names found across the artifact's chunks are resolved in two batched lookups (one for
+ * qualified names, one for bare names), so a document is a couple of queries regardless of length.
  */
 @Component
-class IdentifierMatchLinker implements CrossArtifactLinker {
+class IdentifierMatchLinker extends AbstractDocumentLinker {
 
   /**
    * A qualified reference like {@code com.example.Greeter} (lowercase packages, capitalised type).
@@ -47,52 +49,59 @@ class IdentifierMatchLinker implements CrossArtifactLinker {
   }
 
   @Override
-  public boolean supports(RawArtifact artifact) {
-    return artifact.text() != null && !artifact.path().toLowerCase(Locale.ROOT).endsWith(".java");
-  }
-
-  @Override
   public List<LinkCandidate> link(RawArtifact artifact, List<Chunk> chunks) {
+    List<Chunk> docs = documentChunks(chunks);
+    if (docs.isEmpty()) {
+      return List.of();
+    }
     ResolutionScope scope = new ResolutionScope(artifact.provenance().sourceId());
+
+    Set<String> qualifiedNames = new LinkedHashSet<>();
+    Set<String> bareNames = new LinkedHashSet<>();
+    for (Chunk chunk : docs) {
+      addMatches(QUALIFIED, chunk.text(), qualifiedNames);
+      addMatches(CAMEL_CASE, chunk.text(), bareNames);
+    }
+    Map<String, String> resolvedQualified = resolver.resolve(qualifiedNames, scope);
+    Map<String, List<String>> byName = resolver.findByName(bareNames, scope);
+
     List<LinkCandidate> candidates = new ArrayList<>();
-    for (Chunk chunk : chunks) {
-      if (chunk.type() != ChunkType.DOC) {
-        continue;
-      }
+    for (Chunk chunk : docs) {
       Set<String> linkedTargets = new HashSet<>();
-      qualifiedRefs(chunk, scope, candidates, linkedTargets);
-      bareNameRefs(chunk, scope, candidates, linkedTargets);
+      qualifiedCandidates(chunk, resolvedQualified, linkedTargets, candidates);
+      bareNameCandidates(chunk, byName, linkedTargets, candidates);
     }
     return candidates;
   }
 
-  private void qualifiedRefs(
-      Chunk chunk, ResolutionScope scope, List<LinkCandidate> out, Set<String> linked) {
-    Matcher matcher = QUALIFIED.matcher(chunk.text());
+  private static void addMatches(Pattern pattern, String text, Set<String> into) {
+    Matcher matcher = pattern.matcher(text);
     while (matcher.find()) {
-      String fqn = matcher.group();
-      resolver
-          .resolve(fqn, scope)
-          .filter(linked::add)
-          .ifPresent(
-              toId ->
-                  out.add(
-                      new LinkCandidate(
-                          chunk.chunkId(),
-                          toId,
-                          RelationType.DESCRIBES,
-                          QUALIFIED_CONFIDENCE,
-                          fqn)));
+      into.add(matcher.group());
     }
   }
 
-  private void bareNameRefs(
-      Chunk chunk, ResolutionScope scope, List<LinkCandidate> out, Set<String> linked) {
+  private static void qualifiedCandidates(
+      Chunk chunk, Map<String, String> resolved, Set<String> linked, List<LinkCandidate> out) {
+    Matcher matcher = QUALIFIED.matcher(chunk.text());
+    while (matcher.find()) {
+      String fqn = matcher.group();
+      String toId = resolved.get(fqn);
+      if (toId != null && linked.add(toId)) {
+        out.add(
+            new LinkCandidate(
+                chunk.chunkId(), toId, RelationType.DESCRIBES, QUALIFIED_CONFIDENCE, fqn));
+      }
+    }
+  }
+
+  private static void bareNameCandidates(
+      Chunk chunk, Map<String, List<String>> byName, Set<String> linked, List<LinkCandidate> out) {
     Matcher matcher = CAMEL_CASE.matcher(chunk.text());
     while (matcher.find()) {
       String name = matcher.group();
-      List<String> matches = resolver.findByName(name, scope);
-      if (matches.isEmpty()) {
+      List<String> matches = byName.get(name);
+      if (matches == null || matches.isEmpty()) {
         continue;
       }
       String toId = matches.get(0);

@@ -11,8 +11,10 @@ import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import com.knowledgehub.knowledge.ingestion.infrastructure.MediaTypes;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class JavaStructuralExtractorTests {
@@ -21,18 +23,22 @@ class JavaStructuralExtractorTests {
   private final EntityResolver resolver =
       new EntityResolver() {
         @Override
-        public Optional<String> resolve(String qualifiedName, ResolutionScope scope) {
-          return Optional.of("E:" + qualifiedName);
+        public Map<String, String> resolve(Collection<String> names, ResolutionScope scope) {
+          Map<String, String> out = new HashMap<>();
+          names.forEach(name -> out.put(name, "E:" + name));
+          return out;
         }
 
         @Override
-        public List<String> findByName(String simpleName, ResolutionScope scope) {
-          return List.of();
+        public Map<String, List<String>> findByName(
+            Collection<String> names, ResolutionScope scope) {
+          return Map.of();
         }
 
         @Override
-        public List<String> findByPath(String path, ResolutionScope scope) {
-          return List.of();
+        public Map<String, List<String>> findByPath(
+            Collection<String> paths, ResolutionScope scope) {
+          return Map.of();
         }
       };
 

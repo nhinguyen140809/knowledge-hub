@@ -24,6 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -65,15 +67,32 @@ public class JavaStructuralExtractor implements StructuralExtractor {
     String sourceId = artifact.provenance().sourceId();
     String path = artifact.path();
     String packageName = cu.getPackageDeclaration().map(p -> p.getNameAsString()).orElse("");
-    ResolutionScope scope = new ResolutionScope(sourceId);
     Map<String, String> importsByName = importsByName(cu);
 
+    // Same-type calls resolve locally; imports and inheritance are gathered then resolved in one
+    // batch, so a file is at most a single resolver round-trip rather than one per reference.
     List<Relationship> out = new ArrayList<>();
-    emitImports(cu, sourceId, path, packageName, scope, out);
+    List<PendingRef> refs = new ArrayList<>();
     for (TypeDeclaration<?> type : cu.getTypes()) {
-      processType(type, packageName, sourceId, path, importsByName, scope, out);
+      String topId =
+          IdFactory.entityId(sourceId, path, qualified(packageName, type.getNameAsString()));
+      collectImports(cu, topId, refs);
+      collectType(type, packageName, sourceId, path, importsByName, refs, out);
     }
+    resolveRefs(refs, new ResolutionScope(sourceId), out);
     return out;
+  }
+
+  /** Resolves the gathered references in one round-trip and appends the edges that resolve. */
+  private void resolveRefs(List<PendingRef> refs, ResolutionScope scope, List<Relationship> out) {
+    Set<String> fqns = refs.stream().map(PendingRef::fqn).collect(Collectors.toSet());
+    Map<String, String> resolved = resolver.resolve(fqns, scope);
+    for (PendingRef ref : refs) {
+      String toId = resolved.get(ref.fqn());
+      if (toId != null) {
+        out.add(Relationship.structural(ref.fromId(), toId, ref.type()));
+      }
+    }
   }
 
   /** Simple type name -> fully-qualified name, from the file's single-type imports. */
@@ -88,94 +107,73 @@ public class JavaStructuralExtractor implements StructuralExtractor {
     return imports;
   }
 
-  /**
-   * A file's imports become IMPORTS edges from its first top-level type to the imported entities.
-   */
-  private void emitImports(
-      CompilationUnit cu,
-      String sourceId,
-      String path,
-      String packageName,
-      ResolutionScope scope,
-      List<Relationship> out) {
-    if (cu.getTypes().isEmpty()) {
-      return;
-    }
-    String fromId =
-        IdFactory.entityId(sourceId, path, qualified(packageName, cu.getType(0).getNameAsString()));
+  /** A file's imports become IMPORTS references from each top-level type to the imported entity. */
+  private static void collectImports(CompilationUnit cu, String fromId, List<PendingRef> refs) {
     for (ImportDeclaration imp : cu.getImports()) {
-      if (imp.isAsterisk() || imp.isStatic()) {
-        continue;
+      if (!imp.isAsterisk() && !imp.isStatic()) {
+        refs.add(new PendingRef(fromId, imp.getNameAsString(), RelationType.IMPORTS));
       }
-      resolver
-          .resolve(imp.getNameAsString(), scope)
-          .ifPresent(toId -> out.add(Relationship.structural(fromId, toId, RelationType.IMPORTS)));
     }
   }
 
-  private void processType(
+  private void collectType(
       TypeDeclaration<?> type,
       String enclosingQualifier,
       String sourceId,
       String path,
       Map<String, String> importsByName,
-      ResolutionScope scope,
+      List<PendingRef> refs,
       List<Relationship> out) {
     String qualifiedName = qualified(enclosingQualifier, type.getNameAsString());
     String typeId = IdFactory.entityId(sourceId, path, qualifiedName);
 
-    emitInheritance(type, typeId, enclosingQualifier, importsByName, scope, out);
+    collectInheritance(type, typeId, enclosingQualifier, importsByName, refs);
     emitSameTypeCalls(type, sourceId, path, qualifiedName, out);
 
     for (Node member : type.getMembers()) {
       if (member instanceof TypeDeclaration<?> nested) {
-        processType(nested, qualifiedName, sourceId, path, importsByName, scope, out);
+        collectType(nested, qualifiedName, sourceId, path, importsByName, refs, out);
       }
     }
   }
 
-  private void emitInheritance(
+  private static void collectInheritance(
       TypeDeclaration<?> type,
       String typeId,
       String packageScope,
       Map<String, String> importsByName,
-      ResolutionScope scope,
-      List<Relationship> out) {
+      List<PendingRef> refs) {
     if (type instanceof ClassOrInterfaceDeclaration cls) {
       for (ClassOrInterfaceType ext : cls.getExtendedTypes()) {
-        link(typeId, ext, RelationType.EXTENDS, packageScope, importsByName, scope, out);
+        refs.add(
+            new PendingRef(typeId, fqnOf(ext, packageScope, importsByName), RelationType.EXTENDS));
       }
       for (ClassOrInterfaceType impl : cls.getImplementedTypes()) {
-        link(typeId, impl, RelationType.IMPLEMENTS, packageScope, importsByName, scope, out);
+        refs.add(
+            new PendingRef(
+                typeId, fqnOf(impl, packageScope, importsByName), RelationType.IMPLEMENTS));
       }
     } else if (type instanceof EnumDeclaration en) {
       for (ClassOrInterfaceType impl : en.getImplementedTypes()) {
-        link(typeId, impl, RelationType.IMPLEMENTS, packageScope, importsByName, scope, out);
+        refs.add(
+            new PendingRef(
+                typeId, fqnOf(impl, packageScope, importsByName), RelationType.IMPLEMENTS));
       }
     }
   }
 
-  private void link(
-      String fromId,
-      ClassOrInterfaceType reference,
-      RelationType type,
-      String packageScope,
-      Map<String, String> importsByName,
-      ResolutionScope scope,
-      List<Relationship> out) {
+  /** The fully-qualified name a type reference points at, via imports or the same package. */
+  private static String fqnOf(
+      ClassOrInterfaceType reference, String packageScope, Map<String, String> importsByName) {
     String referenced = reference.getNameWithScope();
-    String fqn;
     if (referenced.contains(".")) {
-      fqn = referenced;
-    } else if (importsByName.containsKey(referenced)) {
-      fqn = importsByName.get(referenced);
-    } else {
-      // Same package when not imported (the package scope is the enclosing qualifier of the type).
-      fqn = packageScope.isEmpty() ? referenced : packageScope + "." + referenced;
+      return referenced;
     }
-    resolver
-        .resolve(fqn, scope)
-        .ifPresent(toId -> out.add(Relationship.structural(fromId, toId, type)));
+    if (importsByName.containsKey(referenced)) {
+      return importsByName.get(referenced);
+    }
+    // Same package when not imported (the package scope is the enclosing qualifier of the type).
+    return packageScope.isEmpty() ? referenced : packageScope + "." + referenced;
   }
 
   /**
@@ -215,4 +213,9 @@ public class JavaStructuralExtractor implements StructuralExtractor {
   private static String qualified(String enclosingQualifier, String name) {
     return enclosingQualifier.isEmpty() ? name : enclosingQualifier + "." + name;
   }
+
+  /**
+   * A reference gathered before resolution: the source entity, the target name, and the edge type.
+   */
+  private record PendingRef(String fromId, String fqn, RelationType type) {}
 }
