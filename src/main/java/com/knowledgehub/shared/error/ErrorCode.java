@@ -14,6 +14,8 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
   SOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "Source not found"),
   DUPLICATE_SOURCE(HttpStatus.CONFLICT, "Source already exists"),
+  PRINCIPAL_NOT_FOUND(HttpStatus.NOT_FOUND, "Principal not found"),
+  DUPLICATE_PRINCIPAL(HttpStatus.CONFLICT, "Principal already exists"),
   VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "Request validation failed"),
   UNAUTHENTICATED(HttpStatus.UNAUTHORIZED, "Authentication required or invalid"),
   FORBIDDEN(HttpStatus.FORBIDDEN, "Operation not permitted"),
