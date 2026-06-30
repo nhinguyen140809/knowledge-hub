@@ -106,6 +106,12 @@
 			<version>${jtokkit.version}</version>
 		</dependency>
 
+		<!-- In-memory result cache for repeated retrieval queries (TTL + size bound) -->
+		<dependency>
+			<groupId>com.github.ben-manes.caffeine</groupId>
+			<artifactId>caffeine</artifactId>
+		</dependency>
+
 		<!-- Retry with backoff for the outbound embedding call (needs AOP for @Retryable) -->
 		<dependency>
 			<groupId>org.springframework.retry</groupId>
