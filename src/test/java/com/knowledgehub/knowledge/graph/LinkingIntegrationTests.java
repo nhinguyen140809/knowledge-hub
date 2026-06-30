@@ -30,10 +30,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
  * End-to-end knowledge-linking acceptance across two sources of the same product. Source A holds a
- * base class; source B holds a subclass and a document that both point at A's code. After indexing
- * A then B, the graph must carry the structural relations within A, a cross-source EXTENDS and a
- * confident cross-artifact DESCRIBES from B into A, and re-linking must not duplicate edges. The
- * embedding provider is mocked deterministically so the test is offline.
+ * base class; source B holds a subclass that overrides a method and a requirement document, both
+ * pointing at A's code. After indexing A then B, the graph must carry the structural relations
+ * within A, cross-source EXTENDS and OVERRIDES edges, and confident cross-artifact DESCRIBES and
+ * IMPLEMENTED_BY edges from B into A; re-linking must not duplicate edges. The embedding provider
+ * is mocked deterministically so the test is offline.
  */
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
@@ -85,10 +86,13 @@ class LinkingIntegrationTests {
         package com.example;
 
         public class Child extends Base {
+          @Override
+          void run() {}
         }
         """);
     Files.writeString(
-        b.resolve("README.md"), "# Guide\n\nThe com.example.Base class is the core entry point.\n");
+        b.resolve("README.md"),
+        "# Guide\n\nFR-1 is implemented by com.example.Base, the core entry point.\n");
 
     sources.save(
         new Source(SOURCE_A, SourceType.FS, a.toString(), null, List.of("**/*.java"), List.of()));
@@ -141,6 +145,26 @@ class LinkingIntegrationTests {
                     + SOURCE_A
                     + "'}) RETURN count(r)"))
         .isEqualTo(1);
+
+    // Cross-source override: Child.run() in B overrides Base.run() in A.
+    assertThat(
+            count(
+                "MATCH (:CodeEntity {source_id: '"
+                    + SOURCE_B
+                    + "'})-[r:OVERRIDES]->(:CodeEntity {source_id: '"
+                    + SOURCE_A
+                    + "'}) RETURN count(r)"))
+        .isEqualTo(1);
+
+    // Requirement in B implemented by code in A (cross-artifact, cross-source).
+    assertThat(
+            count(
+                "MATCH (:Chunk {source_id: '"
+                    + SOURCE_B
+                    + "'})-[r:IMPLEMENTED_BY]->(:CodeEntity {source_id: '"
+                    + SOURCE_A
+                    + "'}) RETURN count(r)"))
+        .isGreaterThanOrEqualTo(1);
 
     // Cross-artifact, cross-source: README in B describes Base in A, with a confidence.
     Double confidence =

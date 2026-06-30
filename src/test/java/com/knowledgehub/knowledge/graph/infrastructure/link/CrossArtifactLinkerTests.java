@@ -24,11 +24,24 @@ class CrossArtifactLinkerTests {
   private static final String SOURCE = "src";
   private static final String DOC_PATH = "README.md";
 
-  private static final Map<String, String> QUALIFIED = Map.of("com.example.Greeter", "E:greeter");
+  private static final Map<String, String> QUALIFIED =
+      Map.of("com.example.Greeter", "E:greeter", "com.example.GreeterTest", "E:greeterTest");
   private static final Map<String, List<String>> BY_NAME =
-      Map.of("Greeter", List.of("E:greeter"), "Foo", List.of("F1", "F2"));
+      Map.of(
+          "Greeter",
+          List.of("E:greeter"),
+          "Foo",
+          List.of("F1", "F2"),
+          "CodeChunker",
+          List.of("E:chunker"),
+          "Chunk",
+          List.of("E:chunk"));
   private static final Map<String, List<String>> BY_PATH =
-      Map.of("src/Greeter.java", List.of("E:greeter"));
+      Map.of(
+          "src/Greeter.java",
+          List.of("E:greeter"),
+          "src/test/java/GreeterTest.java",
+          List.of("E:greeterTest"));
 
   private final EntityResolver resolver =
       new EntityResolver() {
@@ -126,6 +139,58 @@ class CrossArtifactLinkerTests {
             new FsProvenance(SOURCE, "Greeter.java", "hash", Instant.EPOCH));
 
     assertThat(linker.link(doc(), List.of(code))).isEmpty();
+  }
+
+  @Test
+  void scoresCompoundNameHighButSingleWordNameLow() {
+    IdentifierMatchLinker linker = new IdentifierMatchLinker(resolver);
+    Chunk chunk = docChunk("The CodeChunker splits a Chunk into pieces.");
+
+    List<LinkCandidate> candidates = linker.link(doc(), List.of(chunk));
+
+    assertThat(candidates)
+        .anySatisfy(
+            c -> {
+              assertThat(c.toId()).isEqualTo("E:chunker"); // compound, unique -> strong
+              assertThat(c.score()).isEqualTo(0.7);
+            })
+        .anySatisfy(
+            c -> {
+              assertThat(c.toId()).isEqualTo("E:chunk"); // single word -> weak, dropped by default
+              assertThat(c.score()).isEqualTo(0.4);
+            });
+  }
+
+  @Test
+  void linksRequirementToItsImplementationAndItsTest() {
+    RequirementCodeLinker linker = new RequirementCodeLinker(resolver);
+    Chunk chunk =
+        docChunk(
+            "FR-3 is implemented by com.example.Greeter and verified by"
+                + " src/test/java/GreeterTest.java.");
+
+    List<LinkCandidate> candidates = linker.link(doc(), List.of(chunk));
+
+    assertThat(candidates)
+        .allSatisfy(c -> assertThat(c.score()).isEqualTo(0.85))
+        .anySatisfy(
+            c -> {
+              assertThat(c.type()).isEqualTo(RelationType.IMPLEMENTED_BY);
+              assertThat(c.toId()).isEqualTo("E:greeter");
+            })
+        .anySatisfy(
+            c -> {
+              assertThat(c.type()).isEqualTo(RelationType.VERIFIED_BY);
+              assertThat(c.toId()).isEqualTo("E:greeterTest");
+            });
+  }
+
+  @Test
+  void ignoresDocumentChunksWithoutARequirementId() {
+    RequirementCodeLinker linker = new RequirementCodeLinker(resolver);
+    Chunk chunk = docChunk("The class com.example.Greeter greets people.");
+
+    assertThat(linker.link(doc(), List.of(chunk))).isEmpty();
   }
 
   @Test
