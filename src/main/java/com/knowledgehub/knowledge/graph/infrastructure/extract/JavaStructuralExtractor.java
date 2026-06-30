@@ -32,13 +32,15 @@ import org.springframework.stereotype.Component;
 
 /**
  * Reads structural relationships out of Java source via JavaParser. It emits {@code IMPORTS} (file
- * imports resolved to entities), {@code EXTENDS}/{@code IMPLEMENTS} (inheritance), and {@code
- * CALLS} for calls to a sibling method of the same type. All edges are deterministic (confidence
- * 1); a reference that does not resolve to an indexed entity is dropped rather than guessed.
+ * imports resolved to entities), {@code EXTENDS}/{@code IMPLEMENTS} (inheritance), {@code
+ * OVERRIDES} (an {@code @Override} method to the same-signature method it overrides in a
+ * supertype), and {@code CALLS} for calls to a sibling method of the same type. All edges are
+ * deterministic (confidence 1); a reference that does not resolve to an indexed entity is dropped
+ * rather than guessed.
  *
- * <p>Targets are resolved through the {@link EntityResolver}, so an import or supertype that lives
- * in another source links across source boundaries. Calls across types (which need full type
- * inference) and {@code OVERRIDES} are intentionally left to a later, symbol-solver-backed pass.
+ * <p>Targets are resolved through the {@link EntityResolver}, so an import, supertype or overridden
+ * method that lives in another source links across source boundaries. Calls across types, which
+ * need full type inference, are intentionally left to a later, symbol-solver-backed pass.
  */
 @Component
 public class JavaStructuralExtractor implements StructuralExtractor {
@@ -69,15 +71,15 @@ public class JavaStructuralExtractor implements StructuralExtractor {
     String packageName = cu.getPackageDeclaration().map(p -> p.getNameAsString()).orElse("");
     Map<String, String> importsByName = importsByName(cu);
 
-    // Same-type calls resolve locally; imports and inheritance are gathered then resolved in one
-    // batch, so a file is at most a single resolver round-trip rather than one per reference.
+    // Same-type calls resolve locally; imports, inheritance and overrides are gathered then
+    // resolved in one batch, so a file is one resolver round-trip rather than one per reference.
     List<Relationship> out = new ArrayList<>();
     List<PendingRef> refs = new ArrayList<>();
     for (TypeDeclaration<?> type : cu.getTypes()) {
       String topId =
           IdFactory.entityId(sourceId, path, qualified(packageName, type.getNameAsString()));
       collectImports(cu, topId, refs);
-      collectType(type, packageName, sourceId, path, importsByName, refs, out);
+      collectType(type, packageName, packageName, sourceId, path, importsByName, refs, out);
     }
     resolveRefs(refs, new ResolutionScope(sourceId), out);
     return out;
@@ -119,6 +121,7 @@ public class JavaStructuralExtractor implements StructuralExtractor {
   private void collectType(
       TypeDeclaration<?> type,
       String enclosingQualifier,
+      String packageName,
       String sourceId,
       String path,
       Map<String, String> importsByName,
@@ -127,44 +130,75 @@ public class JavaStructuralExtractor implements StructuralExtractor {
     String qualifiedName = qualified(enclosingQualifier, type.getNameAsString());
     String typeId = IdFactory.entityId(sourceId, path, qualifiedName);
 
-    collectInheritance(type, typeId, enclosingQualifier, importsByName, refs);
+    List<String> supertypes = collectInheritance(type, typeId, packageName, importsByName, refs);
+    collectOverrides(type, sourceId, path, qualifiedName, supertypes, refs);
     emitSameTypeCalls(type, sourceId, path, qualifiedName, out);
 
     for (Node member : type.getMembers()) {
       if (member instanceof TypeDeclaration<?> nested) {
-        collectType(nested, qualifiedName, sourceId, path, importsByName, refs, out);
+        collectType(nested, qualifiedName, packageName, sourceId, path, importsByName, refs, out);
       }
     }
   }
 
-  private static void collectInheritance(
+  /** Emits the type's EXTENDS/IMPLEMENTS edges and returns every supertype's qualified name. */
+  private static List<String> collectInheritance(
       TypeDeclaration<?> type,
       String typeId,
-      String packageScope,
+      String packageName,
       Map<String, String> importsByName,
       List<PendingRef> refs) {
+    List<String> supertypes = new ArrayList<>();
     if (type instanceof ClassOrInterfaceDeclaration cls) {
       for (ClassOrInterfaceType ext : cls.getExtendedTypes()) {
-        refs.add(
-            new PendingRef(typeId, fqnOf(ext, packageScope, importsByName), RelationType.EXTENDS));
+        String fqn = fqnOf(ext, packageName, importsByName);
+        supertypes.add(fqn);
+        refs.add(new PendingRef(typeId, fqn, RelationType.EXTENDS));
       }
       for (ClassOrInterfaceType impl : cls.getImplementedTypes()) {
-        refs.add(
-            new PendingRef(
-                typeId, fqnOf(impl, packageScope, importsByName), RelationType.IMPLEMENTS));
+        String fqn = fqnOf(impl, packageName, importsByName);
+        supertypes.add(fqn);
+        refs.add(new PendingRef(typeId, fqn, RelationType.IMPLEMENTS));
       }
     } else if (type instanceof EnumDeclaration en) {
       for (ClassOrInterfaceType impl : en.getImplementedTypes()) {
-        refs.add(
-            new PendingRef(
-                typeId, fqnOf(impl, packageScope, importsByName), RelationType.IMPLEMENTS));
+        String fqn = fqnOf(impl, packageName, importsByName);
+        supertypes.add(fqn);
+        refs.add(new PendingRef(typeId, fqn, RelationType.IMPLEMENTS));
+      }
+    }
+    return supertypes;
+  }
+
+  /**
+   * A method carrying {@code @Override} overrides the same-signature method in a supertype; emit an
+   * OVERRIDES edge to whichever supertype actually declares it (others simply do not resolve).
+   */
+  private static void collectOverrides(
+      TypeDeclaration<?> type,
+      String sourceId,
+      String path,
+      String qualifiedName,
+      List<String> supertypes,
+      List<PendingRef> refs) {
+    if (supertypes.isEmpty()) {
+      return;
+    }
+    for (MethodDeclaration method : type.getMethods()) {
+      if (method.getAnnotationByName("Override").isEmpty()) {
+        continue;
+      }
+      String fromId = methodEntityId(sourceId, path, qualifiedName, method);
+      String signature = "#" + method.getDeclarationAsString(false, false, false);
+      for (String supertype : supertypes) {
+        refs.add(new PendingRef(fromId, supertype + signature, RelationType.OVERRIDES));
       }
     }
   }
 
   /** The fully-qualified name a type reference points at, via imports or the same package. */
   private static String fqnOf(
-      ClassOrInterfaceType reference, String packageScope, Map<String, String> importsByName) {
+      ClassOrInterfaceType reference, String packageName, Map<String, String> importsByName) {
     String referenced = reference.getNameWithScope();
     if (referenced.contains(".")) {
       return referenced;
@@ -172,8 +206,8 @@ public class JavaStructuralExtractor implements StructuralExtractor {
     if (importsByName.containsKey(referenced)) {
       return importsByName.get(referenced);
     }
-    // Same package when not imported (the package scope is the enclosing qualifier of the type).
-    return packageScope.isEmpty() ? referenced : packageScope + "." + referenced;
+    // Not imported: a simple name resolves against the file's own package.
+    return packageName.isEmpty() ? referenced : packageName + "." + referenced;
   }
 
   /**

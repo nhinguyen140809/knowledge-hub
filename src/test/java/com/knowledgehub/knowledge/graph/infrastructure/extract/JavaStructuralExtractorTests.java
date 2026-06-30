@@ -88,6 +88,50 @@ class JavaStructuralExtractorTests {
   }
 
   @Test
+  void linksOverrideToTheSupertypeMethodItOverrides() {
+    String source =
+        """
+        package com.example;
+
+        import com.other.Base;
+
+        public class Child extends Base {
+          @Override
+          public void run() {}
+        }
+        """;
+
+    List<Relationship> rels = extractor.extract(java("Child.java", source));
+
+    assertThat(ofType(rels, RelationType.OVERRIDES))
+        .singleElement()
+        .satisfies(
+            r -> {
+              assertThat(r.toId()).isEqualTo("E:com.other.Base#void run()");
+              assertThat(r.confidence()).isEqualTo(1.0);
+            });
+  }
+
+  @Test
+  void resolvesSamePackageSupertypeFromANestedType() {
+    String source =
+        """
+        package com.example;
+
+        public class Outer {
+          static class Inner extends Base {}
+        }
+        """;
+
+    List<Relationship> rels = extractor.extract(java("Outer.java", source));
+
+    // Base is unimported and same-package, so it resolves against the file's package, not Outer.
+    assertThat(ofType(rels, RelationType.EXTENDS))
+        .singleElement()
+        .satisfies(r -> assertThat(r.toId()).isEqualTo("E:com.example.Base"));
+  }
+
+  @Test
   void emitsImplementsForEachInterface() {
     String source =
         """
