@@ -49,20 +49,22 @@ class ContentHashDiffer implements SourceDiffer {
 
     List<String> added = new ArrayList<>();
     List<String> modified = new ArrayList<>();
-    current.hashes.forEach(
-        (path, hash) -> {
-          String previous = stored.get(path);
-          if (previous == null) {
-            added.add(path);
-          } else if (!previous.equals(hash)) {
-            modified.add(path);
-          }
-        });
+    int unchanged = 0;
+    for (Map.Entry<String, String> entry : current.hashes.entrySet()) {
+      String previous = stored.get(entry.getKey());
+      if (previous == null) {
+        added.add(entry.getKey());
+      } else if (!previous.equals(entry.getValue())) {
+        modified.add(entry.getKey());
+      } else {
+        unchanged++;
+      }
+    }
 
     List<String> deleted =
         stored.keySet().stream().filter(path -> !current.hashes.containsKey(path)).toList();
 
-    return new ChangeSet(source.sourceId(), added, modified, deleted, current.commitSha);
+    return new ChangeSet(source.sourceId(), added, modified, deleted, unchanged, current.commitSha);
   }
 
   private Map<String, String> storedHashes(String sourceId) {

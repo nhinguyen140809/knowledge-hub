@@ -52,11 +52,13 @@ class SyncServiceTests {
 
   @Test
   void aNoChangeSyncIsAnIdempotentNoOp() {
-    when(differ.diff(any())).thenReturn(new ChangeSet("s1", List.of(), List.of(), List.of(), null));
+    when(differ.diff(any()))
+        .thenReturn(new ChangeSet("s1", List.of(), List.of(), List.of(), 3, null));
 
     SyncResult result = service.sync("s1");
 
     assertThat(result.idempotent()).isTrue();
+    assertThat(result.skipped()).isEqualTo(3);
     verify(indexing, never()).reindex(any(), any());
     verify(evictor, never()).evictFiles(any(), any());
     verify(freshness, never()).save(any());
@@ -68,7 +70,7 @@ class SyncServiceTests {
     when(differ.diff(any()))
         .thenReturn(
             new ChangeSet(
-                "s1", List.of("New.java"), List.of("Mod.java"), List.of("Del.java"), "abc123"));
+                "s1", List.of("New.java"), List.of("Mod.java"), List.of("Del.java"), 5, "abc123"));
     when(indexing.reindex(eq("s1"), any()))
         .thenReturn(Map.of("New.java", List.of("c3"), "Mod.java", List.of("c1", "c2")));
 
@@ -77,6 +79,7 @@ class SyncServiceTests {
     assertThat(result.indexed()).isEqualTo(1);
     assertThat(result.reindexed()).isEqualTo(1);
     assertThat(result.evicted()).isEqualTo(1);
+    assertThat(result.skipped()).isEqualTo(5);
     assertThat(result.idempotent()).isFalse();
     assertThat(result.toCommit()).isEqualTo("abc123");
 
@@ -86,6 +89,18 @@ class SyncServiceTests {
     verify(evictor).retainChunks("s1", "Mod.java", List.of("c1", "c2"));
     verify(freshness).save(any(FreshnessInfo.class));
     verify(events).publishEvent(any(IndexCompleted.class));
+  }
+
+  @Test
+  void aModifiedFileWhoseReindexWasSkippedKeepsItsExistingChunks() {
+    when(differ.diff(any()))
+        .thenReturn(new ChangeSet("s1", List.of(), List.of("Mod.java"), List.of(), 0, null));
+    // Re-index produced no entry for the path (it was skipped or failed), not an empty chunk list.
+    when(indexing.reindex(eq("s1"), any())).thenReturn(Map.of());
+
+    service.sync("s1");
+
+    verify(evictor, never()).retainChunks(any(), any(), any());
   }
 
   @Test

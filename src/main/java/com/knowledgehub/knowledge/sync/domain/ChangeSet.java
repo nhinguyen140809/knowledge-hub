@@ -12,6 +12,7 @@ import java.util.stream.Stream;
  * @param added paths present now but not at the last index
  * @param modified paths whose content hash changed
  * @param deleted paths indexed before but gone now
+ * @param unchanged how many indexed files were left untouched because their content was the same
  * @param toCommit the commit the source is at now, or {@code null} for a non-git source
  */
 public record ChangeSet(
@@ -19,6 +20,7 @@ public record ChangeSet(
     List<String> added,
     List<String> modified,
     List<String> deleted,
+    int unchanged,
     String toCommit) {
 
   public ChangeSet {

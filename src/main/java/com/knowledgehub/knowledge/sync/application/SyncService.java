@@ -79,7 +79,7 @@ public class SyncService {
     if (changes.isEmpty()) {
       long elapsed = System.currentTimeMillis() - start;
       log.info("Sync of {} found no changes ({} ms)", sourceId, elapsed);
-      return SyncResult.noChange(sourceId, 0, elapsed, changes.toCommit());
+      return SyncResult.noChange(sourceId, changes.unchanged(), elapsed, changes.toCommit());
     }
 
     evictor.evictFiles(sourceId, changes.deleted());
@@ -87,7 +87,12 @@ public class SyncService {
     Map<String, List<String>> chunkIdsByPath =
         indexingService.reindex(sourceId, new HashSet<>(changes.toIndex()));
     for (String path : changes.modified()) {
-      evictor.retainChunks(sourceId, path, chunkIdsByPath.getOrDefault(path, List.of()));
+      // Reconcile only when the file was actually re-indexed. A modified file whose re-index was
+      // skipped or failed is absent from the map; retaining against an empty keep-set would then
+      // evict every chunk of a file that still exists, so leave its old chunks in place to retry.
+      if (chunkIdsByPath.containsKey(path)) {
+        evictor.retainChunks(sourceId, path, chunkIdsByPath.get(path));
+      }
     }
 
     freshness.save(
@@ -101,7 +106,7 @@ public class SyncService {
             changes.added().size(),
             changes.modified().size(),
             changes.deleted().size(),
-            0,
+            changes.unchanged(),
             elapsed,
             changes.toCommit(),
             false);
