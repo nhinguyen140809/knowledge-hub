@@ -2,7 +2,6 @@ package com.knowledgehub.shared.error;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -50,14 +49,6 @@ public class GlobalExceptionHandler {
   }
 
   private static ProblemDetail problem(ErrorCode code, String detail) {
-    ProblemDetail pd = ProblemDetail.forStatus(code.status());
-    pd.setTitle(code.status().getReasonPhrase());
-    pd.setDetail(detail != null ? detail : code.defaultMessage());
-    pd.setProperty("code", code.name());
-    String traceId = MDC.get("traceId");
-    if (traceId != null) {
-      pd.setProperty("traceId", traceId);
-    }
-    return pd;
+    return ProblemDetails.of(code, detail);
   }
 }
