@@ -18,9 +18,11 @@ import org.springframework.stereotype.Component;
 
 /**
  * Proposes {@code DESCRIBES} links from a document chunk to the code it names. A fully-qualified
- * reference resolved to one entity is strong evidence; a bare type name matched to a single entity
- * is weaker; a name that matches several entities is ambiguous and scored low so the confidence
- * threshold drops it. The linker only scores - keeping or dropping is the caller's policy.
+ * reference resolved to one entity is strong evidence; a <em>compound</em> CamelCase name (e.g.
+ * {@code CodeChunker}) matched to a single entity is weaker; everything else - a name matching
+ * several entities, or a single-word name like {@code Chunk} or {@code Context} that doubles as
+ * ordinary prose - is scored low so the confidence threshold drops it by default. The linker only
+ * scores; keeping or dropping is the caller's policy.
  *
  * <p>All names found across the artifact's chunks are resolved in two batched lookups (one for
  * qualified names, one for bare names), so a document is a couple of queries regardless of length.
@@ -38,9 +40,12 @@ class IdentifierMatchLinker extends AbstractDocumentLinker {
   private static final Pattern CAMEL_CASE =
       Pattern.compile("\\b[A-Z][A-Za-z0-9]*[a-z][A-Za-z0-9]*\\b");
 
+  /** A second capitalised segment (e.g. the {@code C} in {@code CodeChunker}) marks a compound. */
+  private static final Pattern COMPOUND = Pattern.compile("[a-z0-9][A-Z]");
+
   private static final double QUALIFIED_CONFIDENCE = 0.9;
   private static final double UNIQUE_NAME_CONFIDENCE = 0.7;
-  private static final double AMBIGUOUS_NAME_CONFIDENCE = 0.4;
+  private static final double WEAK_NAME_CONFIDENCE = 0.4;
 
   private final EntityResolver resolver;
 
@@ -74,13 +79,6 @@ class IdentifierMatchLinker extends AbstractDocumentLinker {
     return candidates;
   }
 
-  private static void addMatches(Pattern pattern, String text, Set<String> into) {
-    Matcher matcher = pattern.matcher(text);
-    while (matcher.find()) {
-      into.add(matcher.group());
-    }
-  }
-
   private static void qualifiedCandidates(
       Chunk chunk, Map<String, String> resolved, Set<String> linked, List<LinkCandidate> out) {
     Matcher matcher = QUALIFIED.matcher(chunk.text());
@@ -108,7 +106,8 @@ class IdentifierMatchLinker extends AbstractDocumentLinker {
       if (!linked.add(toId)) {
         continue;
       }
-      double score = matches.size() == 1 ? UNIQUE_NAME_CONFIDENCE : AMBIGUOUS_NAME_CONFIDENCE;
+      boolean strong = matches.size() == 1 && COMPOUND.matcher(name).find();
+      double score = strong ? UNIQUE_NAME_CONFIDENCE : WEAK_NAME_CONFIDENCE;
       out.add(new LinkCandidate(chunk.chunkId(), toId, RelationType.DESCRIBES, score, name));
     }
   }

@@ -6,6 +6,9 @@ import com.knowledgehub.knowledge.indexing.domain.ChunkType;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Shared base for cross-artifact linkers that read prose out of document chunks: it applies to any
@@ -23,5 +26,13 @@ abstract class AbstractDocumentLinker implements CrossArtifactLinker {
   /** The artifact's document chunks - the only chunks a cross-artifact linker reads. */
   protected static List<Chunk> documentChunks(List<Chunk> chunks) {
     return chunks.stream().filter(chunk -> chunk.type() == ChunkType.DOC).toList();
+  }
+
+  /** Collects every match of {@code pattern} in {@code text} into {@code into}. */
+  protected static void addMatches(Pattern pattern, String text, Set<String> into) {
+    Matcher matcher = pattern.matcher(text);
+    while (matcher.find()) {
+      into.add(matcher.group());
+    }
   }
 }
