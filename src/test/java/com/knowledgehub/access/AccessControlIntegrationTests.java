@@ -1,5 +1,6 @@
 package com.knowledgehub.access;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
@@ -21,6 +22,7 @@ import com.knowledgehub.access.domain.SystemConfigRepository;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
 import com.knowledgehub.knowledge.ingestion.domain.SourceRepository;
 import com.knowledgehub.knowledge.ingestion.domain.SourceType;
+import com.knowledgehub.knowledge.sync.infrastructure.mcp.SyncSourceTools;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +33,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -63,6 +67,7 @@ class AccessControlIntegrationTests {
   @Autowired private PrincipalRepository principals;
   @Autowired private SourceRepository sources;
   @Autowired private SystemConfigRepository systemConfig;
+  @Autowired private SyncSourceTools syncSourceTools;
 
   @BeforeEach
   void setUp() {
@@ -96,6 +101,18 @@ class AccessControlIntegrationTests {
         .andExpect(status().isUnauthorized());
     mvc.perform(get("/api/v1/admin/principals").header("Authorization", "Bearer wrong"))
         .andExpect(status().isUnauthorized());
+    // The MCP endpoint runs through the same filter chain, so it is closed to anonymous callers.
+    mvc.perform(post("/mcp").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @WithMockUser(roles = "MEMBER")
+  void theSyncMcpToolIsForbiddenToANonAdmin() {
+    // Syncing is admin-only over REST; the MCP tool carries the same guard, so a member is denied
+    // before the sync ever runs.
+    assertThatThrownBy(() -> syncSourceTools.syncSource(SRC_A))
+        .isInstanceOf(AccessDeniedException.class);
   }
 
   @Test
