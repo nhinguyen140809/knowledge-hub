@@ -5,6 +5,8 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 
 import com.knowledgehub.TestcontainersConfiguration;
+import com.knowledgehub.knowledge.domain.Filter;
+import com.knowledgehub.knowledge.domain.ScoredId;
 import com.knowledgehub.knowledge.domain.VectorStorePort;
 import com.knowledgehub.knowledge.indexing.application.IndexingService;
 import com.knowledgehub.knowledge.indexing.domain.ChunkRepository;
@@ -13,8 +15,11 @@ import com.knowledgehub.knowledge.ingestion.domain.Source;
 import com.knowledgehub.knowledge.ingestion.domain.SourceRepository;
 import com.knowledgehub.knowledge.ingestion.domain.SourceType;
 import com.knowledgehub.retrieval.application.RetrievalService;
+import com.knowledgehub.retrieval.domain.GraphTraversalPort;
+import com.knowledgehub.retrieval.domain.KeywordSearchPort;
 import com.knowledgehub.retrieval.domain.Query;
 import com.knowledgehub.retrieval.domain.RankedResult;
+import com.knowledgehub.retrieval.domain.RetrievalReadPort;
 import com.knowledgehub.retrieval.infrastructure.cache.RetrievalCache;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -52,6 +57,9 @@ class RetrievalIntegrationTests {
   @Autowired private ChunkRepository chunks;
   @Autowired private CodeEntityRepository entities;
   @Autowired private VectorStorePort vectorStore;
+  @Autowired private KeywordSearchPort keywordSearch;
+  @Autowired private GraphTraversalPort graphTraversal;
+  @Autowired private RetrievalReadPort reader;
   @Autowired private SourceRepository sources;
 
   @TempDir Path root;
@@ -134,6 +142,35 @@ class RetrievalIntegrationTests {
     assertThat(onlyA.hits()).isNotEmpty();
     assertThat(onlyA.hits())
         .allSatisfy(hit -> assertThat(hit.metadata().sourceId()).isEqualTo(SOURCE_A));
+  }
+
+  @Test
+  void eachRetrievalPathHonoursTheAclFilterOnItsOwn() {
+    indexingService.index(SOURCE_A);
+    indexingService.index(SOURCE_B);
+
+    Filter onlyB = Filter.ofSources(Set.of(SOURCE_B));
+
+    // Semantic path: the vector search scoped to B must surface no chunk from A.
+    assertNoSourceA(vectorStore.search(deterministicVector("Greeter greet name"), 50, onlyB));
+
+    // Keyword path: "Greeter" exists only in A, yet scoped to B the lexical search returns none.
+    assertNoSourceA(keywordSearch.search(List.of("Greeter", "greet"), 50, onlyB));
+
+    // Graph path: even expanding from A's own chunks, scoped to B it must not surface A.
+    List<String> seedsFromA =
+        keywordSearch.search(List.of("Greeter"), 50, Filter.unrestricted()).stream()
+            .map(ScoredId::chunkId)
+            .toList();
+    assertThat(seedsFromA).isNotEmpty();
+    assertNoSourceA(graphTraversal.expand(seedsFromA, 50, onlyB));
+  }
+
+  /** Resolves the ids' real sources (unfiltered) and asserts none belongs to the disallowed A. */
+  private void assertNoSourceA(List<ScoredId> scored) {
+    List<String> ids = scored.stream().map(ScoredId::chunkId).toList();
+    assertThat(reader.loadMetadata(ids, Filter.unrestricted()).values())
+        .noneMatch(metadata -> SOURCE_A.equals(metadata.sourceId()));
   }
 
   private static float[] deterministicVector(String text) {

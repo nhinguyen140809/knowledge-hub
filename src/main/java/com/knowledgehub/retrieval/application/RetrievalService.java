@@ -77,7 +77,17 @@ public class RetrievalService {
    * @return the ranked result, possibly served from the canonical ref
    */
   public RankedResult retrieve(Query query, Set<String> allowedSources) {
-    return cache.get(query, allowedSources, () -> runPipeline(query, allowedSources));
+    long startNanos = System.nanoTime();
+    RankedResult result =
+        cache.get(query, allowedSources, () -> runPipeline(query, allowedSources));
+    // Log the query as metadata only — never the query text, which may be sensitive.
+    log.info(
+        "Query served: type={} ref={} hits={} in {} ms",
+        query.params().type(),
+        query.params().ref(),
+        result.hits().size(),
+        (System.nanoTime() - startNanos) / 1_000_000);
+    return result;
   }
 
   private RankedResult runPipeline(Query query, Set<String> allowedSources) {
