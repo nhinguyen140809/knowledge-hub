@@ -46,7 +46,7 @@ class RetrievalServiceTests {
 
   @BeforeEach
   void setUp() {
-    AppProperties properties = new AppProperties(null, null, null, null);
+    AppProperties properties = new AppProperties(null, null, null, null, null);
     service =
         new RetrievalService(
             new PrepareQueryStage(),

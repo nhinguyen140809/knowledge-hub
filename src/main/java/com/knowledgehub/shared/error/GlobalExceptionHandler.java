@@ -2,8 +2,8 @@ package com.knowledgehub.shared.error;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import org.springframework.http.ProblemDetail;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -42,6 +42,15 @@ public class GlobalExceptionHandler {
     return problem(ErrorCode.VALIDATION_FAILED, ex.getMessage());
   }
 
+  /**
+   * Method-security denials ({@code @PreAuthorize}) surface here rather than at the filter chain,
+   * so map them to the same 403 the chain produces.
+   */
+  @ExceptionHandler(AccessDeniedException.class)
+  public ProblemDetail handleAccessDenied(AccessDeniedException ex) {
+    return problem(ErrorCode.FORBIDDEN, null);
+  }
+
   /** Anything unmapped is an internal error; log the cause, never leak it to the client. */
   @ExceptionHandler(Exception.class)
   public ProblemDetail handleUnexpected(Exception ex) {
@@ -50,14 +59,6 @@ public class GlobalExceptionHandler {
   }
 
   private static ProblemDetail problem(ErrorCode code, String detail) {
-    ProblemDetail pd = ProblemDetail.forStatus(code.status());
-    pd.setTitle(code.status().getReasonPhrase());
-    pd.setDetail(detail != null ? detail : code.defaultMessage());
-    pd.setProperty("code", code.name());
-    String traceId = MDC.get("traceId");
-    if (traceId != null) {
-      pd.setProperty("traceId", traceId);
-    }
-    return pd;
+    return ProblemDetails.of(code, detail);
   }
 }

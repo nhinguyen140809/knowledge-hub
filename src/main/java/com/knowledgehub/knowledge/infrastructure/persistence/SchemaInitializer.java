@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Component;
 
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Component;
  * create-collection-if-absent on Qdrant) — there is no separate migration tool.
  */
 @Component
+@Order(0)
 public class SchemaInitializer implements ApplicationRunner {
 
   private static final Logger log = LoggerFactory.getLogger(SchemaInitializer.class);
