@@ -1,0 +1,262 @@
+[
+  {
+    "id": "q001",
+    "query": "How does reciprocal rank fusion combine ranked lists?",
+    "relevantPath": "reciprocal-rank-fusion.md"
+  },
+  {
+    "id": "q002",
+    "query": "What is the constant k in RRF scoring?",
+    "relevantPath": "reciprocal-rank-fusion.md"
+  },
+  {
+    "id": "q003",
+    "query": "Explain BM25 term frequency saturation.",
+    "relevantPath": "bm25-lexical-search.md"
+  },
+  {
+    "id": "q004",
+    "query": "Why does BM25 use inverse document frequency?",
+    "relevantPath": "bm25-lexical-search.md"
+  },
+  {
+    "id": "q005",
+    "query": "What is a dense vector embedding used for?",
+    "relevantPath": "vector-embeddings.md"
+  },
+  {
+    "id": "q006",
+    "query": "How does semantic search compare query and passage vectors?",
+    "relevantPath": "vector-embeddings.md"
+  },
+  {
+    "id": "q007",
+    "query": "How does the HNSW graph speed up nearest neighbour search?",
+    "relevantPath": "hnsw-index.md"
+  },
+  {
+    "id": "q008",
+    "query": "What tradeoff does approximate nearest neighbour make?",
+    "relevantPath": "hnsw-index.md"
+  },
+  {
+    "id": "q009",
+    "query": "Why store a knowledge graph in Neo4j?",
+    "relevantPath": "neo4j-graph-database.md"
+  },
+  {
+    "id": "q010",
+    "query": "How does Neo4j model nodes and relationships?",
+    "relevantPath": "neo4j-graph-database.md"
+  },
+  {
+    "id": "q011",
+    "query": "How does Qdrant filter results by payload metadata?",
+    "relevantPath": "qdrant-vector-store.md"
+  },
+  {
+    "id": "q012",
+    "query": "What does a Qdrant collection define?",
+    "relevantPath": "qdrant-vector-store.md"
+  },
+  {
+    "id": "q013",
+    "query": "How does exponential backoff space out retry attempts?",
+    "relevantPath": "retry-backoff.md"
+  },
+  {
+    "id": "q014",
+    "query": "Why cap the number of retries before failing?",
+    "relevantPath": "retry-backoff.md"
+  },
+  {
+    "id": "q015",
+    "query": "When does a circuit breaker trip open?",
+    "relevantPath": "circuit-breaker.md"
+  },
+  {
+    "id": "q016",
+    "query": "How does a circuit breaker fail fast during an outage?",
+    "relevantPath": "circuit-breaker.md"
+  },
+  {
+    "id": "q017",
+    "query": "How does bearer token authentication identify a caller?",
+    "relevantPath": "bearer-token-auth.md"
+  },
+  {
+    "id": "q018",
+    "query": "Why does a stateless API reject a revoked token immediately?",
+    "relevantPath": "bearer-token-auth.md"
+  },
+  {
+    "id": "q019",
+    "query": "How does an access control list scope query results?",
+    "relevantPath": "access-control-list.md"
+  },
+  {
+    "id": "q020",
+    "query": "What keeps a disallowed source out of every retrieval path?",
+    "relevantPath": "access-control-list.md"
+  },
+  {
+    "id": "q021",
+    "query": "Why split documents into overlapping chunks?",
+    "relevantPath": "document-chunking.md"
+  },
+  {
+    "id": "q022",
+    "query": "How is source code chunked along syntactic units?",
+    "relevantPath": "document-chunking.md"
+  },
+  {
+    "id": "q023",
+    "query": "Why measure a chunk budget in tokens not characters?",
+    "relevantPath": "tokenization.md"
+  },
+  {
+    "id": "q024",
+    "query": "What does tokenization break text into?",
+    "relevantPath": "tokenization.md"
+  },
+  {
+    "id": "q025",
+    "query": "How does content hashing avoid re-embedding unchanged chunks?",
+    "relevantPath": "content-deduplication.md"
+  },
+  {
+    "id": "q026",
+    "query": "What does deduplication save during incremental updates?",
+    "relevantPath": "content-deduplication.md"
+  },
+  {
+    "id": "q027",
+    "query": "How does an MCP tool expose an application service to an agent?",
+    "relevantPath": "mcp-tool-protocol.md"
+  },
+  {
+    "id": "q028",
+    "query": "What transport does the Model Context Protocol use?",
+    "relevantPath": "mcp-tool-protocol.md"
+  },
+  {
+    "id": "q029",
+    "query": "Why group admin and query endpoints in OpenAPI docs?",
+    "relevantPath": "openapi-documentation.md"
+  },
+  {
+    "id": "q030",
+    "query": "What does an OpenAPI schema example help clients do?",
+    "relevantPath": "openapi-documentation.md"
+  },
+  {
+    "id": "q031",
+    "query": "Why use parameterised structured log events?",
+    "relevantPath": "structured-logging.md"
+  },
+  {
+    "id": "q032",
+    "query": "What log level suits lifecycle events versus developer detail?",
+    "relevantPath": "structured-logging.md"
+  },
+  {
+    "id": "q033",
+    "query": "How does a correlation id help reconstruct a failed request?",
+    "relevantPath": "trace-correlation-id.md"
+  },
+  {
+    "id": "q034",
+    "query": "What threads a trace id through every log line?",
+    "relevantPath": "trace-correlation-id.md"
+  },
+  {
+    "id": "q035",
+    "query": "Why run integration tests against a Testcontainers database?",
+    "relevantPath": "testcontainers-integration.md"
+  },
+  {
+    "id": "q036",
+    "query": "Why pin the container image version in tests?",
+    "relevantPath": "testcontainers-integration.md"
+  },
+  {
+    "id": "q037",
+    "query": "What does cosine similarity measure between two vectors?",
+    "relevantPath": "cosine-similarity.md"
+  },
+  {
+    "id": "q038",
+    "query": "Why ignore vector magnitude when comparing embeddings?",
+    "relevantPath": "cosine-similarity.md"
+  },
+  {
+    "id": "q039",
+    "query": "How is a retrieval cache entry keyed?",
+    "relevantPath": "cache-eviction-ttl.md"
+  },
+  {
+    "id": "q040",
+    "query": "What bounds staleness in a cache with a time to live?",
+    "relevantPath": "cache-eviction-ttl.md"
+  },
+  {
+    "id": "q041",
+    "query": "What does a Cypher MATCH clause describe?",
+    "relevantPath": "cypher-query-language.md"
+  },
+  {
+    "id": "q042",
+    "query": "How does Cypher express graph patterns?",
+    "relevantPath": "cypher-query-language.md"
+  },
+  {
+    "id": "q043",
+    "query": "How does incremental sync process only changed files?",
+    "relevantPath": "incremental-sync.md"
+  },
+  {
+    "id": "q044",
+    "query": "What happens to chunks a modified file no longer has?",
+    "relevantPath": "incremental-sync.md"
+  },
+  {
+    "id": "q045",
+    "query": "What fields does an RFC 7807 problem detail carry?",
+    "relevantPath": "rfc7807-problem-detail.md"
+  },
+  {
+    "id": "q046",
+    "query": "Why give API errors a stable machine-readable code?",
+    "relevantPath": "rfc7807-problem-detail.md"
+  },
+  {
+    "id": "q047",
+    "query": "How does dependency injection supply collaborators?",
+    "relevantPath": "dependency-injection.md"
+  },
+  {
+    "id": "q048",
+    "query": "Why depend on ports instead of concrete adapters?",
+    "relevantPath": "dependency-injection.md"
+  },
+  {
+    "id": "q049",
+    "query": "What does a major version bump signal in semantic versioning?",
+    "relevantPath": "semantic-versioning.md"
+  },
+  {
+    "id": "q050",
+    "query": "How does semantic versioning distinguish a minor from a patch release?",
+    "relevantPath": "semantic-versioning.md"
+  },
+  {
+    "id": "q051",
+    "query": "Why fuse retrievers by rank instead of raw score?",
+    "relevantPath": "rrf-vs-scores.md"
+  },
+  {
+    "id": "q052",
+    "query": "How can semantic and lexical hits merge without score normalisation?",
+    "relevantPath": "rrf-vs-scores.md"
+  }
+]
