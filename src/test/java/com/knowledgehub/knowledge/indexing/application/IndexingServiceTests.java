@@ -55,12 +55,15 @@ class IndexingServiceTests {
   }
 
   private static RawArtifact markdown() {
-    String text = "# Title\n\nbody paragraph.\n";
+    return markdown("doc.md", "# Title\n\nbody paragraph.\n", "h1");
+  }
+
+  private static RawArtifact markdown(String path, String text, String hash) {
     return RawArtifact.raw(
-            "doc.md",
+            path,
             MediaTypes.MARKDOWN,
             text.getBytes(StandardCharsets.UTF_8),
-            new FsProvenance("s", "doc.md", "h1", Instant.EPOCH))
+            new FsProvenance("s", path, hash, Instant.EPOCH))
         .withText(text);
   }
 
@@ -91,6 +94,25 @@ class IndexingServiceTests {
     assertThat(result.chunksCached()).isZero();
     verify(vectorStore, times(1)).upsert(anyList());
     verify(chunks, times(1)).upsertAll(anyList());
+  }
+
+  @Test
+  void isolatesAMidPipelineFailureAndKeepsIndexingTheRest() {
+    when(ingestion.ingest("s"))
+        .thenReturn(Stream.of(markdown("first.md", "# First\n\none.\n", "h1"), markdown()));
+    when(chunks.existingContentHashes(eq("s"), any())).thenReturn(Set.of());
+    // The embedding provider fails for the first file, then recovers for the second.
+    when(embedding.embedBatch(anyList()))
+        .thenThrow(new RuntimeException("provider down"))
+        .thenAnswer(
+            inv ->
+                ((List<String>) inv.getArgument(0)).stream().map(t -> new float[] {1f}).toList());
+
+    IndexResult result = service().index("s");
+
+    assertThat(result.filesSkipped()).isEqualTo(1); // the file whose embedding failed
+    assertThat(result.filesRead()).isEqualTo(1); // the run continued past the failure
+    verify(vectorStore, times(1)).upsert(anyList());
   }
 
   @Test
