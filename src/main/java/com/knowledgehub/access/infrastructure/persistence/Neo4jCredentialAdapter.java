@@ -5,6 +5,7 @@ import com.knowledgehub.access.domain.CredentialRepository;
 import com.knowledgehub.access.domain.Principal;
 import com.knowledgehub.access.domain.PrincipalType;
 import com.knowledgehub.access.domain.Role;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -18,9 +19,15 @@ import org.springframework.stereotype.Component;
  * Neo4j-backed {@link CredentialRepository}. A credential is the SHA-256 hash of its secret on a
  * {@code :Credential} node linked to its principal; timestamps are epoch millis so the retention
  * job can range-scan them. The raw secret never reaches this layer.
+ *
+ * <p>{@code last_used_at} is on the authentication hot path, so it is only rewritten once the
+ * stored value is older than {@link #LAST_USED_THROTTLE}: bursts of requests on the same credential
+ * skip the write. This keeps the timestamp useful for audit without a write on every request.
  */
 @Component
 class Neo4jCredentialAdapter implements CredentialRepository {
+
+  private static final Duration LAST_USED_THROTTLE = Duration.ofMinutes(5);
 
   private static final String SAVE =
       "MATCH (p:Principal {principal_id: $principalId})"
@@ -33,7 +40,9 @@ class Neo4jCredentialAdapter implements CredentialRepository {
           + " RETURN p.principal_id AS id, p.type AS type, p.role AS role";
 
   private static final String TOUCH_LAST_USED =
-      "MATCH (c:Credential {hash: $hash}) SET c.last_used_at = $when";
+      "MATCH (c:Credential {hash: $hash})"
+          + " WHERE c.last_used_at IS NULL OR c.last_used_at < $staleBefore"
+          + " SET c.last_used_at = $when";
 
   private static final String REVOKE =
       "MATCH (c:Credential {credential_id: $id}) SET c.revoked = true";
@@ -88,7 +97,12 @@ class Neo4jCredentialAdapter implements CredentialRepository {
 
   @Override
   public void touchLastUsed(String hash, Instant when) {
-    client.query(TOUCH_LAST_USED).bindAll(Map.of("hash", hash, "when", when.toEpochMilli())).run();
+    long now = when.toEpochMilli();
+    client
+        .query(TOUCH_LAST_USED)
+        .bindAll(
+            Map.of("hash", hash, "when", now, "staleBefore", now - LAST_USED_THROTTLE.toMillis()))
+        .run();
   }
 
   @Override
