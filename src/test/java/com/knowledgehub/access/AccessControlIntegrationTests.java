@@ -93,7 +93,10 @@ class AccessControlIntegrationTests {
 
   @Test
   void rejectsRequestsWithoutAValidToken() throws Exception {
-    mvc.perform(get("/api/v1/admin/principals")).andExpect(status().isUnauthorized());
+    mvc.perform(get("/api/v1/admin/principals"))
+        .andExpect(status().isUnauthorized())
+        // Even an auth failure carries a trace id, so a rejected request is reconstructable.
+        .andExpect(jsonPath("$.traceId").exists());
     mvc.perform(
             post("/api/v1/query")
                 .contentType(MediaType.APPLICATION_JSON)
