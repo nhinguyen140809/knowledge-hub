@@ -1,0 +1,54 @@
+{
+  "name": "knowledge-hub",
+  "image": "mcr.microsoft.com/devcontainers/java:21-bookworm",
+
+  // Docker-in-Docker so `docker compose` and Testcontainers work inside the Codespace.
+  // Node is only here so the Claude Code CLI can be installed if you want it in-terminal.
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/node:1": { "version": "lts" }
+  },
+
+  // Pass Codespaces secrets (Settings > Codespaces secrets) through to the container.
+  // Any that are unset stay empty and post-create.sh leaves them blank in .env.
+  "containerEnv": {
+    "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}",
+    "VOYAGEAI_API_KEY": "${localEnv:VOYAGEAI_API_KEY}",
+    "NEO4J_PASSWORD": "${localEnv:NEO4J_PASSWORD}",
+    "API_KEY": "${localEnv:API_KEY}"
+  },
+
+  "forwardPorts": [8000, 7474, 7687, 6333, 6334],
+  "portsAttributes": {
+    "8000": { "label": "app — REST + MCP (/mcp)" },
+    "7474": { "label": "neo4j browser" },
+    "7687": { "label": "neo4j bolt" },
+    "6333": { "label": "qdrant dashboard" },
+    "6334": { "label": "qdrant gRPC" }
+  },
+
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  // Runs on every Codespace *start* (including resume from stopped). Brings the
+  // datastores up automatically so you can `just dev` right away. Use `just up`
+  // yourself when you want the full app container too.
+  "postStartCommand": "docker compose up -d neo4j qdrant && echo 'Neo4j + Qdrant up — run: just dev (app on host) or just up (full stack in containers)'",
+
+  // Recommend at least 4-core / 16GB for a comfortable build + 3 containers.
+  // 2-core / 8GB works but is tight while Maven builds and all containers run.
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "16gb",
+    "storage": "32gb"
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "redhat.vscode-yaml",
+        "anthropic.claude-code"
+      ]
+    }
+  }
+}
