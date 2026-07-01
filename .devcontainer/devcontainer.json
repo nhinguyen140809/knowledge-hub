@@ -29,6 +29,11 @@
 
   "postCreateCommand": "bash .devcontainer/post-create.sh",
 
+  // Runs on every Codespace *start* (including resume from stopped). Brings the
+  // datastores up automatically so you can `just dev` right away. Use `just up`
+  // yourself when you want the full app container too.
+  "postStartCommand": "docker compose up -d neo4j qdrant && echo 'Neo4j + Qdrant up — run: just dev (app on host) or just up (full stack in containers)'",
+
   // Recommend at least 4-core / 16GB for a comfortable build + 3 containers.
   // 2-core / 8GB works but is tight while Maven builds and all containers run.
   "hostRequirements": {
