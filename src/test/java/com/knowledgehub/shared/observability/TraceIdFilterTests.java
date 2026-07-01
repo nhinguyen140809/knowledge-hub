@@ -42,6 +42,21 @@ class TraceIdFilterTests {
   }
 
   @Test
+  void rejectsAnUnsafeInboundTraceIdToPreventLogForging() throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.addHeader(TraceIdFilter.HEADER, "abc\nINFO forged-log-line");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    String[] seenDuringRequest = new String[1];
+    FilterChain chain = (req, res) -> seenDuringRequest[0] = MDC.get(TraceIdFilter.TRACE_ID);
+
+    filter.doFilter(request, response, chain);
+
+    // The malicious value is dropped and a safe, generated id is used instead.
+    assertThat(seenDuringRequest[0]).doesNotContain("\n").doesNotContain(" ");
+    assertThat(seenDuringRequest[0]).isNotEqualTo("abc\nINFO forged-log-line");
+  }
+
+  @Test
   void clearsTheTraceIdEvenWhenTheChainFails() {
     MockHttpServletRequest request = new MockHttpServletRequest();
     MockHttpServletResponse response = new MockHttpServletResponse();
