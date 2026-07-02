@@ -28,7 +28,6 @@ class SystemInfoServiceTests {
 
     assertThat(info.application()).isEqualTo("knowledge-hub");
     assertThat(info.activeProfiles()).containsExactly("dev");
-    assertThat(info.vectorStore()).isEqualTo("neo4j+qdrant");
     assertThat(info.version()).isEqualTo("unknown");
   }
 }

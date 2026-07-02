@@ -18,8 +18,8 @@ public class SystemTools {
   @Tool(
       name = "system_info",
       description =
-          "Return Knowledge Hub runtime information: application name, version, active profiles, "
-              + "and the active vector store mode.")
+          "Return Knowledge Hub runtime information: application name, version, and active "
+              + "profiles.")
   public SystemInfo systemInfo() {
     return systemInfoService.currentInfo();
   }
