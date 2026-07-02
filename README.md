@@ -26,8 +26,8 @@ team. Knowledge is shared across the team; access is controlled per source via a
 
 - **Clean Architecture**, **packaged by feature** — each feature has `domain` (model + ports),
   `application` (services), and `infrastructure` (adapters) layers; dependencies point inward.
-- **GraphRAG storage** — **Neo4j** holds both the graph and vectors by default; **Qdrant** can be
-  added behind a `VectorStore` port when scaling (`APP_VECTORSTORE_MODE=neo4j+qdrant`).
+- **GraphRAG storage** — **Neo4j** holds the graph + keyword (BM25) index; **Qdrant** holds the
+  vectors (behind a `VectorStore` port), linked by a shared `chunkId`.
 - **Embedding** — external API (no local model), configurable provider/model.
 - **Deployment** — modular monolith, one Docker image, runs via a single `docker-compose`.
 
@@ -60,7 +60,7 @@ Diagrams: see [`docs/diagrams/`](docs/diagrams) (deployment + logical architectu
 
 ```bash
 # 1. configure secrets
-cp .env.example .env            # set NEO4J_PASSWORD and OPENAI_API_KEY
+cp .env.example .env            # set NEO4J_PASSWORD and EMBEDDING_API_KEY
 
 # 2a. run the whole stack (app + Neo4j) in containers
 just up                         # = docker compose up -d --build
@@ -113,7 +113,7 @@ Run `just` to list tasks.
 | `just logs` | tail app logs |
 | `just hooks` | enable the pre-commit format hook |
 
-> `.env` is auto-loaded by `just` (via `dotenv-load`), so tasks pick up `OPENAI_API_KEY` etc.
+> `.env` is auto-loaded by `just` (via `dotenv-load`), so tasks pick up `EMBEDDING_API_KEY` etc.
 
 > **Hot reload:** `just dev` runs the app on the host with Spring Boot **DevTools** — saving a source
 > file triggers a fast in-JVM restart (~1s, not a container or full-JVM restart), so changes apply
@@ -134,12 +134,15 @@ runtime). Precedence: env var > `application-<profile>.yml` > `application.yml`.
 | `SERVER_PORT` | `8000` | HTTP port |
 | `SPRING_NEO4J_URI` | `bolt://localhost:7687` | Neo4j connection |
 | `NEO4J_USERNAME` / `NEO4J_PASSWORD` | `neo4j` / `knowledgehub` | Neo4j credentials |
-| `OPENAI_API_KEY` | — | Embedding API key (required for ingestion/retrieval) |
-| `EMBEDDING_MODEL` | `text-embedding-3-small` | Embedding model |
-| `APP_VECTORSTORE_MODE` | `neo4j` | `neo4j` or `neo4j+qdrant` (added when scaling) |
+| `EMBEDDING_PROVIDER` | `api` | `api` (remote) or `local` (OpenAI-compatible server) |
+| `EMBEDDING_MODEL` | `text-embedding-3-small` | Embedding model (e.g. `voyage-3`) |
+| `EMBEDDING_BASE_URL` | `https://api.openai.com` | OpenAI-compatible endpoint host (OpenAI / Voyage / local) |
+| `EMBEDDING_API_KEY` | — | Embedding provider key (blank for a keyless local server) |
+| `EMBEDDING_DIMENSION` | `1536` | Vector dimension — must match the model; sizes the Qdrant collection |
 
-Secrets (`OPENAI_API_KEY`, DB password) come from env / secret manager — **never commit them**
-(`.env` is git-ignored; see `.env.example`).
+Switch embedding provider/model by editing these env vars only — no code change or image rebuild.
+Secrets (`EMBEDDING_API_KEY`, `NEO4J_PASSWORD`, bootstrap `API_KEY`) come from env / secret manager —
+**never commit them** (`.env` is git-ignored; see `.env.example`).
 
 ## Testing
 
