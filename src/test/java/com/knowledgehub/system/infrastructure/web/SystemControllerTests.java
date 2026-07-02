@@ -26,14 +26,13 @@ class SystemControllerTests {
   @Test
   void returnsSystemInfoAsJson() throws Exception {
     when(systemInfoService.currentInfo())
-        .thenReturn(new SystemInfo("knowledge-hub", "0.0.1", List.of("dev"), "neo4j+qdrant"));
+        .thenReturn(new SystemInfo("knowledge-hub", "0.0.1", List.of("dev")));
 
     mockMvc
         .perform(get("/api/v1/system/info"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.application").value("knowledge-hub"))
         .andExpect(jsonPath("$.version").value("0.0.1"))
-        .andExpect(jsonPath("$.activeProfiles[0]").value("dev"))
-        .andExpect(jsonPath("$.vectorStore").value("neo4j+qdrant"));
+        .andExpect(jsonPath("$.activeProfiles[0]").value("dev"));
   }
 }
