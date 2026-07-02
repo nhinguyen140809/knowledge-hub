@@ -32,7 +32,7 @@ import org.springframework.context.annotation.Import;
  * embedding model, so it makes live provider calls while indexing the corpus and embedding queries.
  *
  * <p>The whole class is gated on {@code EVAL_ASSERT_THRESHOLDS=true} so it never boots in CI: run
- * it with that variable set and a real provider configured ({@code OPENAI_API_KEY} and a model
+ * it with that variable set and a real provider configured ({@code EMBEDDING_API_KEY} and a model
  * whose dimension matches {@code app.embedding.dimension}).
  */
 @SpringBootTest

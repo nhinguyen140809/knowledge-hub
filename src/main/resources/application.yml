@@ -14,7 +14,11 @@ spring:
   # --- AI: embedding provider + vector store ---
   ai:
     openai:
-      api-key: ${OPENAI_API_KEY:}
+      # Any OpenAI-compatible embeddings endpoint — OpenAI, Voyage AI, or a local
+      # server (LM Studio / TEI / llama.cpp). Switch provider or model by env only,
+      # no rebuild. `base-url` is the host root; the /v1/embeddings path is appended.
+      api-key: ${EMBEDDING_API_KEY:}
+      base-url: ${EMBEDDING_BASE_URL:https://api.openai.com}
       embedding:
         options:
           model: ${EMBEDDING_MODEL:text-embedding-3-small}
@@ -58,10 +62,10 @@ springdoc:
 # --- Application toggles (config-as-a-feature) ---
 app:
   embedding:
-    provider: ${APP_EMBEDDING_PROVIDER:api}   # api | local (OpenAI-compatible endpoint)
-    dimension: ${APP_EMBEDDING_DIMENSION:1536}   # must match the model (1536 for text-embedding-3-small)
-    retry-max-attempts: ${APP_EMBEDDING_RETRY_MAX_ATTEMPTS:3}   # attempts per embedding call (incl. first)
-    retry-backoff-ms: ${APP_EMBEDDING_RETRY_BACKOFF_MS:500}   # initial backoff, doubles each retry
+    provider: ${EMBEDDING_PROVIDER:api}   # api (remote, needs key) | local (OpenAI-compatible server; use any placeholder key)
+    dimension: ${EMBEDDING_DIMENSION:1536}   # MUST match the model (1536 text-embedding-3-small, 1024 voyage-3); sizes the Qdrant collection
+    retry-max-attempts: ${EMBEDDING_RETRY_MAX_ATTEMPTS:3}   # attempts per embedding call (incl. first)
+    retry-backoff-ms: ${EMBEDDING_RETRY_BACKOFF_MS:500}   # initial backoff, doubles each retry
   chunk:
     max-tokens: ${APP_CHUNK_MAX_TOKENS:512}
     overlap: ${APP_CHUNK_OVERLAP:64}
