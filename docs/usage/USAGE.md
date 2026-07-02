@@ -69,6 +69,15 @@ own browser, use the forwarded URL shown in the Ports tab.
 The admin registers sources, onboards developers, and controls who can read what. All admin
 routes live under `/api/v1/admin/**`, require the `ADMIN` role, and take the admin bearer token.
 
+> **Two ways to run these calls — pick either.**
+> - **Swagger UI (interactive, easiest).** Open **`/docs`**, click **Authorize**, paste the admin
+>   bearer token (§2.1), and use *Try it out* on the **admin** group. Best for one-off operations;
+>   the form shows every field and response. On Codespaces `/docs` is the forwarded **port-8000**
+>   URL from the Ports tab (private — only you as the codespace owner); locally it is
+>   `http://localhost:8000/docs`.
+> - **`curl` (scriptable).** The snippets below issue the exact same requests and document the
+>   request bodies, so they double as a field reference and as automation.
+
 ### 2.1 Bootstrap the admin
 
 Set `API_KEY` before the first startup. On boot, if no admin exists yet, the app creates the
