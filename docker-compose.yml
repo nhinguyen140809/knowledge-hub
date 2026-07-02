@@ -32,6 +32,12 @@ services:
       qdrant:
         condition: service_started
     restart: unless-stopped
+    # Cap container log growth so a long-running host never fills its disk.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   neo4j:
     image: neo4j:5.26-community

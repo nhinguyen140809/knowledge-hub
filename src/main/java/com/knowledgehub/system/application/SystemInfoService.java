@@ -15,9 +15,6 @@ public class SystemInfoService {
 
   private static final Logger log = LoggerFactory.getLogger(SystemInfoService.class);
 
-  /** Storage topology is fixed: the graph lives in Neo4j and vectors in Qdrant, at every scale. */
-  private static final String VECTOR_STORE = "neo4j+qdrant";
-
   private final Environment environment;
   private final ObjectProvider<BuildProperties> buildProperties;
 
@@ -35,12 +32,11 @@ public class SystemInfoService {
     List<String> profiles = List.of(environment.getActiveProfiles());
 
     log.debug(
-        "Reporting system info: application={}, version={}, profiles={}, vectorStore={}",
+        "Reporting system info: application={}, version={}, profiles={}",
         application,
         version,
-        profiles,
-        VECTOR_STORE);
+        profiles);
 
-    return new SystemInfo(application, version, profiles, VECTOR_STORE);
+    return new SystemInfo(application, version, profiles);
   }
 }
