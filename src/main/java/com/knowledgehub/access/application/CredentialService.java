@@ -32,18 +32,21 @@ public class CredentialService {
     this.principals = principals;
   }
 
-  /** Issues a new credential for a principal and returns the raw secret once. */
-  public IssuedCredential issue(String principalId) {
+  /** Issues a new named credential for a principal and returns the raw secret once. */
+  public IssuedCredential issue(String principalId, String name) {
     if (principals.findById(principalId).isEmpty()) {
       throw new PrincipalNotFoundException(principalId);
+    }
+    if (credentials.existsActiveByPrincipalAndName(principalId, name)) {
+      throw new DuplicateCredentialNameException(principalId, name);
     }
     byte[] bytes = new byte[SECRET_BYTES];
     random.nextBytes(bytes);
     String secret = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     String credentialId = UUID.randomUUID().toString();
-    credentials.save(credentialId, principalId, Sha256.hex(secret), Instant.now());
-    log.info("Issued credential {} for principal {}", credentialId, principalId);
-    return new IssuedCredential(credentialId, secret);
+    credentials.save(credentialId, principalId, name, Sha256.hex(secret), Instant.now());
+    log.info("Issued credential {} ('{}') for principal {}", credentialId, name, principalId);
+    return new IssuedCredential(credentialId, name, secret);
   }
 
   /** Revokes a credential; the next request using it fails authentication. */

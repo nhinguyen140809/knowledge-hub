@@ -145,7 +145,9 @@ class AccessControlIntegrationTests {
     MvcResult issued =
         mvc.perform(
                 post("/api/v1/admin/principals/" + USER + "/credentials")
-                    .header("Authorization", bearer(ADMIN_KEY)))
+                    .header("Authorization", bearer(ADMIN_KEY))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"name\":\"laptop\"}"))
             .andExpect(status().isOk())
             .andReturn();
     JsonNode body = json.readTree(issued.getResponse().getContentAsString());
@@ -233,7 +235,9 @@ class AccessControlIntegrationTests {
     MvcResult result =
         mvc.perform(
                 post("/api/v1/admin/principals/" + principalId + "/credentials")
-                    .header("Authorization", bearer(ADMIN_KEY)))
+                    .header("Authorization", bearer(ADMIN_KEY))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"name\":\"default\"}"))
             .andExpect(status().isOk())
             .andReturn();
     return json.readTree(result.getResponse().getContentAsString()).get("secret").asText();

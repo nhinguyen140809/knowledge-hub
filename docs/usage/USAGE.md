@@ -100,12 +100,15 @@ curl -s -X POST "$BASE/admin/principals" -H "$ADMIN" -H 'Content-Type: applicati
   -d '{"principalId":"dev-alice","type":"SUBJECT","role":"MEMBER"}'
 ```
 
-**Step 2 — issue a credential.** The plaintext secret is returned **once** and only stored
-hashed; copy it now and give it to the developer over a secure channel.
+**Step 2 — issue a credential.** Give it a `name` (unique among that principal's active
+credentials) so you can tell credentials apart later when listing or revoking. The plaintext secret
+is returned **once** and only stored hashed; copy it now and give it to the developer over a secure
+channel.
 
 ```bash
-curl -s -X POST "$BASE/admin/principals/dev-alice/credentials" -H "$ADMIN"
-# => {"credentialId":"<uuid>","secret":"<256-bit url-safe base64>"}   <-- shown once
+curl -s -X POST "$BASE/admin/principals/dev-alice/credentials" -H "$ADMIN" \
+  -H 'Content-Type: application/json' -d '{"name":"alice-laptop"}'
+# => {"credentialId":"<uuid>","name":"alice-laptop","secret":"<256-bit url-safe base64>"}   <-- secret shown once
 ```
 
 **Step 3 — grant read access** to the sources the developer may see (by source id):
@@ -215,7 +218,7 @@ lack a grant for that source — ask your admin.
 | Method & path (`/api/v1` prefix) | Role | Purpose |
 | --- | --- | --- |
 | `POST /admin/principals` | ADMIN | Create a principal (subject or group) |
-| `POST /admin/principals/{id}/credentials` | ADMIN | Issue a credential (secret returned once) |
+| `POST /admin/principals/{id}/credentials` | ADMIN | Issue a named credential (secret returned once) |
 | `GET /admin/principals/{id}/effective-permissions` | ADMIN | Resolve what a principal can read |
 | `POST /admin/principals/{id}/members` | ADMIN | Add a member to a group |
 | `POST /admin/grants` | ADMIN | Grant read access to sources |

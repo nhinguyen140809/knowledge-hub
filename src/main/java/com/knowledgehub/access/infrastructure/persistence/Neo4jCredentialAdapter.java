@@ -31,9 +31,14 @@ class Neo4jCredentialAdapter implements CredentialRepository {
 
   private static final String SAVE =
       "MATCH (p:Principal {principal_id: $principalId})"
-          + " CREATE (c:Credential {credential_id: $id, hash: $hash, revoked: false,"
+          + " CREATE (c:Credential {credential_id: $id, name: $name, hash: $hash, revoked: false,"
           + " created_at: $createdAt})"
           + " MERGE (p)-[:HAS_CREDENTIAL]->(c)";
+
+  private static final String EXISTS_ACTIVE_BY_NAME =
+      "MATCH (:Principal {principal_id: $principalId})-[:HAS_CREDENTIAL]"
+          + "->(c:Credential {name: $name, revoked: false})"
+          + " RETURN count(c) > 0 AS exists";
 
   private static final String FIND_PRINCIPAL_BY_HASH =
       "MATCH (c:Credential {hash: $hash, revoked: false})<-[:HAS_CREDENTIAL]-(p:Principal)"
@@ -49,8 +54,8 @@ class Neo4jCredentialAdapter implements CredentialRepository {
 
   private static final String LIST_BY_PRINCIPAL =
       "MATCH (:Principal {principal_id: $principalId})-[:HAS_CREDENTIAL]->(c:Credential)"
-          + " RETURN c.credential_id AS id, c.revoked AS revoked, c.created_at AS createdAt,"
-          + " c.last_used_at AS lastUsedAt ORDER BY c.created_at";
+          + " RETURN c.credential_id AS id, c.name AS name, c.revoked AS revoked,"
+          + " c.created_at AS createdAt, c.last_used_at AS lastUsedAt ORDER BY c.created_at";
 
   private static final String PURGE_REVOKED =
       "MATCH (c:Credential {revoked: true}) WHERE c.created_at < $cutoff"
@@ -63,7 +68,8 @@ class Neo4jCredentialAdapter implements CredentialRepository {
   }
 
   @Override
-  public void save(String credentialId, String principalId, String hash, Instant createdAt) {
+  public void save(
+      String credentialId, String principalId, String name, String hash, Instant createdAt) {
     client
         .query(SAVE)
         .bindAll(
@@ -72,11 +78,24 @@ class Neo4jCredentialAdapter implements CredentialRepository {
                 credentialId,
                 "principalId",
                 principalId,
+                "name",
+                name,
                 "hash",
                 hash,
                 "createdAt",
                 createdAt.toEpochMilli()))
         .run();
+  }
+
+  @Override
+  public boolean existsActiveByPrincipalAndName(String principalId, String name) {
+    return client
+        .query(EXISTS_ACTIVE_BY_NAME)
+        .bindAll(Map.of("principalId", principalId, "name", name))
+        .fetchAs(Boolean.class)
+        .mappedBy((t, row) -> row.get("exists").asBoolean())
+        .one()
+        .orElse(false);
   }
 
   @Override
@@ -121,6 +140,7 @@ class Neo4jCredentialAdapter implements CredentialRepository {
             (t, row) ->
                 new Credential(
                     row.get("id").asString(),
+                    row.get("name").asString(null),
                     row.get("revoked").asBoolean(),
                     Instant.ofEpochMilli(row.get("createdAt").asLong()),
                     instantOrNull(row.get("lastUsedAt"))))

@@ -91,9 +91,10 @@ public class PrincipalController {
   }
 
   @PostMapping("/{id}/credentials")
-  @Operation(summary = "Issue a credential (returns the secret once)")
-  public IssuedCredentialResponse issueCredential(@PathVariable String id) {
-    return IssuedCredentialResponse.from(credentials.issue(id));
+  @Operation(summary = "Issue a named credential (returns the secret once)")
+  public IssuedCredentialResponse issueCredential(
+      @PathVariable String id, @Valid @RequestBody IssueCredentialRequest request) {
+    return IssuedCredentialResponse.from(credentials.issue(id, request.name()));
   }
 
   @GetMapping("/{id}/credentials")
