@@ -11,7 +11,10 @@ import java.util.Optional;
 public interface CredentialRepository {
 
   /** Persists a credential (by hash) and attaches it to a principal. */
-  void save(String credentialId, String principalId, String hash, Instant createdAt);
+  void save(String credentialId, String principalId, String name, String hash, Instant createdAt);
+
+  /** Whether the principal already has an active (non-revoked) credential with this name. */
+  boolean existsActiveByPrincipalAndName(String principalId, String name);
 
   /**
    * Resolves the active (non-revoked) principal owning the credential with this hash, or empty if

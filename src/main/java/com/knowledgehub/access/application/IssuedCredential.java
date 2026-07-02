@@ -5,6 +5,7 @@ package com.knowledgehub.access.application;
  * once and never stored; losing it means issuing a new credential.
  *
  * @param credentialId the new credential's id (safe to keep and reference)
+ * @param name the credential's human-readable label
  * @param secret the raw secret, shown this once only
  */
-public record IssuedCredential(String credentialId, String secret) {}
+public record IssuedCredential(String credentialId, String name, String secret) {}

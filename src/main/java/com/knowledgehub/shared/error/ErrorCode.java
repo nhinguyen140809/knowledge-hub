@@ -16,6 +16,8 @@ public enum ErrorCode {
   DUPLICATE_SOURCE(HttpStatus.CONFLICT, "Source already exists"),
   PRINCIPAL_NOT_FOUND(HttpStatus.NOT_FOUND, "Principal not found"),
   DUPLICATE_PRINCIPAL(HttpStatus.CONFLICT, "Principal already exists"),
+  DUPLICATE_CREDENTIAL_NAME(
+      HttpStatus.CONFLICT, "Credential name already in use for this principal"),
   VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "Request validation failed"),
   UNAUTHENTICATED(HttpStatus.UNAUTHORIZED, "Authentication required or invalid"),
   FORBIDDEN(HttpStatus.FORBIDDEN, "Operation not permitted"),

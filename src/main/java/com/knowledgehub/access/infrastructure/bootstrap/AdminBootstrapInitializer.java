@@ -30,6 +30,7 @@ class AdminBootstrapInitializer implements ApplicationRunner {
   private static final Logger log = LoggerFactory.getLogger(AdminBootstrapInitializer.class);
 
   private static final String ADMIN_ID = "bootstrap-admin";
+  private static final String BOOTSTRAP_CREDENTIAL_NAME = "bootstrap";
 
   private final PrincipalRepository principals;
   private final CredentialRepository credentials;
@@ -53,7 +54,12 @@ class AdminBootstrapInitializer implements ApplicationRunner {
       return;
     }
     principals.save(new Principal(ADMIN_ID, PrincipalType.SUBJECT, Role.ADMIN));
-    credentials.save(UUID.randomUUID().toString(), ADMIN_ID, Sha256.hex(apiKey), Instant.now());
+    credentials.save(
+        UUID.randomUUID().toString(),
+        ADMIN_ID,
+        BOOTSTRAP_CREDENTIAL_NAME,
+        Sha256.hex(apiKey),
+        Instant.now());
     log.info("Seeded bootstrap admin principal '{}' from the configured API key", ADMIN_ID);
   }
 }
