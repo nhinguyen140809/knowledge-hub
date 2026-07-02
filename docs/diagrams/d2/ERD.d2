@@ -120,6 +120,7 @@ access: "Access control (ACL)" {
     shape: sql_table
     credential_id: string {constraint: primary_key}
     principal_id: string {constraint: foreign_key}
+    name: "string (unique per principal)"
     hash: "string"
     revoked: "boolean"
     created_at: datetime
