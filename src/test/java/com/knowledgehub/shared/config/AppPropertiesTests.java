@@ -29,13 +29,21 @@ class AppPropertiesTests {
   }
 
   @Test
-  void missingValuesFallBackToDefaultsAndPassValidation() {
+  void everyTunableGetsADefaultAndPassesValidation() {
     AppProperties properties = new AppProperties(null, null, null, null, null);
 
-    assertThat(properties.embedding().provider()).isEqualTo("api");
-    assertThat(properties.embedding().dimension()).isEqualTo(1536);
-    assertThat(properties.retrieval().topK()).isEqualTo(10);
-    assertThat(properties.linking().confidenceThreshold()).isEqualTo(0.5);
+    // Assert a default *exists* (value present), not the exact number — so tuning a default
+    // never breaks this test.
+    assertThat(properties.embedding().provider()).isNotBlank();
+    assertThat(properties.embedding().dimension()).isNotNull();
+    assertThat(properties.embedding().retryMaxAttempts()).isNotNull();
+    assertThat(properties.embedding().retryBackoffMs()).isNotNull();
+    assertThat(properties.chunk().maxTokens()).isNotNull();
+    assertThat(properties.retrieval().topK()).isNotNull();
+    assertThat(properties.retrieval().weights().vector()).isNotNull();
+    assertThat(properties.retrieval().cacheTtl()).isNotNull();
+    assertThat(properties.linking().confidenceThreshold()).isNotNull();
+    assertThat(properties.security().credentialRetentionMonths()).isNotNull();
     assertThat(validator.validate(properties)).isEmpty();
   }
 

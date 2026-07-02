@@ -27,10 +27,13 @@ upsert() {
 if [ ! -f .env ]; then
   echo "==> Creating .env from .env.example"
   cp .env.example .env
-  upsert NEO4J_PASSWORD    "${NEO4J_PASSWORD:-}"
-  upsert OPENAI_API_KEY    "${OPENAI_API_KEY:-}"
-  upsert VOYAGEAI_API_KEY  "${VOYAGEAI_API_KEY:-}"
-  upsert API_KEY           "${API_KEY:-}"
+  upsert NEO4J_PASSWORD     "${NEO4J_PASSWORD:-}"
+  upsert API_KEY            "${API_KEY:-}"
+  upsert EMBEDDING_API_KEY  "${EMBEDDING_API_KEY:-}"
+  upsert EMBEDDING_PROVIDER "${EMBEDDING_PROVIDER:-}"
+  upsert EMBEDDING_MODEL    "${EMBEDDING_MODEL:-}"
+  upsert EMBEDDING_BASE_URL "${EMBEDDING_BASE_URL:-}"
+  upsert EMBEDDING_DIMENSION "${EMBEDDING_DIMENSION:-}"
 else
   echo "==> .env already exists, leaving it untouched"
 fi
