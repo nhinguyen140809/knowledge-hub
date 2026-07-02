@@ -28,11 +28,13 @@ class CredentialServiceTests {
     when(principals.findById("p1"))
         .thenReturn(Optional.of(new Principal("p1", PrincipalType.SUBJECT, Role.MEMBER)));
 
-    IssuedCredential issued = service.issue("p1");
+    IssuedCredential issued = service.issue("p1", "laptop");
 
     assertThat(issued.secret()).isNotBlank();
+    assertThat(issued.name()).isEqualTo("laptop");
     ArgumentCaptor<String> hash = ArgumentCaptor.forClass(String.class);
-    verify(credentials).save(eq(issued.credentialId()), eq("p1"), hash.capture(), any());
+    verify(credentials)
+        .save(eq(issued.credentialId()), eq("p1"), eq("laptop"), hash.capture(), any());
     // What is stored is the hash of the secret, never the secret itself.
     assertThat(hash.getValue()).isEqualTo(Sha256.hex(issued.secret()));
     assertThat(hash.getValue()).isNotEqualTo(issued.secret());
@@ -42,7 +44,18 @@ class CredentialServiceTests {
   void issuingForAnUnknownPrincipalThrows() {
     when(principals.findById("nope")).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> service.issue("nope")).isInstanceOf(PrincipalNotFoundException.class);
+    assertThatThrownBy(() -> service.issue("nope", "laptop"))
+        .isInstanceOf(PrincipalNotFoundException.class);
+  }
+
+  @Test
+  void issuingADuplicateNameForThePrincipalThrows() {
+    when(principals.findById("p1"))
+        .thenReturn(Optional.of(new Principal("p1", PrincipalType.SUBJECT, Role.MEMBER)));
+    when(credentials.existsActiveByPrincipalAndName("p1", "laptop")).thenReturn(true);
+
+    assertThatThrownBy(() -> service.issue("p1", "laptop"))
+        .isInstanceOf(DuplicateCredentialNameException.class);
   }
 
   @Test
