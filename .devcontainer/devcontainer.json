@@ -12,10 +12,13 @@
   // Pass Codespaces secrets (Settings > Codespaces secrets) through to the container.
   // Any that are unset stay empty and post-create.sh leaves them blank in .env.
   "containerEnv": {
-    "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}",
-    "VOYAGEAI_API_KEY": "${localEnv:VOYAGEAI_API_KEY}",
     "NEO4J_PASSWORD": "${localEnv:NEO4J_PASSWORD}",
-    "API_KEY": "${localEnv:API_KEY}"
+    "API_KEY": "${localEnv:API_KEY}",
+    "EMBEDDING_API_KEY": "${localEnv:EMBEDDING_API_KEY}",
+    "EMBEDDING_PROVIDER": "${localEnv:EMBEDDING_PROVIDER}",
+    "EMBEDDING_MODEL": "${localEnv:EMBEDDING_MODEL}",
+    "EMBEDDING_BASE_URL": "${localEnv:EMBEDDING_BASE_URL}",
+    "EMBEDDING_DIMENSION": "${localEnv:EMBEDDING_DIMENSION}"
   },
 
   "forwardPorts": [8000, 7474, 7687, 6333, 6334],
