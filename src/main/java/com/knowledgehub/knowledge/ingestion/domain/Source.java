@@ -66,6 +66,15 @@ public final class Source {
     return ignore;
   }
 
+  /**
+   * Returns a copy with new editable configuration — the Git {@code ref} and the include/ignore
+   * globs — while the identity ({@code sourceId}), {@code type}, and location ({@code uriOrPath})
+   * stay unchanged. The same construction-time invariants apply (e.g. {@code ref} only for Git).
+   */
+  public Source withConfig(String ref, List<String> include, List<String> ignore) {
+    return new Source(sourceId, type, uriOrPath, ref, include, ignore);
+  }
+
   private static String requireText(String value, String field) {
     if (value == null || value.isBlank()) {
       throw new IllegalArgumentException(field + " must not be blank");

@@ -60,6 +60,24 @@ public class SourceService {
   }
 
   /**
+   * Updates a source's editable configuration — its Git {@code ref} and the include/ignore globs —
+   * while its id, type, and location stay fixed. The index is not touched here: trigger a sync
+   * afterwards to reconcile it with the new globs (newly included files are added, newly excluded
+   * ones are evicted).
+   *
+   * @throws SourceNotFoundException if no such source exists
+   * @throws IllegalArgumentException if a {@code ref} is given for a non-Git source
+   */
+  @Transactional
+  public Source update(String sourceId, String ref, List<String> include, List<String> ignore) {
+    Source existing =
+        repository.findById(sourceId).orElseThrow(() -> new SourceNotFoundException(sourceId));
+    Source saved = repository.save(existing.withConfig(ref, include, ignore));
+    log.info("Updated source {} ({})", saved.sourceId(), saved.type());
+    return saved;
+  }
+
+  /**
    * Removes the source with the given id.
    *
    * @throws SourceNotFoundException if no such source exists

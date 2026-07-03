@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -55,6 +56,14 @@ public class SourceController {
   @Operation(summary = "Get a source by id")
   public SourceResponse get(@PathVariable String id) {
     return SourceResponse.from(sourceService.get(id));
+  }
+
+  @PutMapping("/{id}")
+  @Operation(summary = "Update a source's ref and include/ignore globs")
+  public SourceResponse update(
+      @PathVariable String id, @Valid @RequestBody UpdateSourceRequest request) {
+    Source updated = sourceService.update(id, request.ref(), request.include(), request.ignore());
+    return SourceResponse.from(updated);
   }
 
   @DeleteMapping("/{id}")
