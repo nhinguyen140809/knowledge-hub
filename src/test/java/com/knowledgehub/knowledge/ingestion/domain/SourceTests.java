@@ -54,6 +54,30 @@ class SourceTests {
   }
 
   @Test
+  void withConfigReplacesEditablePartsAndKeepsIdentity() {
+    Source original =
+        new Source("src-1", SourceType.GIT, "https://x/y.git", "main", List.of("**/*.java"), null);
+
+    Source updated = original.withConfig("dev", List.of("**/*.md"), List.of("target"));
+
+    assertThat(updated.sourceId()).isEqualTo("src-1");
+    assertThat(updated.type()).isEqualTo(SourceType.GIT);
+    assertThat(updated.uriOrPath()).isEqualTo("https://x/y.git");
+    assertThat(updated.ref()).contains("dev");
+    assertThat(updated.include()).containsExactly("**/*.md");
+    assertThat(updated.ignore()).containsExactly("target");
+  }
+
+  @Test
+  void withConfigStillEnforcesInvariants() {
+    Source fsSource = new Source("src-2", SourceType.FS, "/data", null, null, null);
+
+    assertThatThrownBy(() -> fsSource.withConfig("main", null, null))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("ref");
+  }
+
+  @Test
   void sourcesAreEqualByIdentity() {
     Source a = new Source("same", SourceType.GIT, "https://x/y.git", "main", null, null);
     Source b = new Source("same", SourceType.FS, "/other", null, null, null);
