@@ -1,0 +1,129 @@
+# Module / Component Architecture — Knowledge Hub (whole-system code structure)
+# Component (package) view: the 4 bounded contexts + the shared kernel, the submodules
+# inside `knowledge`, and the datastores / external service they depend on. Boxes are Java
+# packages (packaged-by-feature, then by layer); arrows are compile-time dependencies
+# labelled with the port / type / event that crosses the boundary. Dashed = domain event.
+# Detailed class views of a submodule: CLASS-INDEXING.d2, CLASS-RETRIEVAL.d2, CLASS-ACCESS.d2.
+# Render:  d2 MODULE-ARCHITECTURE.d2 module-architecture.svg   (or .pdf for LaTeX)
+vars: {
+  d2-config: {
+    layout-engine: elk
+    pad: 16
+  }
+}
+direction: down
+
+classes: {
+  ctx: {
+    style.fill: "#eff6ff"
+    style.stroke: "#3b82f6"
+  }
+  sub: {
+    shape: package
+    style.fill: "#f8fafc"
+    style.stroke: "#94a3b8"
+  }
+  port: {
+    style.fill: "#2563eb"
+    style.stroke: "#eef6ff"
+    style.font-color: "#ffffff"
+  }
+  store: {
+    shape: cylinder
+    style.fill: "#fef3c7"
+    style.stroke: "#d97706"
+  }
+  ext: {
+    shape: oval
+    style.fill: "#ecfdf5"
+    style.stroke: "#059669"
+  }
+  actor: {
+    shape: person
+    style.fill: "#f5f3ff"
+    style.stroke: "#7c3aed"
+  }
+}
+
+# --- Clients ------------------------------------------------------------------
+agent: "AI Agent" {class: actor}
+admin: "Admin / operator" {class: actor}
+
+# --- The application: 4 bounded contexts + shared kernel ----------------------
+hub: "Knowledge Hub · com.knowledgehub" {
+  style.fill: "#ffffff"
+
+  access: "access — authentication + ACL" {
+    class: ctx
+    authPort: "BearerAuthFilter\n(authn on every request)" {class: port}
+    aclPort: "AclFilterProvider\n(allowed sources)" {class: port}
+  }
+
+  knowledge: "knowledge — ingest · index · link · sync (write side)" {
+    class: ctx
+    ingestion: "ingestion" {class: sub}
+    indexing: "indexing" {class: sub}
+    graph: "graph (linking)" {class: sub}
+    sync: "sync" {class: sub}
+    kdomain: "domain — shared ports\nVectorStorePort · EmbeddingPort" {class: port}
+    kinfra: "infrastructure — shared adapters\n(Qdrant · embedding · Neo4j)" {class: sub}
+
+    # submodules build on the shared knowledge ports, realized by the shared adapters
+    ingestion -> kdomain
+    indexing -> kdomain
+    graph -> kdomain
+    sync -> kdomain
+    ingestion -> kinfra
+    indexing -> kinfra
+    graph -> kinfra
+    sync -> kinfra
+    kinfra -> kdomain: realizes {target-arrowhead.shape: triangle; target-arrowhead.style.filled: false; style.stroke-dash: 4}
+  }
+
+  retrieval: "retrieval — hybrid query (read side)" {class: ctx}
+  system: "system — runtime info (self-contained)" {class: ctx}
+  shared: "shared — config · error · id · pipeline · observability" {
+    class: ctx
+    style.fill: "#f5f3ff"
+  }
+}
+
+# --- External systems ---------------------------------------------------------
+neo4j: "Neo4j\ngraph + keyword index + ACL" {class: store}
+qdrant: "Qdrant\nvectors" {class: store}
+embed: "Embedding provider\n(external API)" {class: ext}
+
+# --- Cross-context dependencies (the arrows a single-slice class diagram hides) --
+# retrieval requires knowledge's ports, reacts to its sync event, and asks access for the ACL set
+hub.retrieval -> hub.knowledge.kdomain: "VectorStorePort · EmbeddingPort\nFilter · ScoredId"
+hub.retrieval -> hub.knowledge.sync: "IndexCompleted\n(cache invalidation)" {style.stroke-dash: 4}
+hub.retrieval -> hub.access.aclPort: "allowed sources\n(hard ACL pre-filter)"
+# the ACL authorizes on sources, whose model the ingestion submodule owns
+hub.access -> hub.knowledge.ingestion: "Source · SourceRepository"
+# shared kernel used by the three data-facing contexts (system is self-contained)
+hub.access -> hub.shared
+hub.knowledge -> hub.shared
+hub.retrieval -> hub.shared
+
+# --- Datastores / external service -------------------------------------------
+# knowledge write side dual-writes both stores and calls the embedding API
+hub.knowledge.kinfra -> neo4j: "graph + keyword (write)"
+hub.knowledge.kinfra -> qdrant: "vectors (upsert / evict)"
+hub.knowledge.kinfra -> embed: "embed(text)"
+# access persists the ACL in Neo4j
+hub.access -> neo4j: "principals · grants · credentials"
+# retrieval reads Neo4j directly (keyword + graph); its semantic path reaches Qdrant
+# through knowledge's VectorStorePort, so no direct retrieval -> Qdrant edge
+hub.retrieval -> neo4j: "keyword + graph search"
+
+# --- Inbound: which context each client drives (all authenticated first) ------
+authNote: "Every REST + MCP request passes access.BearerAuthFilter before dispatch" {
+  shape: text
+  style.italic: true
+}
+agent -> hub.retrieval: "MCP · query_knowledge"
+agent -> hub.knowledge.sync: "MCP · sync_source"
+admin -> hub.access: "REST · principals / grants / credentials"
+admin -> hub.knowledge.ingestion: "REST · register / sync sources"
+admin -> hub.retrieval: "REST · query"
+agent -> hub.system: "MCP · system_info" {style.stroke-dash: 4}

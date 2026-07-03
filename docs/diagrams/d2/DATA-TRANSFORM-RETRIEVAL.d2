@@ -1,0 +1,110 @@
+# Data Transformation — retrieval pipeline (object flow)
+# Shows the DATA OBJECT and its shape at each step of the read side, and how one record type is
+# transformed into the next. Companion to the structural view CLASS-RETRIEVAL.d2 (types + wiring)
+# and the data-flow view PIPELINE-RETRIEVAL.d2 (what happens). Scatter-gather: the semantic and
+# keyword paths produce ScoredId lists in parallel, the graph path seeds from them, then RRF fuses.
+# Boxes are the payloads carried by RetrievalContext; edge labels are the stage that transforms them.
+# Render:  d2 DATA-TRANSFORM-RETRIEVAL.d2 data-transform-retrieval.svg     (or .pdf for LaTeX)
+vars: {
+  d2-config: {
+    layout-engine: elk
+    pad: 16
+  }
+}
+direction: down
+
+classes: {
+  data: {
+    style.fill: "#2563eb"
+    style.stroke: "#eef6ff"
+  }
+  aux: {
+    style.fill: "#059669"
+    style.stroke: "#ecfdf5"
+  }
+}
+
+Query: {
+  shape: class
+  class: data
+  text: String
+  "params": "QueryParams"
+  "  · topK": Integer
+  "  · ref": String
+  "  · type": String
+}
+
+Prepared: "RetrievalContext (prepared)" {
+  shape: class
+  class: aux
+  effectiveRef: "String (canonical-ref fallback)"
+  typeFilter: String
+  topK: int
+  aclFilter: "Filter (allowedSources)"
+}
+
+SemanticHits: "List<ScoredId> — semantic" {
+  shape: class
+  class: data
+  chunkId: String
+  score: "double (cosine)"
+}
+
+KeywordHits: "List<ScoredId> — keyword" {
+  shape: class
+  class: data
+  chunkId: String
+  score: "double (BM25)"
+}
+
+GraphHits: "List<ScoredId> — graph" {
+  shape: class
+  class: data
+  chunkId: String
+  score: "double (expanded from seeds)"
+}
+
+Fused: "List<ScoredId> — fused" {
+  shape: class
+  class: data
+  chunkId: String
+  score: "double (RRF rank)"
+}
+
+Hit: "List<Hit> — assembled" {
+  shape: class
+  class: data
+  id: String
+  relevanceScore: double
+  "metadata": "HitMetadata"
+  "  · kind / type / ref": String
+  "  · sourceId / path": String
+  "  · lineStart / lineEnd": Integer
+  "  · viaPath": "List<String>"
+}
+
+RankedResult: {
+  shape: class
+  class: data
+  hits: "List<Hit> (ref/type + top-k cut)"
+  servedFromCanonicalRef: boolean
+}
+
+# ---- object flow: each edge is the stage that transforms one shape into the next ----
+Query -> Prepared: "PrepareQueryStage\n(resolve params · build ACL filter)"
+
+# scatter: two search paths run in parallel off the prepared query
+Prepared -> SemanticHits: "SemanticSearchStage\n(EmbeddingPort → VectorStorePort)"
+Prepared -> KeywordHits: "KeywordSearchStage\n(KeywordSearchPort)"
+
+# graph expansion seeds from both hit lists
+SemanticHits -> GraphHits: "GraphTraversalStage\n(seeds)"
+KeywordHits -> GraphHits: "GraphTraversalStage\n(seeds)"
+
+# gather: RRF fuses the three lists into one ranked list
+SemanticHits -> Fused: "RrfFusionStage" {style.stroke-dash: 3}
+KeywordHits -> Fused: "RrfFusionStage" {style.stroke-dash: 3}
+GraphHits -> Fused: "RrfFusionStage"
+
+Fused -> Hit: "AssembleResultStage\n(RetrievalReadPort.loadMetadata)"
+Hit -> RankedResult: "AclFilterStage\n(ref/type filter + top-k)"
