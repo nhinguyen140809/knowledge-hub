@@ -4,10 +4,10 @@ import java.util.Set;
 
 /**
  * Query filter applied at the storage layer (a hard pre-filter, never a post-filter). Present on
- * every search port from day one so retrieval (P4) and ACL (P5) need not change signatures later.
+ * every search port so that adding retrieval and ACL restrictions never changes their signatures.
  *
  * @param allowedSources the source ids the caller may read; {@code null} means
- *     <em>unrestricted</em> (no ACL applied yet), an empty set means <em>nothing readable</em>
+ *     <em>unrestricted</em> (no ACL restriction), an empty set means <em>nothing readable</em>
  * @param ref optional version/branch filter, or {@code null} for none
  * @param type optional data-type filter (code|doc|requirement|commit), or {@code null}
  */
@@ -19,7 +19,7 @@ public record Filter(Set<String> allowedSources, String ref, String type) {
     }
   }
 
-  /** A filter with no restriction at all — used before ACL is wired in. */
+  /** A filter with no restriction at all — every source is readable. */
   public static Filter unrestricted() {
     return new Filter(null, null, null);
   }
