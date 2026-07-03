@@ -11,9 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -58,8 +58,15 @@ public class SourceController {
     return SourceResponse.from(sourceService.get(id));
   }
 
-  @PutMapping("/{id}")
-  @Operation(summary = "Update a source's ref and include/ignore globs")
+  @PatchMapping("/{id}")
+  @Operation(
+      summary = "Update a source's ref and include/ignore globs (partial update)",
+      description =
+          """
+          Partial update — only the fields you send change. For each field: an omitted field \
+          (or null) keeps its current value, an empty array [] clears the list, and a non-empty \
+          array replaces it. The id, type and location cannot be changed here. The index is not \
+          touched — run a sync afterwards to apply the new globs.""")
   public SourceResponse update(
       @PathVariable String id, @Valid @RequestBody UpdateSourceRequest request) {
     Source updated = sourceService.update(id, request.ref(), request.include(), request.ignore());
