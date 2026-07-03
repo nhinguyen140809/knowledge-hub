@@ -3,7 +3,9 @@ package com.knowledgehub.shared.error;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpInputMessage;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 
 class GlobalExceptionHandlerTests {
 
@@ -36,6 +38,21 @@ class GlobalExceptionHandlerTests {
     assertThat(pd.getStatus()).isEqualTo(400);
     assertThat(pd.getProperties()).containsEntry("code", "VALIDATION_FAILED");
     assertThat(pd.getDetail()).isEqualTo("ref only for GIT");
+  }
+
+  @Test
+  void unreadableBodyBecomesValidationErrorWithGenericDetail() {
+    ProblemDetail pd =
+        handler.handleUnreadable(
+            new HttpMessageNotReadableException(
+                "Cannot deserialize value of type `ArrayList` from String",
+                (HttpInputMessage) null));
+
+    assertThat(pd.getStatus()).isEqualTo(400);
+    assertThat(pd.getProperties()).containsEntry("code", "VALIDATION_FAILED");
+    assertThat(pd.getDetail())
+        .isEqualTo("Malformed or unreadable request body")
+        .doesNotContain("ArrayList");
   }
 
   @Test

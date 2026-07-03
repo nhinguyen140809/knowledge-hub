@@ -58,6 +58,53 @@ class SourceServiceTests {
   }
 
   @Test
+  void updateReplacesConfigWhenPresent() {
+    Source existing =
+        new Source("s1", SourceType.GIT, "https://x/y.git", "main", List.of(), List.of());
+    when(repository.findById("s1")).thenReturn(Optional.of(existing));
+    when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    Source updated = service.update("s1", "dev", List.of("**/*.md"), List.of("target"));
+
+    assertThat(updated.ref()).contains("dev");
+    assertThat(updated.include()).containsExactly("**/*.md");
+    assertThat(updated.ignore()).containsExactly("target");
+    ArgumentCaptor<Source> saved = ArgumentCaptor.forClass(Source.class);
+    verify(repository).save(saved.capture());
+    assertThat(saved.getValue().uriOrPath()).isEqualTo("https://x/y.git");
+  }
+
+  @Test
+  void updateKeepsFieldsPassedAsNull() {
+    Source existing =
+        new Source(
+            "s1",
+            SourceType.GIT,
+            "https://x/y.git",
+            "main",
+            List.of("**/*.java"),
+            List.of("target"));
+    when(repository.findById("s1")).thenReturn(Optional.of(existing));
+    when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    // change only ignore; ref and include passed as null must keep their current value
+    Source updated = service.update("s1", null, null, List.of("build"));
+
+    assertThat(updated.ref()).contains("main");
+    assertThat(updated.include()).containsExactly("**/*.java");
+    assertThat(updated.ignore()).containsExactly("build");
+  }
+
+  @Test
+  void updateThrowsWhenMissing() {
+    when(repository.findById("nope")).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.update("nope", null, null, null))
+        .isInstanceOf(SourceNotFoundException.class);
+    verify(repository, never()).save(any());
+  }
+
+  @Test
   void removeThrowsWhenMissing() {
     when(repository.findById("nope")).thenReturn(Optional.empty());
 

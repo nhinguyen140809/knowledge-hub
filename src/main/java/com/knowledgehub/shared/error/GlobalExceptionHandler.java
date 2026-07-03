@@ -3,6 +3,7 @@ package com.knowledgehub.shared.error;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -49,6 +50,16 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(AccessDeniedException.class)
   public ProblemDetail handleAccessDenied(AccessDeniedException ex) {
     return problem(ErrorCode.FORBIDDEN, null);
+  }
+
+  /**
+   * A body that cannot be parsed or bound to the expected types (malformed JSON, a scalar where a
+   * list is expected, a bad enum value) is a client error, not a 500.
+   */
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ProblemDetail handleUnreadable(HttpMessageNotReadableException ex) {
+    log.debug("Unreadable request body: {}", ex.getMessage());
+    return problem(ErrorCode.VALIDATION_FAILED, "Malformed or unreadable request body");
   }
 
   /** Anything unmapped is an internal error; log the cause, never leak it to the client. */

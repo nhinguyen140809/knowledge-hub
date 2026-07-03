@@ -60,6 +60,30 @@ public class SourceService {
   }
 
   /**
+   * Applies a partial update to a source's editable configuration — its Git {@code ref} and the
+   * include/ignore globs — while its id, type, and location stay fixed. Merge semantics: a {@code
+   * null} argument leaves that field unchanged (so a caller sends only what it wants to change),
+   * while a non-null list — including an empty one — replaces the current globs. The index is not
+   * touched here: trigger a sync afterwards to reconcile it with the new globs.
+   *
+   * @throws SourceNotFoundException if no such source exists
+   * @throws IllegalArgumentException if a {@code ref} is given for a non-Git source
+   */
+  @Transactional
+  public Source update(String sourceId, String ref, List<String> include, List<String> ignore) {
+    Source existing =
+        repository.findById(sourceId).orElseThrow(() -> new SourceNotFoundException(sourceId));
+    Source saved =
+        repository.save(
+            existing.withConfig(
+                ref != null ? ref : existing.ref().orElse(null),
+                include != null ? include : existing.include(),
+                ignore != null ? ignore : existing.ignore()));
+    log.info("Updated source {} ({})", saved.sourceId(), saved.type());
+    return saved;
+  }
+
+  /**
    * Removes the source with the given id.
    *
    * @throws SourceNotFoundException if no such source exists
