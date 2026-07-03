@@ -1,11 +1,12 @@
-# Logical Architecture — Clean Architecture + Pipes & Filters (indexing slice)
-# Illustrative: the `knowledge` context (write side / indexing). Packaged by
-# bounded context then layer (domain / application / inbound / infrastructure).
-# Dependencies point inward; infrastructure realizes domain ports. The application
-# layer is a PIPELINE of single-responsibility FILTERS (stages) over a shared
-# context — pipes & filters layered on top of Clean Architecture. The `retrieval`
-# context mirrors this as a parallel (scatter-gather) pipeline — see PIPELINE-RETRIEVAL.
-# Render:  d2 LOGICAL-ARCHITECTURE.d2 logical.svg     (or logical.pdf for LaTeX)
+# Class Diagram — knowledge / indexing submodule (Clean Architecture + Pipes & Filters)
+# Detailed class view of ONE submodule; for the whole-system module map see
+# MODULE-ARCHITECTURE.d2, and for the other detailed views CLASS-RETRIEVAL.d2 / CLASS-ACCESS.d2.
+# Packaged by layer (domain / application / inbound / infrastructure). Dependencies point
+# inward; infrastructure realizes domain ports. The application layer is a PIPELINE of
+# single-responsibility FILTERS (stages) over a shared context — pipes & filters layered on
+# top of Clean Architecture. The `retrieval` submodule mirrors this as a parallel
+# (scatter-gather) pipeline — see CLASS-RETRIEVAL.d2 and PIPELINE-RETRIEVAL.d2.
+# Render:  d2 CLASS-INDEXING.d2 class-indexing.svg     (or .pdf for LaTeX)
 vars: {
   d2-config: {
     layout-engine: elk
