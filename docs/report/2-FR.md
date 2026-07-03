@@ -50,7 +50,7 @@
 ### FR-7 — Cấu hình (Configuration)
 
 - **FR-7.1** Hệ thống phải cho phép chọn embedding provider qua cấu hình (gọi API bên ngoài hoặc dùng local model).
-- **FR-7.2** Hệ thống phải cho phép cấu hình backend lưu trữ vector, cho phép bổ sung vector store database khi mở rộng.
+- **FR-7.2** Hệ thống phải cô lập backend lưu trữ vector sau một ranh giới trừu tượng, sao cho việc bổ sung hoặc thay thế backend chỉ đòi hỏi thêm một thành phần lưu trữ tương ứng khi mở rộng.
 - **FR-7.3** Hệ thống phải hỗ trợ cấu hình theo nhiều môi trường (dev, server, cloud).
 
 ### FR-8 — Truy cập đồng thời & bảo mật (Concurrency & access)

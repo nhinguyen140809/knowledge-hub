@@ -13,7 +13,7 @@
 ### NFR-3 — Khả năng mở rộng (Scalability)
 
 - **NFR-3.1** Hệ thống phải phục vụ được kho ≥ 2 triệu chunk mà vẫn đạt các ngưỡng ở NFR-1 và NFR-2.
-- **NFR-3.2** Khi bật chế độ mở rộng theo chiều ngang qua cấu hình (FR-7.2), hệ thống phải chạy đúng và vượt qua toàn bộ test chức năng.
+- **NFR-3.2** Khi mở rộng theo chiều ngang bằng cách bổ sung hoặc thay thế backend lưu trữ (FR-7.2), hệ thống phải chạy đúng và vượt qua toàn bộ test chức năng.
 - **NFR-3.3** Với ≥ 20 truy vấn đồng thời, độ trễ p95 không được vượt quá 2 lần so với khi tải đơn.
 
 ### NFR-4 — Hiệu quả lưu trữ (Storage efficiency)
@@ -52,6 +52,6 @@
 
 ### NFR-10 — Khả năng bảo trì (Maintainability)
 
-- **NFR-10.1** Thay vector store hoặc embedding provider chỉ bằng thay đổi cấu hình (FR-7); tiêu chí: chuyển đổi thành công và vượt qua bộ test chức năng.
+- **NFR-10.1** Thay embedding provider chỉ bằng thay đổi cấu hình (FR-7.1); tiêu chí: chuyển đổi thành công và vượt qua bộ test chức năng.
 - **NFR-10.2** Hệ thống phải log mọi sự kiện ingestion, truy vấn và lỗi; tiêu chí: tái dựng lại được một request lỗi chỉ từ log.
 - **NFR-10.3** Thêm một định dạng tài liệu mới hoặc một nguồn dữ liệu mới chỉ cần bổ sung một thành phần xử lý độc lập; kiểm chứng bằng việc thêm một parser mẫu.
