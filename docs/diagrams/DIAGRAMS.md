@@ -39,7 +39,8 @@ unit (ACL). The hard ACL filter pushes the allowed `source_id` set into every re
 
 ![Ingestion & indexing pipeline](pipeline-ingestion.svg)
 
-*Source: [d2/PIPELINE-INGESTION.d2](d2/PIPELINE-INGESTION.d2)*
+*Source: [d2/PIPELINE-INGESTION.d2](d2/PIPELINE-INGESTION.d2)* · *object flow (payload shape per step):
+[d2/DATA-TRANSFORM-INDEXING.d2](d2/DATA-TRANSFORM-INDEXING.d2)*
 
 **Notes**
 
@@ -66,7 +67,8 @@ Triggered on demand via REST or an MCP tool; idempotent and incremental.
 
 ![Incremental sync & eviction](pipeline-sync.svg)
 
-*Source: [d2/PIPELINE-SYNC.d2](d2/PIPELINE-SYNC.d2)*
+*Source: [d2/PIPELINE-SYNC.d2](d2/PIPELINE-SYNC.d2)* · *object flow (payload shape per step):
+[d2/DATA-TRANSFORM-SYNC.d2](d2/DATA-TRANSFORM-SYNC.d2)*
 
 ---
 
@@ -76,18 +78,54 @@ The query side that consumes the indexed knowledge — hybrid search with a hard
 
 ![Retrieval pipeline](pipeline-retrieval.svg)
 
-*Source: [d2/PIPELINE-RETRIEVAL.d2](d2/PIPELINE-RETRIEVAL.d2)*
+*Source: [d2/PIPELINE-RETRIEVAL.d2](d2/PIPELINE-RETRIEVAL.d2)* · *object flow (payload shape per step):
+[d2/DATA-TRANSFORM-RETRIEVAL.d2](d2/DATA-TRANSFORM-RETRIEVAL.d2)*
 
 ---
 
-## 5. Logical architecture (code structure)
+## 5. Code structure (module & class views)
 
-*Source: [d2/LOGICAL-ARCHITECTURE.d2](d2/LOGICAL-ARCHITECTURE.d2)*
+Two zoom levels: a **component view** of the whole system, then a **class view** per non-trivial
+submodule. All follow Clean Architecture — `domain` / `application` / `infrastructure`, dependencies
+pointing inward, infrastructure realizing domain ports.
 
-Clean Architecture + pipes-&-filters for the `knowledge` context (write side): `domain` /
-`application` / `infrastructure`, dependencies pointing inward, infrastructure realizing domain ports.
-The application layer is a pipeline of single-responsibility stages over a shared context. The
-`retrieval` context mirrors this as a parallel (scatter-gather) pipeline — see §4.
+### 5.1 Module architecture (component view)
+
+*Source: [d2/MODULE-ARCHITECTURE.d2](d2/MODULE-ARCHITECTURE.d2)*
+
+The four bounded contexts (`access`, `knowledge`, `retrieval`, `system`) plus the `shared` kernel,
+the submodules inside `knowledge` (`ingestion` / `indexing` / `graph` / `sync` + shared ports and
+adapters), and the datastores/external service they touch. Arrows are compile-time dependencies
+labelled with the port, type, or event crossing the boundary — the cross-context edges a
+single-slice class diagram hides: `retrieval` requires `knowledge`'s ports, reacts to its sync
+event, and asks `access` for the allowed-source set; `access` authorizes on sources owned by
+`knowledge.ingestion`.
+
+### 5.2 Class view — knowledge / indexing (write side)
+
+*Source: [d2/CLASS-INDEXING.d2](d2/CLASS-INDEXING.d2)*
+
+The `indexing` submodule as a pipeline of single-responsibility stages (chunk → dedup → embed →
+store → link) over a shared context; infrastructure realizes the chunker/embedding/vector/repository
+ports. The behavioural counterpart is §2.
+
+### 5.3 Class view — retrieval (read side)
+
+*Source: [d2/CLASS-RETRIEVAL.d2](d2/CLASS-RETRIEVAL.d2)*
+
+The read side as a **scatter-gather** pipeline: semantic + keyword paths fan out in parallel, graph
+expansion seeds from them, RRF fusion fans in, then metadata assembly and the final ref/type/top-k
+cut. Reuses `knowledge`'s embedding/vector ports and the `access` ACL provider; cache invalidation
+reacts to the write side's completion event. The behavioural counterpart is §4.
+
+### 5.4 Class view — access (authentication + ACL)
+
+*Source: [d2/CLASS-ACCESS.d2](d2/CLASS-ACCESS.d2)*
+
+The security context as a two-step model: authentication resolves a credential to a principal
+(`Authenticator`), authorization computes a principal's readable sources (`Authorizer`). Shows the
+REST admin controllers, the security filter chain, the Neo4j ACL repository adapters, and the
+bootstrap/retention lifecycle jobs.
 
 ---
 
