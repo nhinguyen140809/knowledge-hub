@@ -75,10 +75,31 @@ class SourceServiceTests {
   }
 
   @Test
+  void updateKeepsFieldsPassedAsNull() {
+    Source existing =
+        new Source(
+            "s1",
+            SourceType.GIT,
+            "https://x/y.git",
+            "main",
+            List.of("**/*.java"),
+            List.of("target"));
+    when(repository.findById("s1")).thenReturn(Optional.of(existing));
+    when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    // change only ignore; ref and include passed as null must keep their current value
+    Source updated = service.update("s1", null, null, List.of("build"));
+
+    assertThat(updated.ref()).contains("main");
+    assertThat(updated.include()).containsExactly("**/*.java");
+    assertThat(updated.ignore()).containsExactly("build");
+  }
+
+  @Test
   void updateThrowsWhenMissing() {
     when(repository.findById("nope")).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> service.update("nope", null, List.of(), List.of()))
+    assertThatThrownBy(() -> service.update("nope", null, null, null))
         .isInstanceOf(SourceNotFoundException.class);
     verify(repository, never()).save(any());
   }

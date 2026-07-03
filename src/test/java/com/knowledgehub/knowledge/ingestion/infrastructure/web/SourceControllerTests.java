@@ -5,8 +5,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -98,9 +98,9 @@ class SourceControllerTests {
 
     mockMvc
         .perform(
-            put("/api/v1/admin/sources/s1")
+            patch("/api/v1/admin/sources/s1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"ref\":\"main\",\"include\":[\"**/*.java\"],\"ignore\":[\"target\"]}"))
+                .content("{\"ignore\":[\"build\"]}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value("s1"))
         .andExpect(jsonPath("$.include[0]").value("**/*.java"));
@@ -113,9 +113,31 @@ class SourceControllerTests {
 
     mockMvc
         .perform(
-            put("/api/v1/admin/sources/nope").contentType(MediaType.APPLICATION_JSON).content("{}"))
+            patch("/api/v1/admin/sources/nope")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"ref\":\"main\"}"))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("SOURCE_NOT_FOUND"));
+  }
+
+  @Test
+  void updateRejectsEmptyBodyWith400() throws Exception {
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/sources/s1").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+  }
+
+  @Test
+  void updateRejectsNonListValueWith400() throws Exception {
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/sources/s1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"include\":\"not-a-list\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
   }
 
   @Test
