@@ -39,7 +39,8 @@ import org.springframework.stereotype.Component;
  * for graph linking. Leading Javadoc/comments are kept with each chunk to strengthen the signal.
  *
  * <p>Highest precedence so it wins over the document fallback for {@code .java} files. Other
- * languages fall through to the document chunker until their own AST chunker is added.
+ * languages fall through to the document chunker unless a language-specific AST chunker supports
+ * them.
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)

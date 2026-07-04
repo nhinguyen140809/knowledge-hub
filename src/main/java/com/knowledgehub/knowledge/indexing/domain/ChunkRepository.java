@@ -5,15 +5,15 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Persists chunk nodes and their structural relationships in the graph. Writes are idempotent by
- * {@code chunkId} (re-indexing the same content does not create duplicates). The vector for each
- * chunk lives in the {@code VectorStorePort}, joined by {@code chunkId}.
+ * Persists chunks and their structural relationships in the graph. Writes are idempotent by {@code
+ * chunkId} (re-indexing the same content does not create duplicates). The vector for each chunk
+ * lives in the {@code VectorStorePort}, joined by {@code chunkId}.
  */
 public interface ChunkRepository {
 
   /**
-   * Upserts the given chunks as {@code :Chunk} nodes, each linked {@code PART_OF} its {@code :File}
-   * and, when it belongs to one, {@code CHUNK_OF} its {@code :CodeEntity}.
+   * Upserts the given chunks, linking each to the file it was cut from and, when it belongs to one,
+   * to its code entity.
    */
   void upsertAll(List<Chunk> chunks);
 
@@ -27,9 +27,9 @@ public interface ChunkRepository {
    */
   Set<String> existingContentHashes(String sourceId, Collection<String> contentHashes);
 
-  /** Removes the given chunk nodes (eviction on update). */
+  /** Removes the given chunks (eviction on update). */
   void deleteByChunkIds(List<String> chunkIds);
 
-  /** Removes all chunk nodes of a source (eviction on source delete). */
+  /** Removes all chunks of a source (eviction on source delete). */
   void deleteBySource(String sourceId);
 }
