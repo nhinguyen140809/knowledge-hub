@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
  * Removing the vectors first means a query can never hit a vector whose node is already gone.
  */
 @Component
-class Neo4jEvictor implements Evictor {
+class DualStoreEvictor implements Evictor {
 
   private static final String CHUNK_IDS_FOR_FILES =
       "MATCH (f:File {source_id: $sourceId})<-[:PART_OF]-(c:Chunk)"
@@ -42,7 +42,7 @@ class Neo4jEvictor implements Evictor {
   private final Neo4jClient client;
   private final VectorStorePort vectorStore;
 
-  Neo4jEvictor(Neo4jClient client, VectorStorePort vectorStore) {
+  DualStoreEvictor(Neo4jClient client, VectorStorePort vectorStore) {
     this.client = client;
     this.vectorStore = vectorStore;
   }
