@@ -1,6 +1,8 @@
 package com.knowledgehub.knowledge.indexing.domain;
 
 import com.knowledgehub.knowledge.ingestion.domain.Provenance;
+import com.knowledgehub.shared.id.Hashing;
+import com.knowledgehub.shared.id.IdFactory;
 import java.util.Objects;
 
 /**
@@ -53,5 +55,47 @@ public record Chunk(
     if (lineStart < 1 || lineEnd < lineStart) {
       throw new IllegalArgumentException("invalid line range: " + lineStart + ".." + lineEnd);
     }
+  }
+
+  /**
+   * Mints a new chunk from a piece of content, deriving its content hash and stable ids so identity
+   * stays consistent with the text (re-indexing the same content yields the same {@code chunkId}).
+   * Use this for freshly cut chunks; the canonical constructor is for reconstituting a chunk whose
+   * ids are already known (e.g. read back from storage).
+   *
+   * @param tokenCount estimated token count of {@code text} (counting is the caller's concern)
+   */
+  public static Chunk create(
+      Provenance provenance,
+      String path,
+      ChunkType type,
+      String text,
+      int tokenCount,
+      int lineStart,
+      int lineEnd,
+      String entityId) {
+    String sourceId = provenance.sourceId();
+    String contentHash = Hashing.sha256(text);
+    return new Chunk(
+        deriveId(sourceId, path, contentHash),
+        sourceId,
+        IdFactory.fileId(sourceId, path),
+        path,
+        type,
+        text,
+        contentHash,
+        tokenCount,
+        lineStart,
+        lineEnd,
+        entityId,
+        provenance);
+  }
+
+  /**
+   * Derives the stable id of the chunk with these coordinates and content hash. The same content at
+   * the same path always yields the same id, so re-indexing unchanged content upserts in place.
+   */
+  public static String deriveId(String sourceId, String path, String contentHash) {
+    return IdFactory.stableId(sourceId, path, contentHash);
   }
 }

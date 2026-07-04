@@ -3,10 +3,10 @@ package com.knowledgehub.knowledge.sync.domain;
 import java.util.Collection;
 
 /**
- * Removes stale knowledge from both stores at once - the vector point in Qdrant and the node/edges
- * in Neo4j, keyed by {@code chunk_id} - so a deleted or shrunken file never leaves a hit the query
- * can still return. Keeping the two stores in step is the whole point: a vector with no node (or
- * the reverse) would answer from dead data.
+ * Removes stale knowledge from both stores at once - the vector in the vector store and the
+ * node/edges in the graph, keyed by {@code chunkId} - so a deleted or shrunken file never leaves a
+ * hit the query can still return. Keeping the two stores in step is the whole point: a vector with
+ * no node (or the reverse) would answer from dead data.
  */
 public interface Evictor {
 

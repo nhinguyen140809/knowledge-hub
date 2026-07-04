@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.knowledgehub.knowledge.ingestion.domain.FsProvenance;
 import com.knowledgehub.knowledge.ingestion.domain.Provenance;
+import com.knowledgehub.shared.id.Hashing;
+import com.knowledgehub.shared.id.IdFactory;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
@@ -48,5 +50,29 @@ class ChunkTests {
   void rejectsInvalidLineRange() {
     assertThatThrownBy(() -> chunk("x", 5, 2)).isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> chunk("x", 0, 1)).isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void createDerivesContentHashAndStableIdsFromContent() {
+    Provenance provenance = provenance();
+    Chunk chunk = Chunk.create(provenance, "a.md", ChunkType.DOC, "hello", 3, 1, 4, null);
+
+    assertThat(chunk.sourceId()).isEqualTo(provenance.sourceId());
+    assertThat(chunk.contentHash()).isEqualTo(Hashing.sha256("hello"));
+    assertThat(chunk.fileId()).isEqualTo(IdFactory.fileId(provenance.sourceId(), "a.md"));
+    assertThat(chunk.chunkId())
+        .isEqualTo(Chunk.deriveId(provenance.sourceId(), "a.md", chunk.contentHash()));
+  }
+
+  @Test
+  void createIsIdempotentForSameContentAndDivergesForDifferent() {
+    Chunk a = Chunk.create(provenance(), "a.md", ChunkType.DOC, "hello", 3, 1, 4, null);
+    Chunk same = Chunk.create(provenance(), "a.md", ChunkType.DOC, "hello", 3, 1, 4, null);
+    Chunk different = Chunk.create(provenance(), "a.md", ChunkType.DOC, "world", 3, 1, 4, null);
+
+    assertThat(same.chunkId()).isEqualTo(a.chunkId());
+    assertThat(different.chunkId()).isNotEqualTo(a.chunkId());
+    // identity of the file is independent of chunk content
+    assertThat(different.fileId()).isEqualTo(a.fileId());
   }
 }

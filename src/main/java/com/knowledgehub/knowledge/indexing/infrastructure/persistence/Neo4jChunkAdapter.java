@@ -2,13 +2,14 @@ package com.knowledgehub.knowledge.indexing.infrastructure.persistence;
 
 import com.knowledgehub.knowledge.indexing.domain.Chunk;
 import com.knowledgehub.knowledge.indexing.domain.ChunkRepository;
-import com.knowledgehub.knowledge.ingestion.domain.GitProvenance;
 import com.knowledgehub.knowledge.ingestion.domain.Provenance;
+import com.knowledgehub.knowledge.ingestion.domain.VersionRef;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Component;
@@ -95,12 +96,7 @@ class Neo4jChunkAdapter implements ChunkRepository {
 
   private static Map<String, Object> toRow(Chunk chunk) {
     Provenance provenance = chunk.provenance();
-    String ref = null;
-    String commitSha = null;
-    if (provenance instanceof GitProvenance git) {
-      ref = git.ref();
-      commitSha = git.commitSha();
-    }
+    Optional<VersionRef> version = provenance.version();
     Map<String, Object> row = new HashMap<>();
     row.put("chunk_id", chunk.chunkId());
     row.put("source_id", chunk.sourceId());
@@ -114,8 +110,8 @@ class Neo4jChunkAdapter implements ChunkRepository {
     row.put("line_start", chunk.lineStart());
     row.put("line_end", chunk.lineEnd());
     row.put("entity_id", chunk.entityId());
-    row.put("ref", ref);
-    row.put("commit_sha", commitSha);
+    row.put("ref", version.map(VersionRef::ref).orElse(null));
+    row.put("commit_sha", version.map(VersionRef::commitSha).orElse(null));
     row.put("indexed_at", provenance.indexedAt().toString());
     return row;
   }

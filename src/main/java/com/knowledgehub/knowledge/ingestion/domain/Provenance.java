@@ -1,6 +1,7 @@
 package com.knowledgehub.knowledge.ingestion.domain;
 
 import java.time.Instant;
+import java.util.Optional;
 
 /**
  * Origin metadata attached to every ingested unit. The common fields ({@code sourceId}, {@code
@@ -21,4 +22,13 @@ public sealed interface Provenance permits GitProvenance, FsProvenance {
 
   /** When the unit was ingested (UTC). */
   Instant indexedAt();
+
+  /**
+   * Version-control coordinates of this unit, for sources that track them (Git); empty for sources
+   * that identify versions by content alone (filesystem). Lets callers read {@code ref}/{@code
+   * commitSha} without knowing the concrete provenance type.
+   */
+  default Optional<VersionRef> version() {
+    return Optional.empty();
+  }
 }

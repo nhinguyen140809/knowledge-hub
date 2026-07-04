@@ -1,8 +1,8 @@
 package com.knowledgehub.knowledge.indexing.domain;
 
 /**
- * Granularity of a {@link CodeEntity} extracted from source. Coarser levels (package, project) are
- * derived when relationships are linked; this phase produces the levels an AST gives directly.
+ * Granularity of a {@link CodeEntity} extracted from source. These are the levels an AST provides
+ * directly; coarser levels (package, project) are derived elsewhere from entity relationships.
  */
 public enum CodeEntityLevel {
   CLASS,

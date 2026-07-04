@@ -23,8 +23,8 @@ import org.springframework.stereotype.Service;
  *
  * <p>The service is only orchestration; every step is a stage with its own port. A failing search
  * path degrades to empty and is logged rather than failing the whole query, and the {@code
- * allowedSources} pre-filter is threaded into every path from the start (it is {@code null} -
- * unrestricted - until access control is wired in).
+ * allowedSources} pre-filter is threaded into every path from the start ({@code null} means
+ * unrestricted — no ACL restriction).
  */
 @Service
 public class RetrievalService {
@@ -73,7 +73,7 @@ public class RetrievalService {
    *
    * @param query the free-text query and its parameters
    * @param allowedSources the sources the caller may read, or {@code null} for unrestricted (no ACL
-   *     applied yet)
+   *     restriction)
    * @return the ranked result, possibly served from the canonical ref
    */
   public RankedResult retrieve(Query query, Set<String> allowedSources) {

@@ -39,7 +39,8 @@ import org.springframework.stereotype.Component;
  * for graph linking. Leading Javadoc/comments are kept with each chunk to strengthen the signal.
  *
  * <p>Highest precedence so it wins over the document fallback for {@code .java} files. Other
- * languages fall through to the document chunker until their own AST chunker is added.
+ * languages fall through to the document chunker unless a language-specific AST chunker supports
+ * them.
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -89,7 +90,7 @@ public class CodeChunker implements Chunker {
         enclosingQualifier.isEmpty()
             ? type.getNameAsString()
             : enclosingQualifier + "." + type.getNameAsString();
-    String entityId = IdFactory.entityId(sourceId, path, qualifiedName);
+    String entityId = CodeEntity.deriveId(sourceId, path, qualifiedName);
     Range typeRange = type.getRange().orElseThrow();
     CodeEntityLevel level = levelOf(type);
 
@@ -120,7 +121,7 @@ public class CodeChunker implements Chunker {
               ? CodeEntityLevel.CONSTRUCTOR
               : CodeEntityLevel.METHOD;
       String memberQualifiedName = qualifiedName + "#" + signature;
-      String memberId = IdFactory.entityId(sourceId, path, memberQualifiedName);
+      String memberId = CodeEntity.deriveId(sourceId, path, memberQualifiedName);
       entities.add(
           new CodeEntity(
               memberId,
@@ -170,7 +171,7 @@ public class CodeChunker implements Chunker {
         String fieldQualifiedName = qualifiedName + "#" + fieldName;
         entities.add(
             new CodeEntity(
-                IdFactory.entityId(sourceId, path, fieldQualifiedName),
+                CodeEntity.deriveId(sourceId, path, fieldQualifiedName),
                 sourceId,
                 fileId,
                 entityId,

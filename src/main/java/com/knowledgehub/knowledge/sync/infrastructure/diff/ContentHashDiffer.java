@@ -1,7 +1,6 @@
 package com.knowledgehub.knowledge.sync.infrastructure.diff;
 
 import com.knowledgehub.knowledge.ingestion.domain.Connector;
-import com.knowledgehub.knowledge.ingestion.domain.GitProvenance;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
 import com.knowledgehub.knowledge.sync.domain.ChangeSet;
@@ -21,7 +20,7 @@ import org.springframework.stereotype.Component;
  * one whose hash changed is modified, and one stored but no longer present is deleted.
  *
  * <p>This needs no source-type-specific logic, so it serves both source types; a git source could
- * later swap in a cheaper commit-diff implementation behind the same port.
+ * use a cheaper commit-diff implementation behind the same port instead.
  */
 @Component
 class ContentHashDiffer implements SourceDiffer {
@@ -94,9 +93,7 @@ class ContentHashDiffer implements SourceDiffer {
       artifacts.forEach(
           artifact -> {
             hashes.put(artifact.path(), artifact.provenance().contentHash());
-            if (artifact.provenance() instanceof GitProvenance git) {
-              commitSha[0] = git.commitSha();
-            }
+            artifact.provenance().version().ifPresent(v -> commitSha[0] = v.commitSha());
           });
     }
     return new Current(hashes, commitSha[0]);

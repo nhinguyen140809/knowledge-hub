@@ -43,7 +43,7 @@ class Neo4jGraphAdaptersTests {
 
   private static CodeEntity type(String source, String path, String simpleName, String qualified) {
     return new CodeEntity(
-        IdFactory.entityId(source, path, qualified),
+        IdFactory.stableId(source, path, qualified),
         source,
         IdFactory.fileId(source, path),
         null,
@@ -120,7 +120,7 @@ class Neo4jGraphAdaptersTests {
     CodeEntity parent = type(SOURCE_A, "P.java", "P", "com.a.P");
     CodeEntity child =
         new CodeEntity(
-            IdFactory.entityId(SOURCE_A, "P.java", "com.a.P#m"),
+            IdFactory.stableId(SOURCE_A, "P.java", "com.a.P#m"),
             SOURCE_A,
             IdFactory.fileId(SOURCE_A, "P.java"),
             parent.entityId(),

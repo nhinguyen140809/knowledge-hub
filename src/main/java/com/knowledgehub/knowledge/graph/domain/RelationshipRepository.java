@@ -3,8 +3,8 @@ package com.knowledgehub.knowledge.graph.domain;
 import java.util.List;
 
 /**
- * Persists graph relationships. Writes are idempotent {@code MERGE}s keyed by {@code (from, to,
- * type)} so re-linking unchanged content never duplicates an edge.
+ * Persists graph relationships. Writes are idempotent, keyed by {@code (from, to, type)} so
+ * re-linking unchanged content never duplicates an edge.
  */
 public interface RelationshipRepository {
 
