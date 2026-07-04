@@ -40,7 +40,7 @@ class LinkingServiceTests {
   void writesStructuralAndAcceptedLinksAndDropsLowConfidenceOnes() {
     when(extractor.supports(DOC)).thenReturn(true);
     when(extractor.extract(DOC))
-        .thenReturn(List.of(Relationship.structural("a", "b", RelationType.CALLS)));
+        .thenReturn(List.of(Relationship.deterministic("a", "b", RelationType.CALLS)));
     when(linker.supports(DOC)).thenReturn(true);
     when(linker.link(DOC, List.of()))
         .thenReturn(
