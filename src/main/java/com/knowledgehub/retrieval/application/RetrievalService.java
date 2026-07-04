@@ -91,8 +91,7 @@ public class RetrievalService {
   }
 
   private RankedResult runPipeline(Query query, Set<String> allowedSources) {
-    Filter aclFilter =
-        allowedSources == null ? Filter.unrestricted() : Filter.ofSources(allowedSources);
+    Filter aclFilter = effectiveFilter(query.params().sourceId(), allowedSources);
     RetrievalContext context = new RetrievalContext(query, aclFilter);
     resolveParams(context);
 
@@ -115,6 +114,21 @@ public class RetrievalService {
     timed("AssembleResultStage", () -> assembleStage.apply(context));
     timed("AclFilterStage", () -> aclFilterStage.apply(context));
     return context.result();
+  }
+
+  /**
+   * The source scope pushed into every search path: the caller's readable set, narrowed to the
+   * single requested source when one is given. Requesting a source outside the readable set yields
+   * the empty scope — an empty result, never an error that would reveal whether the source exists.
+   */
+  private static Filter effectiveFilter(String sourceId, Set<String> allowedSources) {
+    if (sourceId == null) {
+      return allowedSources == null ? Filter.unrestricted() : Filter.ofSources(allowedSources);
+    }
+    if (allowedSources == null || allowedSources.contains(sourceId)) {
+      return Filter.ofSources(Set.of(sourceId));
+    }
+    return Filter.ofSources(Set.of());
   }
 
   /** Resolves top-k, the type filter, and the canonical-ref fallback before searching. */

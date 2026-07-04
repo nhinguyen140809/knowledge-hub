@@ -37,6 +37,11 @@ public class RetrievalTools {
   public RankedResult queryKnowledge(
       @ToolParam(description = "The free-text query") String text,
       @ToolParam(required = false, description = "Maximum number of results") Integer topK,
+      @ToolParam(
+              required = false,
+              description =
+                  "Restrict to a single source id; narrows within the sources you may read")
+          String sourceId,
       @ToolParam(required = false, description = "Restrict to a version/branch ref") String ref,
       @ToolParam(
               required = false,
@@ -45,7 +50,7 @@ public class RetrievalTools {
     return ToolErrors.mapped(
         () ->
             retrievalService.retrieve(
-                new Query(text, new QueryParams(topK, ref, type)),
+                new Query(text, new QueryParams(topK, sourceId, ref, type)),
                 aclFilterProvider.currentAllowedSources()));
   }
 }
