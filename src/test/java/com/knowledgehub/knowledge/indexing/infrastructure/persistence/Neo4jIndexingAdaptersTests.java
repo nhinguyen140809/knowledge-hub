@@ -51,7 +51,7 @@ class Neo4jIndexingAdaptersTests {
   private static Chunk codeChunk(String text, String entityId) {
     String hash = "h-" + text.hashCode();
     return new Chunk(
-        IdFactory.chunkId(SOURCE, PATH, hash),
+        IdFactory.stableId(SOURCE, PATH, hash),
         SOURCE,
         fileId(),
         PATH,
@@ -71,8 +71,8 @@ class Neo4jIndexingAdaptersTests {
 
   @Test
   void upsertsChunksAndEntitiesWithStructuralRelationships() {
-    String typeId = IdFactory.entityId(SOURCE, PATH, "Greeter");
-    String methodId = IdFactory.entityId(SOURCE, PATH, "Greeter#greet");
+    String typeId = IdFactory.stableId(SOURCE, PATH, "Greeter");
+    String methodId = IdFactory.stableId(SOURCE, PATH, "Greeter#greet");
     entities.upsertAll(
         List.of(
             new CodeEntity(
