@@ -5,6 +5,7 @@ import com.knowledgehub.knowledge.graph.domain.LinkCandidate;
 import com.knowledgehub.knowledge.graph.domain.RelationType;
 import com.knowledgehub.knowledge.graph.domain.ResolutionScope;
 import com.knowledgehub.knowledge.indexing.domain.Chunk;
+import com.knowledgehub.knowledge.infrastructure.lang.SourceLanguages;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -26,6 +27,13 @@ import org.springframework.stereotype.Component;
  * requirement-to-code claim is high-stakes; loose name mentions stay the province of {@code
  * DESCRIBES}. Chunks without a requirement identifier produce nothing. All references across the
  * artifact's requirement chunks are resolved in two batched lookups.
+ *
+ * <p>Example — a chunk reading <em>"REQ-12 is implemented by com.example.parse.PdfReader, verified
+ * by src/test/java/com/example/parse/PdfReaderTests.java"</em> proposes two candidates from that
+ * chunk, both at 0.85: {@code IMPLEMENTED_BY} to the {@code PdfReader} class (qualified name, not a
+ * test), and {@code VERIFIED_BY} to each entity of the test file (path under {@code /test/} and
+ * name ending in {@code Tests}). The same sentence without any requirement identifier would produce
+ * nothing here — only the identifier turns a mention into a requirement claim.
  */
 @Component
 class RequirementCodeLinker extends AbstractDocumentLinker {
@@ -33,21 +41,22 @@ class RequirementCodeLinker extends AbstractDocumentLinker {
   /** A requirement identifier like {@code FR-3.1} or {@code NFR-12} (uppercase tag, number). */
   private static final Pattern REQUIREMENT_ID = Pattern.compile("\\b[A-Z]{2,}-\\d+(?:\\.\\d+)*\\b");
 
-  /** A qualified reference like {@code com.example.Greeter}. */
-  private static final Pattern QUALIFIED =
-      Pattern.compile("\\b(?:[a-z][\\w]*\\.)+[A-Z][A-Za-z0-9]*\\b");
-
-  /** A path token ending in a source file of any known language. */
-  private static final Pattern CODE_PATH = SourceLanguage.codePathPattern();
-
   private static final double REFERENCE_CONFIDENCE = 0.85;
 
   private final EntityResolver resolver;
 
-  RequirementCodeLinker(EntityResolver resolver) {
+  RequirementCodeLinker(EntityResolver resolver, SourceLanguages languages) {
+    super(languages);
     this.resolver = resolver;
   }
 
+  /**
+   * Keeps only the document chunks that carry a requirement identifier, gathers every qualified
+   * name and source-file path they mention, resolves both sets in two batched lookups, and returns
+   * one candidate per (chunk, entity) pair — typed {@code VERIFIED_BY} or {@code IMPLEMENTED_BY} by
+   * whether the reference looks like a test. Artifacts whose chunks carry no requirement identifier
+   * yield an empty list.
+   */
   @Override
   public List<LinkCandidate> link(RawArtifact artifact, List<Chunk> chunks) {
     List<Chunk> requirementChunks =
@@ -62,8 +71,8 @@ class RequirementCodeLinker extends AbstractDocumentLinker {
     Set<String> qualifiedNames = new LinkedHashSet<>();
     Set<String> paths = new LinkedHashSet<>();
     for (Chunk chunk : requirementChunks) {
-      addMatches(QUALIFIED, chunk.text(), qualifiedNames);
-      addMatches(CODE_PATH, chunk.text(), paths);
+      addMatches(languages.qualifiedNamePattern(), chunk.text(), qualifiedNames);
+      addMatches(languages.codePathPattern(), chunk.text(), paths);
     }
     Map<String, String> resolvedQualified = resolver.resolve(qualifiedNames, scope);
     Map<String, List<String>> byPath = resolver.findByPath(paths, scope);
@@ -77,9 +86,10 @@ class RequirementCodeLinker extends AbstractDocumentLinker {
     return candidates;
   }
 
-  private static void qualifiedCandidates(
+  /** One candidate per qualified name in the chunk that resolved to exactly one entity. */
+  private void qualifiedCandidates(
       Chunk chunk, Map<String, String> resolved, Set<String> linked, List<LinkCandidate> out) {
-    Matcher matcher = QUALIFIED.matcher(chunk.text());
+    Matcher matcher = languages.qualifiedNamePattern().matcher(chunk.text());
     while (matcher.find()) {
       String fqn = matcher.group();
       String toId = resolved.get(fqn);
@@ -89,9 +99,10 @@ class RequirementCodeLinker extends AbstractDocumentLinker {
     }
   }
 
-  private static void pathCandidates(
+  /** One candidate per entity declared in each source-file path the chunk mentions. */
+  private void pathCandidates(
       Chunk chunk, Map<String, List<String>> byPath, Set<String> linked, List<LinkCandidate> out) {
-    Matcher matcher = CODE_PATH.matcher(chunk.text());
+    Matcher matcher = languages.codePathPattern().matcher(chunk.text());
     while (matcher.find()) {
       String path = matcher.group();
       for (String toId : byPath.getOrDefault(path, List.of())) {
@@ -104,8 +115,8 @@ class RequirementCodeLinker extends AbstractDocumentLinker {
   }
 
   /** A reference naming a test verifies the requirement; anything else implements it. */
-  private static RelationType typeFor(String reference) {
-    return SourceLanguage.isTestReference(reference)
+  private RelationType typeFor(String reference) {
+    return languages.isTestReference(reference)
         ? RelationType.VERIFIED_BY
         : RelationType.IMPLEMENTED_BY;
   }

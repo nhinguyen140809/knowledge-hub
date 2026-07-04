@@ -16,6 +16,11 @@ import org.springframework.stereotype.Component;
  *
  * <p>Embedding is deliberately not done here: it belongs to the semantic path, so an embedding
  * provider outage degrades only that path rather than failing the whole query.
+ *
+ * <p>Example: {@code "How does the PdfReader extract text from a PDF?"} becomes {@code [pdfreader,
+ * extract, text, pdf]} — lower-cased, split on non-word characters, {@code how/does/the/from/a}
+ * dropped as stop words, repeats de-duplicated in order. The keyword path then runs a full-text
+ * search on those tokens while the semantic path embeds the original sentence untouched.
  */
 @Component
 class PrepareQueryStage implements Stage<RetrievalContext> {

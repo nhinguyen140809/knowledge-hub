@@ -20,20 +20,45 @@ import java.util.List;
  */
 class RetrievalContext {
 
+  /** The caller's free-text query; set at construction, read by every search stage. */
   private final Query query;
+
+  /** Allowed sources of the caller; set at construction, pushed into every store query. */
   private final Filter aclFilter;
 
+  /** Result-size cap; resolved from params or config by the service before the stages run. */
   private int topK;
+
+  /**
+   * Ref to filter by after the canonical-ref fallback; set by the service, null = no restriction.
+   */
   private String effectiveRef;
+
+  /** Data-type restriction from the params; set by the service, null = any type. */
   private String typeFilter;
+
+  /** Whether the canonical-ref fallback fired; set by the service, reported in the result. */
   private boolean servedFromCanonicalRef;
 
+  /** Query tokens for the keyword path; set by PrepareQueryStage. */
   private List<String> keywords = List.of();
+
+  /** Vector-store matches; set by SemanticSearchStage (parallel with the keyword path). */
   private List<ScoredId> semanticHits = List.of();
+
+  /** Full-text matches; set by KeywordSearchStage (parallel with the semantic path). */
   private List<ScoredId> keywordHits = List.of();
+
+  /** Graph-expanded matches seeded from the two lists above; set by GraphTraversalStage. */
   private List<ScoredId> graphHits = List.of();
+
+  /** The three lists merged into one ranking; set by RrfFusionStage. */
   private List<ScoredId> fusedHits = List.of();
+
+  /** Fused ids loaded into full hits with metadata; set by AssembleResultStage. */
   private List<Hit> assembledHits = List.of();
+
+  /** The final ranked answer after the last ACL/type/ref cut; set by AclFilterStage. */
   private RankedResult result = RankedResult.empty();
 
   RetrievalContext(Query query, Filter aclFilter) {
