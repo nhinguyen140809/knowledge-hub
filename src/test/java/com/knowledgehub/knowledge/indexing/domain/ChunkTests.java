@@ -61,7 +61,7 @@ class ChunkTests {
     assertThat(chunk.contentHash()).isEqualTo(Hashing.sha256("hello"));
     assertThat(chunk.fileId()).isEqualTo(IdFactory.fileId(provenance.sourceId(), "a.md"));
     assertThat(chunk.chunkId())
-        .isEqualTo(IdFactory.chunkId(provenance.sourceId(), "a.md", chunk.contentHash()));
+        .isEqualTo(Chunk.deriveId(provenance.sourceId(), "a.md", chunk.contentHash()));
   }
 
   @Test

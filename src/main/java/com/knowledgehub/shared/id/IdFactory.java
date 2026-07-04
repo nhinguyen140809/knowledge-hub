@@ -1,9 +1,10 @@
 package com.knowledgehub.shared.id;
 
 /**
- * Derives <strong>stable, idempotent</strong> ids by hashing the identity (and content) of an
- * entity. Re-running ingestion/indexing on unchanged input produces the same id, so writes upsert
- * instead of creating duplicates.
+ * The id scheme: derives <strong>stable, idempotent</strong> ids by hashing an ordered set of
+ * identity parts, so re-running ingestion/indexing on unchanged input produces the same id and
+ * writes upsert instead of duplicating. Each entity owns which parts make up its id (e.g. {@code
+ * Chunk.create}, {@code CodeEntity.deriveId}); this class only defines how parts become an id.
  */
 public final class IdFactory {
 
@@ -25,18 +26,11 @@ public final class IdFactory {
     return Hashing.sha256(String.join(SEP, parts));
   }
 
-  /** Stable file id from its source and file path. */
+  /**
+   * Stable file id from its source and file path. Kept here because a file has no domain class of
+   * its own yet it is referenced by both {@code Chunk} and {@code CodeEntity}.
+   */
   public static String fileId(String sourceId, String path) {
     return stableId(sourceId, path);
-  }
-
-  /** Stable chunk id from its source, file path, and content hash. */
-  public static String chunkId(String sourceId, String path, String contentHash) {
-    return stableId(sourceId, path, contentHash);
-  }
-
-  /** Stable code-entity id from its source, file path, and fully-qualified name. */
-  public static String entityId(String sourceId, String path, String qualifiedName) {
-    return stableId(sourceId, path, qualifiedName);
   }
 }

@@ -77,7 +77,7 @@ public record Chunk(
     String sourceId = provenance.sourceId();
     String contentHash = Hashing.sha256(text);
     return new Chunk(
-        IdFactory.chunkId(sourceId, path, contentHash),
+        deriveId(sourceId, path, contentHash),
         sourceId,
         IdFactory.fileId(sourceId, path),
         path,
@@ -89,5 +89,13 @@ public record Chunk(
         lineEnd,
         entityId,
         provenance);
+  }
+
+  /**
+   * Derives the stable id of the chunk with these coordinates and content hash. The same content at
+   * the same path always yields the same id, so re-indexing unchanged content upserts in place.
+   */
+  public static String deriveId(String sourceId, String path, String contentHash) {
+    return IdFactory.stableId(sourceId, path, contentHash);
   }
 }
