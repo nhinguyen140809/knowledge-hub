@@ -14,15 +14,22 @@ import java.util.List;
  */
 class IndexingContext {
 
+  // Inputs, set once at construction: the artifact to index and the chunking tunables.
   private final RawArtifact artifact;
   private final ChunkConfig config;
 
+  // All chunks cut from the artifact and the code entities alongside them (set by ChunkStage).
   private List<Chunk> chunks = List.of();
   private List<CodeEntity> entities = List.of();
+  // The subset of chunks whose content is not already indexed — the ones worth embedding — and how
+  // many were skipped as already present (set by DedupStage).
   private List<Chunk> newChunks = List.of();
-  private List<ChunkVector> vectors = List.of();
   private int cached;
+  // Embeddings for the new chunks, ready for the vector store (set by EmbedStage).
+  private List<ChunkVector> vectors = List.of();
+  // Count of graph relationships written for the artifact (set by LinkStage).
   private int relationshipsLinked;
+  // Set by any stage to short-circuit the rest of the pipeline for this artifact.
   private boolean skipped;
   private String skipReason;
 

@@ -3,7 +3,7 @@ package com.knowledgehub.knowledge.domain;
 import java.util.List;
 
 /**
- * Optional capability interface for stores with native dense+sparse hybrid search (e.g. Qdrant).
+ * Optional capability interface for vector stores that support native dense+sparse hybrid search.
  * The application opts in via {@code instanceof} and falls back to application-side RRF fusion
  * otherwise, so behaviour stays identical across adapters by default (reproducibility). Use
  * sparingly.
