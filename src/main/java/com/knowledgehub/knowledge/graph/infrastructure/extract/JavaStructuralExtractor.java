@@ -62,6 +62,36 @@ import org.springframework.stereotype.Component;
  * method that lives in another source links across source boundaries. Relations that need full type
  * inference (calls or accesses on other objects) are out of scope here and belong to a
  * symbol-solver-backed extractor.
+ *
+ * <p>Example — extracting this file:
+ *
+ * <pre>{@code
+ * package com.example;
+ *
+ * import com.other.Base;
+ * import com.other.Clock;
+ *
+ * public class Greeter extends Base {
+ *   private final Clock clock = new Clock();
+ *
+ *   @Override
+ *   public String greet() throws GreetingException {
+ *     return stamp();
+ *   }
+ *
+ *   private String stamp() {
+ *     return Clock.format(clock.now());
+ *   }
+ * }
+ * }</pre>
+ *
+ * yields, when the targets are indexed: {@code Greeter IMPORTS Base, Clock}; {@code Greeter EXTENDS
+ * Base}; {@code greet() OVERRIDES Base#greet()}; {@code greet() CALLS stamp()}; field {@code clock
+ * HAS_TYPE Clock} and {@code INSTANTIATES Clock} (from its initializer); {@code greet() THROWS
+ * com.example.GreetingException} (unimported, so resolved against the file's own package); {@code
+ * stamp() REFERENCES Clock} (static-scope call); {@code stamp() READS clock}. Nothing is emitted
+ * for {@code clock.now()} — a call on another object needs type inference — and {@code @Override}
+ * links nowhere because {@code java.lang.Override} is not an indexed entity.
  */
 @Component
 public class JavaStructuralExtractor implements StructuralExtractor {
@@ -79,6 +109,14 @@ public class JavaStructuralExtractor implements StructuralExtractor {
     return artifact.text() != null && artifact.path().toLowerCase(Locale.ROOT).endsWith(".java");
   }
 
+  /**
+   * Parses the artifact's text and walks every top-level type. Edges whose both ends live in this
+   * file (same-type calls, field reads/writes) are emitted directly — their entity ids are derived
+   * locally from the identity parts. Every other reference is collected as a pending (from,
+   * target-name, edge-type) triple and resolved in one batched lookup at the end; a name the
+   * resolver cannot settle is dropped. Unparseable source yields an empty list rather than failing
+   * the pipeline.
+   */
   @Override
   public List<Relationship> extract(RawArtifact artifact) {
     ParseResult<CompilationUnit> parsed = new JavaParser().parse(artifact.text());
@@ -139,6 +177,11 @@ public class JavaStructuralExtractor implements StructuralExtractor {
     }
   }
 
+  /**
+   * One type's full harvest — inheritance, overrides, annotations, per-callable deep references,
+   * field types, same-type calls and field accesses — then recursion into its nested types. Local
+   * edges go straight to {@code out}; cross-file references accumulate in {@code refs}.
+   */
   private void collectType(
       TypeDeclaration<?> type,
       String enclosingQualifier,
