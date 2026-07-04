@@ -24,13 +24,10 @@ import org.springframework.stereotype.Component;
 @Component
 class Neo4jRelationshipAdapter implements RelationshipRepository {
 
-  /**
-   * Relationship types this adapter owns and may delete on re-link. Excludes {@code CONTAINS} and
-   * {@code DECLARES}, which the indexing entity hierarchy owns.
-   */
+  /** The relationship types linking owns and may delete on re-link. */
   private static final List<String> MANAGED_TYPES =
       Arrays.stream(RelationType.values())
-          .filter(t -> t != RelationType.CONTAINS && t != RelationType.DECLARES)
+          .filter(RelationType::linkerOwned)
           .map(Enum::name)
           .toList();
 

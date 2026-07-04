@@ -26,8 +26,8 @@ import org.springframework.stereotype.Component;
 @Component
 class PathReferenceLinker extends AbstractDocumentLinker {
 
-  /** A path token ending in a Java source file. */
-  private static final Pattern JAVA_PATH = Pattern.compile("\\b[\\w./-]*\\w+\\.java\\b");
+  /** A path token ending in a source file of any known language. */
+  private static final Pattern CODE_PATH = SourceLanguage.codePathPattern();
 
   private static final double PATH_CONFIDENCE = 0.85;
 
@@ -47,7 +47,7 @@ class PathReferenceLinker extends AbstractDocumentLinker {
 
     Set<String> paths = new LinkedHashSet<>();
     for (Chunk chunk : docs) {
-      Matcher matcher = JAVA_PATH.matcher(chunk.text());
+      Matcher matcher = CODE_PATH.matcher(chunk.text());
       while (matcher.find()) {
         paths.add(matcher.group());
       }
@@ -57,7 +57,7 @@ class PathReferenceLinker extends AbstractDocumentLinker {
     List<LinkCandidate> candidates = new ArrayList<>();
     for (Chunk chunk : docs) {
       Set<String> linked = new HashSet<>();
-      Matcher matcher = JAVA_PATH.matcher(chunk.text());
+      Matcher matcher = CODE_PATH.matcher(chunk.text());
       while (matcher.find()) {
         String path = matcher.group();
         for (String toId : byPath.getOrDefault(path, List.of())) {

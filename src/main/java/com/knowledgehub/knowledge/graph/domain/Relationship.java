@@ -30,8 +30,8 @@ public record Relationship(
     }
   }
 
-  /** A deterministic, fully-certain structural relationship. */
-  public static Relationship structural(String fromId, String toId, RelationType type) {
+  /** A deterministic, fully-certain relationship (structural or deep). */
+  public static Relationship deterministic(String fromId, String toId, RelationType type) {
     return new Relationship(fromId, toId, type, 1.0, null);
   }
 }
