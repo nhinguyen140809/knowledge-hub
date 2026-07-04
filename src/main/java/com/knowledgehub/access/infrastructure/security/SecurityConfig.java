@@ -21,6 +21,17 @@ import org.springframework.security.web.access.intercept.AuthorizationFilter;
 @EnableMethodSecurity
 class SecurityConfig {
 
+  /**
+   * The single filter chain every HTTP request passes through, in order: {@link BearerAuthFilter}
+   * settles who the caller is, then the URL rules decide whether that is enough ({@code permitAll}
+   * for health and API docs, {@code authenticated} for everything else), then method security
+   * checks roles on admin endpoints. Both failure kinds — unauthenticated and forbidden — are
+   * rendered by the {@link ProblemSecurityHandler} so they match the application's error schema.
+   *
+   * <p>Example: {@code GET /actuator/health} passes with no token; {@code POST /api/v1/query} needs
+   * a valid bearer token; {@code POST /api/v1/admin/sources} additionally needs the token's
+   * principal to have the admin role.
+   */
   @Bean
   SecurityFilterChain securityFilterChain(
       HttpSecurity http, BearerAuthFilter bearerAuthFilter, ProblemSecurityHandler problemHandler)
@@ -43,6 +54,10 @@ class SecurityConfig {
     return http.build();
   }
 
+  /**
+   * The authentication filter, declared as a bean here instead of being component-scanned so it
+   * only exists together with the security configuration that places it in the chain.
+   */
   @Bean
   BearerAuthFilter bearerAuthFilter(
       Authenticator authenticator, ProblemSecurityHandler problemHandler) {
