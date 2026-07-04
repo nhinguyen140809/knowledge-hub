@@ -3,12 +3,11 @@ package com.knowledgehub.knowledge.indexing.infrastructure.chunking;
 import com.knowledgehub.knowledge.indexing.domain.Chunk;
 import com.knowledgehub.knowledge.indexing.domain.ChunkType;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
-import com.knowledgehub.shared.id.Hashing;
-import com.knowledgehub.shared.id.IdFactory;
 
 /**
- * Assembles a {@link Chunk} from a piece of an artifact, deriving the content hash, stable ids and
- * token estimate so the chunkers focus on <em>where</em> to cut, not on bookkeeping.
+ * Bridges an artifact span to the domain {@link Chunk} factory: counts the tokens — the one piece
+ * that needs the tokenizer — and lets the domain derive the content hash and stable ids. This keeps
+ * the chunkers focused on <em>where</em> to cut, not on bookkeeping.
  */
 final class ChunkBuilder {
 
@@ -26,21 +25,14 @@ final class ChunkBuilder {
       int lineStart,
       int lineEnd,
       String entityId) {
-    String sourceId = artifact.provenance().sourceId();
-    String path = artifact.path();
-    String contentHash = Hashing.sha256(text);
-    return new Chunk(
-        IdFactory.chunkId(sourceId, path, contentHash),
-        sourceId,
-        IdFactory.fileId(sourceId, path),
-        path,
+    return Chunk.create(
+        artifact.provenance(),
+        artifact.path(),
         type,
         text,
-        contentHash,
         TokenCounter.count(text),
         lineStart,
         lineEnd,
-        entityId,
-        artifact.provenance());
+        entityId);
   }
 }
