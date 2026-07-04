@@ -1,5 +1,6 @@
 package com.knowledgehub.knowledge.indexing.domain;
 
+import com.knowledgehub.shared.id.IdFactory;
 import java.util.Objects;
 
 /**
@@ -43,5 +44,14 @@ public record CodeEntity(
     if (lineStart < 1 || lineEnd < lineStart) {
       throw new IllegalArgumentException("invalid line range: " + lineStart + ".." + lineEnd);
     }
+  }
+
+  /**
+   * Derives the stable id of the entity with these coordinates. Content-independent (so it survives
+   * body edits) and computable from parts alone — a reference target's id can be derived before the
+   * entity itself is loaded, which is how cross-file links resolve.
+   */
+  public static String deriveId(String sourceId, String path, String qualifiedName) {
+    return IdFactory.stableId(sourceId, path, qualifiedName);
   }
 }

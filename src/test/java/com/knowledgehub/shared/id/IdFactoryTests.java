@@ -9,14 +9,14 @@ class IdFactoryTests {
 
   @Test
   void sameInputsYieldSameId() {
-    assertThat(IdFactory.chunkId("src-1", "a/b.java", "hash1"))
-        .isEqualTo(IdFactory.chunkId("src-1", "a/b.java", "hash1"));
+    assertThat(IdFactory.stableId("src-1", "a/b.java", "hash1"))
+        .isEqualTo(IdFactory.stableId("src-1", "a/b.java", "hash1"));
   }
 
   @Test
   void differentInputsYieldDifferentId() {
-    assertThat(IdFactory.chunkId("src-1", "a/b.java", "hash1"))
-        .isNotEqualTo(IdFactory.chunkId("src-1", "a/b.java", "hash2"));
+    assertThat(IdFactory.stableId("src-1", "a/b.java", "hash1"))
+        .isNotEqualTo(IdFactory.stableId("src-1", "a/b.java", "hash2"));
   }
 
   @Test

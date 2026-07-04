@@ -90,7 +90,7 @@ public class CodeChunker implements Chunker {
         enclosingQualifier.isEmpty()
             ? type.getNameAsString()
             : enclosingQualifier + "." + type.getNameAsString();
-    String entityId = IdFactory.entityId(sourceId, path, qualifiedName);
+    String entityId = CodeEntity.deriveId(sourceId, path, qualifiedName);
     Range typeRange = type.getRange().orElseThrow();
     CodeEntityLevel level = levelOf(type);
 
@@ -121,7 +121,7 @@ public class CodeChunker implements Chunker {
               ? CodeEntityLevel.CONSTRUCTOR
               : CodeEntityLevel.METHOD;
       String memberQualifiedName = qualifiedName + "#" + signature;
-      String memberId = IdFactory.entityId(sourceId, path, memberQualifiedName);
+      String memberId = CodeEntity.deriveId(sourceId, path, memberQualifiedName);
       entities.add(
           new CodeEntity(
               memberId,
@@ -171,7 +171,7 @@ public class CodeChunker implements Chunker {
         String fieldQualifiedName = qualifiedName + "#" + fieldName;
         entities.add(
             new CodeEntity(
-                IdFactory.entityId(sourceId, path, fieldQualifiedName),
+                CodeEntity.deriveId(sourceId, path, fieldQualifiedName),
                 sourceId,
                 fileId,
                 entityId,

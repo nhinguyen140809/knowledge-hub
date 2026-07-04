@@ -3,8 +3,6 @@ package com.knowledgehub.knowledge.indexing.application;
 import com.knowledgehub.knowledge.domain.ChunkVector;
 import com.knowledgehub.knowledge.domain.EmbeddingPort;
 import com.knowledgehub.knowledge.indexing.domain.Chunk;
-import com.knowledgehub.knowledge.ingestion.domain.GitProvenance;
-import com.knowledgehub.knowledge.ingestion.domain.Provenance;
 import com.knowledgehub.shared.pipeline.Stage;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,11 +49,14 @@ class EmbedStage implements Stage<IndexingContext> {
     metadata.put("type", chunk.type().wireName());
     metadata.put("line_start", chunk.lineStart());
     metadata.put("line_end", chunk.lineEnd());
-    Provenance provenance = chunk.provenance();
-    if (provenance instanceof GitProvenance git) {
-      metadata.put("ref", git.ref());
-      metadata.put("commit_sha", git.commitSha());
-    }
+    chunk
+        .provenance()
+        .version()
+        .ifPresent(
+            v -> {
+              metadata.put("ref", v.ref());
+              metadata.put("commit_sha", v.commitSha());
+            });
     return metadata;
   }
 }

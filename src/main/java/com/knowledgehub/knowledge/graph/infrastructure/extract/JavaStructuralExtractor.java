@@ -17,8 +17,8 @@ import com.knowledgehub.knowledge.graph.domain.RelationType;
 import com.knowledgehub.knowledge.graph.domain.Relationship;
 import com.knowledgehub.knowledge.graph.domain.ResolutionScope;
 import com.knowledgehub.knowledge.graph.domain.StructuralExtractor;
+import com.knowledgehub.knowledge.indexing.domain.CodeEntity;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
-import com.knowledgehub.shared.id.IdFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -77,7 +77,7 @@ public class JavaStructuralExtractor implements StructuralExtractor {
     List<PendingRef> refs = new ArrayList<>();
     for (TypeDeclaration<?> type : cu.getTypes()) {
       String topId =
-          IdFactory.entityId(sourceId, path, qualified(packageName, type.getNameAsString()));
+          CodeEntity.deriveId(sourceId, path, qualified(packageName, type.getNameAsString()));
       collectImports(cu, topId, refs);
       collectType(type, packageName, packageName, sourceId, path, importsByName, refs, out);
     }
@@ -128,7 +128,7 @@ public class JavaStructuralExtractor implements StructuralExtractor {
       List<PendingRef> refs,
       List<Relationship> out) {
     String qualifiedName = qualified(enclosingQualifier, type.getNameAsString());
-    String typeId = IdFactory.entityId(sourceId, path, qualifiedName);
+    String typeId = CodeEntity.deriveId(sourceId, path, qualifiedName);
 
     List<String> supertypes = collectInheritance(type, typeId, packageName, importsByName, refs);
     collectOverrides(type, sourceId, path, qualifiedName, supertypes, refs);
@@ -240,7 +240,7 @@ public class JavaStructuralExtractor implements StructuralExtractor {
 
   private static String methodEntityId(
       String sourceId, String path, String qualifiedName, MethodDeclaration method) {
-    return IdFactory.entityId(
+    return CodeEntity.deriveId(
         sourceId, path, qualifiedName + "#" + method.getDeclarationAsString(false, false, false));
   }
 

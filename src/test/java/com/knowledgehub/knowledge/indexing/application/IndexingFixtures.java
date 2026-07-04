@@ -29,7 +29,7 @@ final class IndexingFixtures {
   static Chunk docChunk(String text) {
     String hash = "hash-" + text.hashCode();
     return new Chunk(
-        IdFactory.chunkId(SOURCE, PATH, hash),
+        IdFactory.stableId(SOURCE, PATH, hash),
         SOURCE,
         IdFactory.fileId(SOURCE, PATH),
         PATH,
