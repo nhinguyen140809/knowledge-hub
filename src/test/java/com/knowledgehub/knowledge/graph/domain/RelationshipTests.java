@@ -9,7 +9,7 @@ class RelationshipTests {
 
   @Test
   void structuralRelationsAreAlwaysCertain() {
-    Relationship rel = Relationship.structural("a", "b", RelationType.CALLS);
+    Relationship rel = Relationship.deterministic("a", "b", RelationType.CALLS);
     assertThat(rel.confidence()).isEqualTo(1.0);
     assertThat(rel.type().deterministic()).isTrue();
   }

@@ -66,7 +66,8 @@ class Neo4jGraphAdaptersTests {
     entities.upsertAll(List.of(caller, callee));
 
     relationships.upsertAll(
-        List.of(Relationship.structural(caller.entityId(), callee.entityId(), RelationType.CALLS)));
+        List.of(
+            Relationship.deterministic(caller.entityId(), callee.entityId(), RelationType.CALLS)));
 
     assertThat(
             count(
@@ -83,7 +84,8 @@ class Neo4jGraphAdaptersTests {
     CodeEntity a = type(SOURCE_A, "A.java", "A", "com.a.A");
     CodeEntity b = type(SOURCE_A, "B.java", "B", "com.a.B");
     entities.upsertAll(List.of(a, b));
-    Relationship edge = Relationship.structural(a.entityId(), b.entityId(), RelationType.EXTENDS);
+    Relationship edge =
+        Relationship.deterministic(a.entityId(), b.entityId(), RelationType.EXTENDS);
 
     relationships.upsertAll(List.of(edge));
     relationships.upsertAll(List.of(edge));
@@ -132,7 +134,8 @@ class Neo4jGraphAdaptersTests {
             4);
     entities.upsertAll(List.of(parent, child));
     relationships.upsertAll(
-        List.of(Relationship.structural(child.entityId(), parent.entityId(), RelationType.CALLS)));
+        List.of(
+            Relationship.deterministic(child.entityId(), parent.entityId(), RelationType.CALLS)));
 
     relationships.deleteBySource(SOURCE_A);
 
