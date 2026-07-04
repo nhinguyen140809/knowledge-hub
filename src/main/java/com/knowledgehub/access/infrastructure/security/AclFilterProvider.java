@@ -21,7 +21,22 @@ public class AclFilterProvider {
     this.authorizer = authorizer;
   }
 
-  /** The sources the current caller may read. */
+  /**
+   * Resolves the sources the current request's caller may read.
+   *
+   * <p>The input is implicit: the {@link AuthenticatedPrincipal} the authentication filter placed
+   * in the security context of this request's thread. The output is the caller's effective read set
+   * — its own grants unioned with the grants of every group it belongs to, interpreted under the
+   * default policy.
+   *
+   * <p>Example: principal {@code alice} holds a grant on {@code docs-service} and belongs to group
+   * {@code backend}, which is granted {@code shared-lib}; under a deny-by-default policy this
+   * returns {@code ["docs-service", "shared-lib"]}, and every search path drops results from any
+   * other source before they leave the store.
+   *
+   * @return ids of the readable sources; empty when there is no authenticated principal, so an
+   *     anonymous caller can read nothing rather than everything
+   */
   public Set<String> currentAllowedSources() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication == null
