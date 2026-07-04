@@ -24,6 +24,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * request, REST and {@code /mcp} alike, since both run through this chain. Wired as a bean by
  * {@link SecurityConfig} rather than component-scanned, so it loads only with the full security
  * context.
+ *
+ * <p>Example: a request carrying {@code Authorization: Bearer 3f9c…} whose secret hashes to an
+ * active credential of principal {@code team-alpha} (role {@code MEMBER}) continues down the chain
+ * with the context holding that principal and authority {@code ROLE_MEMBER}. The same request with
+ * a revoked or mistyped secret is answered on the spot with a 401 problem-detail body and never
+ * reaches a controller.
  */
 class BearerAuthFilter extends OncePerRequestFilter {
 
@@ -37,6 +43,21 @@ class BearerAuthFilter extends OncePerRequestFilter {
     this.problemHandler = problemHandler;
   }
 
+  /**
+   * Settles the request's authentication in one of three ways:
+   *
+   * <ul>
+   *   <li><b>No bearer header</b> — the request continues unauthenticated; the authorization rules
+   *       later return 401 on protected endpoints, while public ones (health, API docs) stay
+   *       reachable without a token.
+   *   <li><b>Header present, secret unknown or revoked</b> — the context is cleared and the request
+   *       ends here with a 401 problem-detail response (fail-closed); the filter chain is not
+   *       continued.
+   *   <li><b>Secret resolves to a principal</b> — an {@link AuthenticatedPrincipal} is stored in
+   *       the {@link SecurityContextHolder} with authority {@code ROLE_<role>} (what
+   *       {@code @PreAuthorize("hasRole('ADMIN')")} checks), and the request continues.
+   * </ul>
+   */
   @Override
   protected void doFilterInternal(
       HttpServletRequest request, HttpServletResponse response, FilterChain chain)

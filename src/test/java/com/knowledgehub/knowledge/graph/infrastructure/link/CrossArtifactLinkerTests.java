@@ -8,6 +8,8 @@ import com.knowledgehub.knowledge.graph.domain.RelationType;
 import com.knowledgehub.knowledge.graph.domain.ResolutionScope;
 import com.knowledgehub.knowledge.indexing.domain.Chunk;
 import com.knowledgehub.knowledge.indexing.domain.ChunkType;
+import com.knowledgehub.knowledge.infrastructure.lang.JavaLanguage;
+import com.knowledgehub.knowledge.infrastructure.lang.SourceLanguages;
 import com.knowledgehub.knowledge.ingestion.domain.FsProvenance;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import com.knowledgehub.knowledge.ingestion.infrastructure.MediaTypes;
@@ -20,6 +22,8 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class CrossArtifactLinkerTests {
+
+  private static final SourceLanguages LANGUAGES = new SourceLanguages(List.of(new JavaLanguage()));
 
   private static final String SOURCE = "src";
   private static final String DOC_PATH = "README.md";
@@ -101,7 +105,7 @@ class CrossArtifactLinkerTests {
 
   @Test
   void scoresQualifiedRefsHighAndAmbiguousNamesLow() {
-    IdentifierMatchLinker linker = new IdentifierMatchLinker(resolver);
+    IdentifierMatchLinker linker = new IdentifierMatchLinker(resolver, LANGUAGES);
     Chunk chunk = docChunk("The com.example.Greeter greets. Also Foo helps.");
 
     List<LinkCandidate> candidates = linker.link(doc(), List.of(chunk));
@@ -122,7 +126,7 @@ class CrossArtifactLinkerTests {
 
   @Test
   void ignoresNonDocumentChunks() {
-    IdentifierMatchLinker linker = new IdentifierMatchLinker(resolver);
+    IdentifierMatchLinker linker = new IdentifierMatchLinker(resolver, LANGUAGES);
     Chunk code =
         new Chunk(
             "code-1",
@@ -143,7 +147,7 @@ class CrossArtifactLinkerTests {
 
   @Test
   void scoresCompoundNameHighButSingleWordNameLow() {
-    IdentifierMatchLinker linker = new IdentifierMatchLinker(resolver);
+    IdentifierMatchLinker linker = new IdentifierMatchLinker(resolver, LANGUAGES);
     Chunk chunk = docChunk("The CodeChunker splits a Chunk into pieces.");
 
     List<LinkCandidate> candidates = linker.link(doc(), List.of(chunk));
@@ -163,7 +167,7 @@ class CrossArtifactLinkerTests {
 
   @Test
   void linksRequirementToItsImplementationAndItsTest() {
-    RequirementCodeLinker linker = new RequirementCodeLinker(resolver);
+    RequirementCodeLinker linker = new RequirementCodeLinker(resolver, LANGUAGES);
     Chunk chunk =
         docChunk(
             "FR-3 is implemented by com.example.Greeter and verified by"
@@ -187,7 +191,7 @@ class CrossArtifactLinkerTests {
 
   @Test
   void ignoresDocumentChunksWithoutARequirementId() {
-    RequirementCodeLinker linker = new RequirementCodeLinker(resolver);
+    RequirementCodeLinker linker = new RequirementCodeLinker(resolver, LANGUAGES);
     Chunk chunk = docChunk("The class com.example.Greeter greets people.");
 
     assertThat(linker.link(doc(), List.of(chunk))).isEmpty();
@@ -195,7 +199,7 @@ class CrossArtifactLinkerTests {
 
   @Test
   void linksAReferencedFilePath() {
-    PathReferenceLinker linker = new PathReferenceLinker(resolver);
+    PathReferenceLinker linker = new PathReferenceLinker(resolver, LANGUAGES);
     Chunk chunk = docChunk("Implementation lives in src/Greeter.java today.");
 
     List<LinkCandidate> candidates = linker.link(doc(), List.of(chunk));
