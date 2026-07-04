@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
  * structural edge is worse than a missing one.
  */
 @Component
-class QualifiedNameResolver implements EntityResolver {
+class Neo4jEntityResolver implements EntityResolver {
 
   private static final String BY_QUALIFIED_NAME =
       "UNWIND $values AS value MATCH (e:CodeEntity {qualified_name: value})"
@@ -39,7 +39,7 @@ class QualifiedNameResolver implements EntityResolver {
 
   private final Neo4jClient client;
 
-  QualifiedNameResolver(Neo4jClient client) {
+  Neo4jEntityResolver(Neo4jClient client) {
     this.client = client;
   }
 
