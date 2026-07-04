@@ -14,8 +14,8 @@ import org.springframework.stereotype.Component;
  * how up to date a source's index is, and {@code sync_source} lets an admin agent bring it up to
  * date before querying. Both are inbound adapters over the same {@link SyncService} the REST
  * controllers call — no sync logic lives here. Only syncing is administrative, so only it carries
- * the admin check; together the two support the loop <em>check freshness → (if stale) sync →
- * query</em>.
+ * the admin check; with {@code list_sources} they support the loop <em>discover sources → check
+ * freshness → (if stale) sync → query</em>.
  *
  * <p>Named to avoid the {@code syncTools} bean the MCP server auto-configuration already defines.
  */
