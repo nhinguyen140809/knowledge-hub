@@ -11,6 +11,7 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Issues and revokes credentials. Issuing generates a 256-bit random secret, stores only its hash,
@@ -33,6 +34,7 @@ public class CredentialService {
   }
 
   /** Issues a new named credential for a principal and returns the raw secret once. */
+  @Transactional
   public IssuedCredential issue(String principalId, String name) {
     if (principals.findById(principalId).isEmpty()) {
       throw new PrincipalNotFoundException(principalId);
@@ -50,12 +52,14 @@ public class CredentialService {
   }
 
   /** Revokes a credential; the next request using it fails authentication. */
+  @Transactional
   public void revoke(String credentialId) {
     credentials.revoke(credentialId);
     log.info("Revoked credential {}", credentialId);
   }
 
   /** Lists a principal's credentials as metadata only (never the secret or hash). */
+  @Transactional(readOnly = true)
   public List<Credential> list(String principalId) {
     if (principals.findById(principalId).isEmpty()) {
       throw new PrincipalNotFoundException(principalId);
