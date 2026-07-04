@@ -1,4 +1,4 @@
-package com.knowledgehub.access.infrastructure.web;
+package com.knowledgehub.access.infrastructure.web.credential;
 
 import com.knowledgehub.access.application.CredentialService;
 import io.swagger.v3.oas.annotations.Operation;

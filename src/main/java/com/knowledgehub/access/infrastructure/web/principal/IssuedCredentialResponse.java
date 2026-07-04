@@ -1,4 +1,4 @@
-package com.knowledgehub.access.infrastructure.web;
+package com.knowledgehub.access.infrastructure.web.principal;
 
 import com.knowledgehub.access.application.IssuedCredential;
 
