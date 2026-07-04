@@ -6,11 +6,12 @@ Tri thức được cung cấp qua hai giao diện với vai trò phân định 
 
 MCP server công bố các tool để agent tự khám phá và gọi bằng ngôn ngữ tự nhiên của nó:
 
-- **Tool truy vấn tri thức** — nhận câu truy vấn văn bản tự do cùng các tham số tùy chọn (số kết quả tối đa, khoanh theo ref, khoanh theo loại dữ liệu), trả về danh sách kết quả xếp hạng như mô tả ở chương *Truy xuất hybrid*. Mô tả tool nói rõ cho agent biết mỗi kết quả kèm điểm tin cậy và metadata trích dẫn, và kết quả đã được giới hạn trong phạm vi nguồn agent được đọc.
+- **Tool truy vấn tri thức** — nhận câu truy vấn văn bản tự do cùng các tham số tùy chọn (số kết quả tối đa, khoanh theo source, khoanh theo ref, khoanh theo loại dữ liệu), trả về danh sách kết quả xếp hạng như mô tả ở chương *Truy xuất hybrid*. Mô tả tool nói rõ cho agent biết mỗi kết quả kèm điểm tin cậy và metadata trích dẫn, và kết quả đã được giới hạn trong phạm vi nguồn agent được đọc.
 - **Tool đồng bộ nguồn** — cho agent chủ động kích hoạt cập nhật một nguồn khi nghi ngờ tri thức đã cũ (ví dụ sau khi chính nó vừa sửa mã), thay vì phải chờ quản trị viên (FR-6.1).
-- **Tool thông tin hệ thống** — cho agent kiểm tra trạng thái và độ mới của tri thức trước khi quyết định có cần đồng bộ trước lúc hỏi (FR-6.5).
+- **Tool trạng thái nguồn** — cho agent kiểm tra độ mới của một nguồn: đã từng đồng bộ chưa, lần đồng bộ gần nhất, và (với nguồn git) ref/commit đã index — để quyết định có cần đồng bộ trước lúc hỏi (FR-6.5). Tool này chỉ đọc, mở cho mọi agent đã xác thực.
+- **Tool thông tin hệ thống** — cho agent xem thông tin vận hành runtime của hệ thống.
 
-Cặp tool truy vấn + đồng bộ tạo thành vòng làm việc tự nhiên của agent: *kiểm tra độ mới → (nếu cần) đồng bộ → truy vấn → trích dẫn*.
+Bộ ba tool trạng thái nguồn + đồng bộ + truy vấn tạo thành vòng làm việc tự nhiên của agent: *kiểm tra độ mới → (nếu cần) đồng bộ → truy vấn → trích dẫn*.
 
 ## Giao diện REST
 
