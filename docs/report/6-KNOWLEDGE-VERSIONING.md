@@ -24,6 +24,8 @@ Mỗi đơn vị tri thức — file, entity mã nguồn, chunk — được gá
 
 Khi một file được xử lý lại, các tính chất trên phối hợp thành một phép hợp nhất: chunk có nội dung không đổi giữ nguyên định danh và được giữ lại kèm embedding sẵn có; chunk có nội dung mới nhận định danh mới và được thêm vào; chunk cũ không còn xuất hiện bị gỡ bỏ. Nhờ đó tri thức luôn khớp với nguồn ở mức nội dung, đồng thời mỗi chunk vẫn truy ngược được về nguồn gốc theo provenance (FR-1.4, FR-2.4).
 
+*Ví dụ.* Một file mã nguồn có ba hàm, đã index thành ba chunk A, B, C. Lập trình viên sửa thân hàm thứ hai rồi kích hoạt đồng bộ. So hash mức file cho biết file này *đã đổi* nên được xử lý lại; ở mức chunk, A và C cho ra đúng content hash cũ — được nhận diện là đã có, giữ nguyên định danh lẫn embedding, không tốn một lời gọi embedding nào; hàm sửa cho ra chunk B′ với hash và định danh mới — chỉ mình nó được embed và ghi thêm; còn B cũ, không xuất hiện trong tập định danh mới của file, bị gỡ khỏi cả vector store lẫn graph store. Tổng chi phí của lần đồng bộ: một lần embed cho đúng phần đã đổi. Trong khi đó *file* — định danh theo danh tính — vẫn là chính nó suốt quá trình, nên mọi quan hệ trỏ vào file không hề đứt.
+
 ## Vai trò trong hệ thống
 
 Cơ chế định danh ổn định là nền tảng cho hai năng lực của hệ thống:
