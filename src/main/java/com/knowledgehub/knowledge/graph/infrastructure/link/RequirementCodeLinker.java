@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -38,8 +37,8 @@ class RequirementCodeLinker extends AbstractDocumentLinker {
   private static final Pattern QUALIFIED =
       Pattern.compile("\\b(?:[a-z][\\w]*\\.)+[A-Z][A-Za-z0-9]*\\b");
 
-  /** A path token ending in a Java source file. */
-  private static final Pattern JAVA_PATH = Pattern.compile("\\b[\\w./-]*\\w+\\.java\\b");
+  /** A path token ending in a source file of any known language. */
+  private static final Pattern CODE_PATH = SourceLanguage.codePathPattern();
 
   private static final double REFERENCE_CONFIDENCE = 0.85;
 
@@ -64,7 +63,7 @@ class RequirementCodeLinker extends AbstractDocumentLinker {
     Set<String> paths = new LinkedHashSet<>();
     for (Chunk chunk : requirementChunks) {
       addMatches(QUALIFIED, chunk.text(), qualifiedNames);
-      addMatches(JAVA_PATH, chunk.text(), paths);
+      addMatches(CODE_PATH, chunk.text(), paths);
     }
     Map<String, String> resolvedQualified = resolver.resolve(qualifiedNames, scope);
     Map<String, List<String>> byPath = resolver.findByPath(paths, scope);
@@ -92,7 +91,7 @@ class RequirementCodeLinker extends AbstractDocumentLinker {
 
   private static void pathCandidates(
       Chunk chunk, Map<String, List<String>> byPath, Set<String> linked, List<LinkCandidate> out) {
-    Matcher matcher = JAVA_PATH.matcher(chunk.text());
+    Matcher matcher = CODE_PATH.matcher(chunk.text());
     while (matcher.find()) {
       String path = matcher.group();
       for (String toId : byPath.getOrDefault(path, List.of())) {
@@ -106,27 +105,8 @@ class RequirementCodeLinker extends AbstractDocumentLinker {
 
   /** A reference naming a test verifies the requirement; anything else implements it. */
   private static RelationType typeFor(String reference) {
-    return isTest(reference) ? RelationType.VERIFIED_BY : RelationType.IMPLEMENTED_BY;
-  }
-
-  private static boolean isTest(String reference) {
-    if (reference.toLowerCase(Locale.ROOT).contains("/test/")) {
-      return true; // a Maven/Gradle test source root
-    }
-    String name = simpleName(reference);
-    return name.endsWith("Test")
-        || name.endsWith("Tests")
-        || name.endsWith("Spec")
-        || name.endsWith("IT"); // the conventional integration-test suffix, capitalised
-  }
-
-  /** The simple type name: the last path/package segment, minus any {@code .java} suffix. */
-  private static String simpleName(String reference) {
-    String trimmed =
-        reference.endsWith(".java")
-            ? reference.substring(0, reference.length() - ".java".length())
-            : reference;
-    int separator = Math.max(trimmed.lastIndexOf('/'), trimmed.lastIndexOf('.'));
-    return trimmed.substring(separator + 1);
+    return SourceLanguage.isTestReference(reference)
+        ? RelationType.VERIFIED_BY
+        : RelationType.IMPLEMENTED_BY;
   }
 }
