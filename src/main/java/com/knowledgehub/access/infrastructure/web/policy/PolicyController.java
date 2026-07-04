@@ -1,4 +1,4 @@
-package com.knowledgehub.access.infrastructure.web;
+package com.knowledgehub.access.infrastructure.web.policy;
 
 import com.knowledgehub.access.application.PrincipalAdminService;
 import io.swagger.v3.oas.annotations.Operation;
