@@ -28,7 +28,7 @@
 - **FR-4.1** Hệ thống phải nhận truy vấn ở dạng văn bản ngôn ngữ tự nhiên (free-text) và dùng làm đầu vào cho truy xuất: embedding hóa để semantic search và tách từ khóa cho keyword search (FR-4.2). Hệ thống không tự hiểu hay diễn giải ý định ngôn ngữ -- đó là vai trò của agent.
 - **FR-4.2** Hệ thống phải thực hiện hybrid search, kết hợp semantic search, keyword search và graph traversal, rồi hợp nhất (fusion) thành một danh sách kết quả.
 - **FR-4.3** Hệ thống phải trả kết quả dưới dạng JSON có cấu trúc, mỗi kết quả kèm relevance score và metadata (nguồn, đường dẫn file, vị trí dòng code, ref/phiên bản).
-- **FR-4.4** Hệ thống phải hỗ trợ các tham số truy vấn tùy chọn, bao gồm: giới hạn số kết quả (top-k) và lọc theo ref hoặc loại dữ liệu.
+- **FR-4.4** Hệ thống phải hỗ trợ các tham số truy vấn tùy chọn, bao gồm: giới hạn số kết quả (top-k) và lọc theo source, ref hoặc loại dữ liệu. Bộ lọc source chỉ được thu hẹp trong phạm vi các source mà principal được đọc, không bao giờ mở rộng.
 - **FR-4.5** Khi truy vấn tham chiếu tới một ref chưa được index, hệ thống phải trả kết quả theo ref canonical và chỉ rõ điều này trong metadata.
 
 ### FR-5 — API & MCP

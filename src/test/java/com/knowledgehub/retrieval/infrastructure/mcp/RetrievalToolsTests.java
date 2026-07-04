@@ -29,7 +29,7 @@ class RetrievalToolsTests {
     when(aclFilterProvider.currentAllowedSources()).thenReturn(Set.of("s-a", "s-b"));
     when(retrievalService.retrieve(any(), any())).thenReturn(RankedResult.empty());
 
-    tools.queryKnowledge("cache keying", 5, "main", "doc");
+    tools.queryKnowledge("cache keying", 5, null, "main", "doc");
 
     ArgumentCaptor<Query> query = ArgumentCaptor.forClass(Query.class);
     @SuppressWarnings("unchecked")
@@ -48,7 +48,7 @@ class RetrievalToolsTests {
     when(aclFilterProvider.currentAllowedSources()).thenReturn(Set.of());
     when(retrievalService.retrieve(any(), any())).thenThrow(new SourceNotFoundException("s-x"));
 
-    assertThatThrownBy(() -> tools.queryKnowledge("q", null, null, null))
+    assertThatThrownBy(() -> tools.queryKnowledge("q", null, null, null, null))
         .isInstanceOf(ToolFailure.class)
         .satisfies(
             e -> assertThat(((ToolFailure) e).errorCode()).isEqualTo(ErrorCode.SOURCE_NOT_FOUND));
@@ -57,7 +57,7 @@ class RetrievalToolsTests {
   @Test
   void mapsARejectedArgumentToValidationFailedWithTheCodeInTheMessage() {
     // A blank query text is rejected by the domain with IllegalArgumentException.
-    assertThatThrownBy(() -> tools.queryKnowledge("  ", null, null, null))
+    assertThatThrownBy(() -> tools.queryKnowledge("  ", null, null, null, null))
         .isInstanceOf(ToolFailure.class)
         .hasMessageContaining("[" + ErrorCode.VALIDATION_FAILED.name() + "]")
         .satisfies(

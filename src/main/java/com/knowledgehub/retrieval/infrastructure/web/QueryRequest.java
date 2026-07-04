@@ -12,6 +12,7 @@ import jakarta.validation.constraints.Positive;
  *
  * @param text the free-text query (required, non-blank)
  * @param topK maximum number of results, or {@code null} for the configured default
+ * @param sourceId restrict to a single source (narrows within the caller's readable set)
  * @param ref restrict to a version/branch, or {@code null} for the canonical ref
  * @param type restrict to a data type ({@code code}/{@code doc}/{@code requirement}/{@code commit})
  */
@@ -22,6 +23,10 @@ public record QueryRequest(
     @Schema(description = "Maximum number of results; defaults to the server's configured top-k")
         @Positive
         Integer topK,
+    @Schema(
+            description = "Restrict to a single source id (narrows within your readable sources)",
+            example = "docs-service")
+        String sourceId,
     @Schema(description = "Restrict to a version/branch ref", example = "main") String ref,
     @Schema(
             description = "Restrict to a data type",
@@ -30,6 +35,6 @@ public record QueryRequest(
         String type) {
 
   Query toQuery() {
-    return new Query(text, new QueryParams(topK, ref, type));
+    return new Query(text, new QueryParams(topK, sourceId, ref, type));
   }
 }

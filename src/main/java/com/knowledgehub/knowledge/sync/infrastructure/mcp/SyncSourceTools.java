@@ -2,6 +2,7 @@ package com.knowledgehub.knowledge.sync.infrastructure.mcp;
 
 import com.knowledgehub.knowledge.sync.application.SyncService;
 import com.knowledgehub.knowledge.sync.domain.SyncResult;
+import com.knowledgehub.knowledge.sync.infrastructure.web.SourceStatusResponse;
 import com.knowledgehub.shared.error.ToolErrors;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
@@ -9,10 +10,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 
 /**
- * MCP tool letting an admin agent bring a source's index up to date before querying. It is an
- * inbound adapter over the same {@link SyncService} the REST controller calls — no sync logic lives
- * here. Syncing is an administrative operation, so the tool carries the same admin check the REST
- * sync endpoint does. The call is idempotent: re-syncing an unchanged source is a no-op.
+ * MCP tools for keeping knowledge fresh: {@code source_status} lets any authenticated agent check
+ * how up to date a source's index is, and {@code sync_source} lets an admin agent bring it up to
+ * date before querying. Both are inbound adapters over the same {@link SyncService} the REST
+ * controllers call — no sync logic lives here. Only syncing is administrative, so only it carries
+ * the admin check; with {@code list_sources} they support the loop <em>discover sources → check
+ * freshness → (if stale) sync → query</em>.
  *
  * <p>Named to avoid the {@code syncTools} bean the MCP server auto-configuration already defines.
  */
@@ -23,6 +26,19 @@ public class SyncSourceTools {
 
   public SyncSourceTools(SyncService syncService) {
     this.syncService = syncService;
+  }
+
+  @Tool(
+      name = "source_status",
+      description =
+          "Check how fresh a knowledge source's index is: whether it has ever been synced, when it "
+              + "was last synced, and (for a git source) at which ref and commit. Call this to "
+              + "decide whether to sync before querying. Read-only and available to every "
+              + "authenticated agent.")
+  public SourceStatusResponse sourceStatus(
+      @ToolParam(description = "The id of the source to check") String sourceId) {
+    return ToolErrors.mapped(
+        () -> SourceStatusResponse.from(sourceId, syncService.freshnessOf(sourceId)));
   }
 
   @PreAuthorize("hasRole('ADMIN')")

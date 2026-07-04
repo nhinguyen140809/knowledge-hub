@@ -16,7 +16,7 @@ import java.util.Optional;
 public record SourceStatusResponse(
     String sourceId, boolean indexed, String indexedAt, String commitSha, String ref) {
 
-  static SourceStatusResponse from(String sourceId, Optional<FreshnessInfo> freshness) {
+  public static SourceStatusResponse from(String sourceId, Optional<FreshnessInfo> freshness) {
     return freshness
         .map(
             info ->

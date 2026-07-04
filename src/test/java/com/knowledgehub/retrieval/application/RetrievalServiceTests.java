@@ -110,6 +110,36 @@ class RetrievalServiceTests {
   }
 
   @Test
+  void narrowsTheSourceScopeToTheRequestedSource() {
+    when(vectorStore.search(any(), anyInt(), any())).thenReturn(List.of());
+    when(keywordSearch.search(anyList(), anyInt(), any())).thenReturn(List.of());
+
+    service.retrieve(
+        new Query("find it", new QueryParams(null, "src-a", null, null)),
+        java.util.Set.of("src-a", "src-b"));
+
+    var filter =
+        org.mockito.ArgumentCaptor.forClass(com.knowledgehub.knowledge.domain.Filter.class);
+    verify(vectorStore).search(any(), anyInt(), filter.capture());
+    assertThat(filter.getValue().allowedSources()).containsExactly("src-a");
+  }
+
+  @Test
+  void requestingAnUnreadableSourceYieldsNothingReadable() {
+    when(vectorStore.search(any(), anyInt(), any())).thenReturn(List.of());
+    when(keywordSearch.search(anyList(), anyInt(), any())).thenReturn(List.of());
+
+    service.retrieve(
+        new Query("find it", new QueryParams(null, "secret-src", null, null)),
+        java.util.Set.of("src-a"));
+
+    var filter =
+        org.mockito.ArgumentCaptor.forClass(com.knowledgehub.knowledge.domain.Filter.class);
+    verify(vectorStore).search(any(), anyInt(), filter.capture());
+    assertThat(filter.getValue().allowedSources()).isEmpty();
+  }
+
+  @Test
   void fallsBackToCanonicalRefWhenTheRequestedRefIsNotIndexed() {
     when(vectorStore.search(any(), anyInt(), any())).thenReturn(List.of(new ScoredId("a", 0.9)));
     when(keywordSearch.search(anyList(), anyInt(), any())).thenReturn(List.of());
@@ -117,7 +147,8 @@ class RetrievalServiceTests {
     when(reader.refIndexed(any(), any())).thenReturn(false);
 
     RankedResult result =
-        service.retrieve(new Query("find it", new QueryParams(null, "feature-x", null)), null);
+        service.retrieve(
+            new Query("find it", new QueryParams(null, null, "feature-x", null)), null);
 
     assertThat(result.servedFromCanonicalRef()).isTrue();
     assertThat(result.hits()).extracting(Hit::id).containsExactly("a");

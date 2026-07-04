@@ -1,5 +1,6 @@
 package com.knowledgehub.shared.config;
 
+import com.knowledgehub.knowledge.ingestion.infrastructure.mcp.SourceCatalogTools;
 import com.knowledgehub.knowledge.sync.infrastructure.mcp.SyncSourceTools;
 import com.knowledgehub.retrieval.infrastructure.mcp.RetrievalTools;
 import com.knowledgehub.system.infrastructure.mcp.SystemTools;
@@ -19,9 +20,12 @@ public class McpToolsConfig {
 
   @Bean
   public ToolCallbackProvider knowledgeHubTools(
-      SystemTools systemTools, RetrievalTools retrievalTools, SyncSourceTools syncSourceTools) {
+      SystemTools systemTools,
+      RetrievalTools retrievalTools,
+      SourceCatalogTools sourceCatalogTools,
+      SyncSourceTools syncSourceTools) {
     return MethodToolCallbackProvider.builder()
-        .toolObjects(systemTools, retrievalTools, syncSourceTools)
+        .toolObjects(systemTools, retrievalTools, sourceCatalogTools, syncSourceTools)
         .build();
   }
 }
