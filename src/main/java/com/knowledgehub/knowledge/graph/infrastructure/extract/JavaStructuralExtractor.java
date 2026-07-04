@@ -40,7 +40,7 @@ import org.springframework.stereotype.Component;
  *
  * <p>Targets are resolved through the {@link EntityResolver}, so an import, supertype or overridden
  * method that lives in another source links across source boundaries. Calls across types, which
- * need full type inference, are intentionally left to a later, symbol-solver-backed pass.
+ * need full type inference, are out of scope here and handled by a symbol-solver-backed extractor.
  */
 @Component
 public class JavaStructuralExtractor implements StructuralExtractor {

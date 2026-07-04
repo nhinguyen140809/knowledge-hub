@@ -6,11 +6,11 @@ package com.knowledgehub.knowledge.graph.domain;
  * deterministic} type is read directly from syntax and is always stored with confidence 1; a
  * non-deterministic type is inferred and must carry a heuristic confidence.
  *
- * <p>This is the full graph vocabulary; not every type has a producer yet. The deep relations are
- * an opt-in extraction pass, and {@code MODIFIES} (commit to changed code), {@code CONSUMES} (an
- * API call across services) and {@code LINKS_TO} (document to document) need node kinds and signals
- * that arrive with later ingestion work. Defining them up front keeps the schema and traversal
- * stable as those producers land.
+ * <p>This is the full graph vocabulary. Not every type comes from the same extraction: the deep
+ * relations are an opt-in pass, and {@code MODIFIES} (commit to changed code), {@code CONSUMES} (an
+ * API call across services) and {@code LINKS_TO} (document to document) depend on node kinds and
+ * signals sourced from other ingestion paths. Defining them up front keeps the schema and traversal
+ * stable regardless of which producers are enabled.
  */
 public enum RelationType {
 

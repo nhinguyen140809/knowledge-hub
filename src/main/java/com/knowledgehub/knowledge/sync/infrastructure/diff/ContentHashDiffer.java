@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
  * one whose hash changed is modified, and one stored but no longer present is deleted.
  *
  * <p>This needs no source-type-specific logic, so it serves both source types; a git source could
- * later swap in a cheaper commit-diff implementation behind the same port.
+ * use a cheaper commit-diff implementation behind the same port instead.
  */
 @Component
 class ContentHashDiffer implements SourceDiffer {

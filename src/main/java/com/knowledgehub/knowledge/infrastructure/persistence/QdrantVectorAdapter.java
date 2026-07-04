@@ -106,8 +106,8 @@ public class QdrantVectorAdapter implements HybridVectorStore {
 
   @Override
   public List<ScoredId> hybridSearch(float[] dense, SparseVector sparse, int k, Filter filter) {
-    // Native dense+sparse fusion (Qdrant Query API) lands with the sparse-embedding pipeline (P4);
-    // until the pipeline produces sparse vectors there is nothing to fuse, so fall back to dense.
+    // No sparse vector is populated here, so there is nothing to fuse — fall back to dense search.
+    // Native dense+sparse fusion via Qdrant's Query API can replace this once sparse vectors exist.
     return search(dense, k, filter);
   }
 

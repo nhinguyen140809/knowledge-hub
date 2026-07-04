@@ -4,11 +4,10 @@ import com.knowledgehub.shared.id.IdFactory;
 import java.util.Objects;
 
 /**
- * A named code construct (class, method, field…) extracted from a source file. Entities are the
- * nodes that semantic relationships ({@code CALLS}, {@code IMPORTS}, …) attach to later; this phase
- * only creates them and the structural {@code DECLARES}/{@code CONTAINS} hierarchy. The {@code
+ * A named code construct (class, method, field…) extracted from a source file. An entity is the
+ * unit that structural and semantic relationships between code are expressed over. The {@code
  * entityId} is derived from {@code (sourceId, path, qualifiedName)} so it is stable across edits to
- * the body (idempotent upsert).
+ * the body, letting a re-extracted entity replace its prior version in place.
  *
  * @param entityId stable, identity-derived id
  * @param sourceId the source this entity came from
