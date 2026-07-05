@@ -10,10 +10,10 @@ import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Component;
 
 /**
- * BM25 keyword search over the Neo4j full-text indexes - {@code chunk_text} on chunk bodies and
- * {@code entity_name} on entity names/signatures. The two indexes are queried together and the best
- * score per id wins, so an exact identifier match surfaces whether it lives in prose or in a
- * symbol.
+ * BM25 keyword search over the Neo4j full-text indexes - {@code chunk_text} on chunk bodies, {@code
+ * entity_name} on entity names/signatures, and {@code commit_message} on commit messages. The
+ * indexes are queried together and the best score per id wins, so an exact identifier match
+ * surfaces whether it lives in prose, in a symbol, or in a commit message.
  *
  * <p>{@code allowedSources} is pushed into the query as a hard pre-filter (a disallowed source is
  * never scored); the functional {@code ref}/{@code type} filters are applied later against loaded
@@ -32,6 +32,10 @@ class Neo4jKeywordSearcher implements KeywordSearchPort {
         CALL db.index.fulltext.queryNodes('entity_name', $query) YIELD node, score
         WHERE $unrestricted OR node.source_id IN $allowedSources
         RETURN node.entity_id AS id, score
+        UNION
+        CALL db.index.fulltext.queryNodes('commit_message', $query) YIELD node, score
+        WHERE $unrestricted OR node.source_id IN $allowedSources
+        RETURN node.commit_id AS id, score
       }
       WITH id, max(score) AS score
       RETURN id, score ORDER BY score DESC LIMIT $k

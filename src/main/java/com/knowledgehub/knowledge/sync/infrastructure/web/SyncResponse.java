@@ -11,6 +11,7 @@ import com.knowledgehub.knowledge.sync.domain.SyncResult;
  * @param reindexed files re-indexed after a change
  * @param evicted files removed from the index
  * @param skipped files left untouched
+ * @param commitsIndexed commits newly added to the knowledge graph (0 for a non-git source)
  * @param durationMs duration of the sync
  * @param toCommit the commit synced to, or {@code null} for a non-git source
  * @param idempotent true when nothing changed (the sync was a no-op)
@@ -21,6 +22,7 @@ public record SyncResponse(
     int reindexed,
     int evicted,
     int skipped,
+    int commitsIndexed,
     long durationMs,
     String toCommit,
     boolean idempotent) {
@@ -32,6 +34,7 @@ public record SyncResponse(
         result.reindexed(),
         result.evicted(),
         result.skipped(),
+        result.commitsIndexed(),
         result.durationMs(),
         result.toCommit(),
         result.idempotent());

@@ -12,10 +12,11 @@ import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Component;
 
 /**
- * Read side of the graph used to finish a query. Metadata is loaded for both node kinds in one
- * query: a {@code :Chunk} carries its own path/lines/ref, while a {@code :CodeEntity} borrows the
- * path from its declaring {@code :File}. Both the load and the ref check honour {@code
- * allowedSources}, so assembly cannot leak a disallowed source either.
+ * Read side of the graph used to finish a query. Metadata is loaded for all node kinds in one
+ * query: a {@code :Chunk} carries its own path/lines/ref, a {@code :CodeEntity} borrows the path
+ * from its declaring {@code :File}, and a {@code :Commit} has no path — its identity is its hash,
+ * returned as {@code commit_sha} with type {@code commit}. Both the load and the ref check honour
+ * {@code allowedSources}, so assembly cannot leak a disallowed source either.
  */
 @Component
 class Neo4jRetrievalReader implements RetrievalReadPort {
@@ -26,17 +27,24 @@ class Neo4jRetrievalReader implements RetrievalReadPort {
       OPTIONAL MATCH (c:Chunk {chunk_id: id})
       OPTIONAL MATCH (e:CodeEntity {entity_id: id})
       OPTIONAL MATCH (ef:File {file_id: e.file_id})
-      WITH id, c, e, ef, coalesce(c.source_id, e.source_id) AS source_id
-      WHERE (c IS NOT NULL OR e IS NOT NULL)
+      OPTIONAL MATCH (m:Commit {commit_id: id})
+      WITH id, c, e, ef, m, coalesce(c.source_id, e.source_id, m.source_id) AS source_id
+      WHERE (c IS NOT NULL OR e IS NOT NULL OR m IS NOT NULL)
         AND ($unrestricted OR source_id IN $allowedSources)
       RETURN id,
-        CASE WHEN c IS NOT NULL THEN 'chunk' ELSE 'entity' END AS kind,
+        CASE
+          WHEN c IS NOT NULL THEN 'chunk'
+          WHEN e IS NOT NULL THEN 'entity'
+          ELSE 'commit'
+        END AS kind,
         source_id AS source_id,
         coalesce(c.path, ef.path) AS path,
         coalesce(c.line_start, e.line_start) AS line_start,
         coalesce(c.line_end, e.line_end) AS line_end,
-        coalesce(c.type, 'code') AS type,
-        c.ref AS ref, c.indexed_at AS indexed_at, c.commit_sha AS commit_sha
+        CASE WHEN m IS NOT NULL THEN 'commit' ELSE coalesce(c.type, 'code') END AS type,
+        coalesce(c.ref, m.ref) AS ref,
+        coalesce(c.indexed_at, m.indexed_at) AS indexed_at,
+        coalesce(c.commit_sha, m.sha) AS commit_sha
       """;
 
   private static final String REF_INDEXED =

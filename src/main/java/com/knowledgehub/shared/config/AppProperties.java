@@ -25,6 +25,7 @@ import org.springframework.validation.annotation.Validated;
 public record AppProperties(
     @Valid Embedding embedding,
     @Valid Chunk chunk,
+    @Valid Commits commits,
     @Valid Retrieval retrieval,
     @Valid Linking linking,
     @Valid Security security) {
@@ -35,6 +36,9 @@ public record AppProperties(
     }
     if (chunk == null) {
       chunk = new Chunk(null, null);
+    }
+    if (commits == null) {
+      commits = new Commits(null);
     }
     if (retrieval == null) {
       retrieval = new Retrieval(null, null, null, null, null, null);
@@ -94,6 +98,22 @@ public record AppProperties(
       }
       if (overlap == null) {
         overlap = 64;
+      }
+    }
+  }
+
+  /**
+   * Commit-history indexing tunables.
+   *
+   * @param historyDepth how many of the newest commits are indexed per source (default 100). Each
+   *     sync only processes commits not indexed yet, so the depth bounds the first walk of a source
+   *     and the recovery after a history rewrite, not the steady state. Zero disables commit
+   *     indexing entirely.
+   */
+  public record Commits(@PositiveOrZero Integer historyDepth) {
+    public Commits {
+      if (historyDepth == null) {
+        historyDepth = 100;
       }
     }
   }

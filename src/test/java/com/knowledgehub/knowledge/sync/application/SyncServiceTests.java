@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.knowledgehub.knowledge.indexing.application.CommitIndexingService;
 import com.knowledgehub.knowledge.indexing.application.IndexingService;
 import com.knowledgehub.knowledge.ingestion.application.SourceDeleted;
 import com.knowledgehub.knowledge.ingestion.application.SourceNotFoundException;
@@ -34,6 +35,7 @@ class SyncServiceTests {
   private final SourceRepository sources = mock(SourceRepository.class);
   private final SourceDiffer differ = mock(SourceDiffer.class);
   private final IndexingService indexing = mock(IndexingService.class);
+  private final CommitIndexingService commitIndexing = mock(CommitIndexingService.class);
   private final Evictor evictor = mock(Evictor.class);
   private final FreshnessRepository freshness = mock(FreshnessRepository.class);
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
@@ -45,7 +47,9 @@ class SyncServiceTests {
 
   @BeforeEach
   void setUp() {
-    service = new SyncService(sources, List.of(differ), indexing, evictor, freshness, events);
+    service =
+        new SyncService(
+            sources, List.of(differ), indexing, commitIndexing, evictor, freshness, events);
     when(sources.findById("s1")).thenReturn(Optional.of(source));
     when(differ.supports(any())).thenReturn(true);
   }
@@ -66,6 +70,37 @@ class SyncServiceTests {
   }
 
   @Test
+  void newCommitsOnUnchangedFilesStillRefreshTheIndex() {
+    when(differ.diff(any()))
+        .thenReturn(new ChangeSet("s1", List.of(), List.of(), List.of(), 3, "abc123"));
+    when(commitIndexing.index(eq(source), any())).thenReturn(2);
+
+    SyncResult result = service.sync("s1");
+
+    // The files were a no-op but the knowledge grew, so the run is not idempotent and
+    // freshness/dependents are still updated.
+    assertThat(result.idempotent()).isFalse();
+    assertThat(result.commitsIndexed()).isEqualTo(2);
+    verify(indexing, never()).reindex(any(), any());
+    verify(freshness).save(any(FreshnessInfo.class));
+    verify(events).publishEvent(any(IndexCompleted.class));
+  }
+
+  @Test
+  void aCommitIndexingFailureNeverFailsTheFileSync() {
+    when(differ.diff(any()))
+        .thenReturn(new ChangeSet("s1", List.of("New.java"), List.of(), List.of(), 0, "abc123"));
+    when(indexing.reindex(eq("s1"), any())).thenReturn(Map.of("New.java", List.of("c1")));
+    when(commitIndexing.index(eq(source), any())).thenThrow(new IllegalStateException("bad repo"));
+
+    SyncResult result = service.sync("s1");
+
+    assertThat(result.indexed()).isEqualTo(1);
+    assertThat(result.commitsIndexed()).isZero();
+    verify(freshness).save(any(FreshnessInfo.class));
+  }
+
+  @Test
   void routesAddedModifiedAndDeletedFiles() {
     when(differ.diff(any()))
         .thenReturn(
@@ -73,6 +108,7 @@ class SyncServiceTests {
                 "s1", List.of("New.java"), List.of("Mod.java"), List.of("Del.java"), 5, "abc123"));
     when(indexing.reindex(eq("s1"), any()))
         .thenReturn(Map.of("New.java", List.of("c3"), "Mod.java", List.of("c1", "c2")));
+    when(commitIndexing.index(eq(source), any())).thenReturn(3);
 
     SyncResult result = service.sync("s1");
 
@@ -80,6 +116,7 @@ class SyncServiceTests {
     assertThat(result.reindexed()).isEqualTo(1);
     assertThat(result.evicted()).isEqualTo(1);
     assertThat(result.skipped()).isEqualTo(5);
+    assertThat(result.commitsIndexed()).isEqualTo(3);
     assertThat(result.idempotent()).isFalse();
     assertThat(result.toCommit()).isEqualTo("abc123");
 
