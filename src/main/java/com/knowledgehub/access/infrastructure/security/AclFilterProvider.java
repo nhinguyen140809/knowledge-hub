@@ -7,6 +7,7 @@ import com.knowledgehub.access.domain.AuthenticatedPrincipal;
 import com.knowledgehub.access.domain.Authorizer;
 import com.knowledgehub.shared.config.AppProperties;
 import java.util.Set;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -28,6 +29,7 @@ public class AclFilterProvider {
   private final Authorizer authorizer;
   private final Cache<String, Set<String>> readableSourcesCache;
 
+  @Autowired
   public AclFilterProvider(Authorizer authorizer, AppProperties properties) {
     this(authorizer, properties, Ticker.systemTicker());
   }
