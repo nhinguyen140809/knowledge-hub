@@ -84,4 +84,58 @@ class SourceTests {
 
     assertThat(a).isEqualTo(b).hasSameHashCodeAs(b);
   }
+
+  @Test
+  void carriesOptionalNameAndDescription() {
+    Source source =
+        new Source(
+            "src", SourceType.FS, "/data", null, null, null, "  Design docs  ", "Team notes");
+
+    assertThat(source.name()).contains("Design docs"); // trimmed
+    assertThat(source.description()).contains("Team notes");
+  }
+
+  @Test
+  void blankNameAndDescriptionAreAbsent() {
+    Source source = new Source("src", SourceType.FS, "/data", null, null, null, " ", "");
+
+    assertThat(source.name()).isEmpty();
+    assertThat(source.description()).isEmpty();
+  }
+
+  @Test
+  void withMetadataReplacesMetadataAndKeepsEverythingElse() {
+    Source original =
+        new Source(
+            "src-1",
+            SourceType.GIT,
+            "https://x/y.git",
+            "main",
+            List.of("**/*.java"),
+            List.of("target"),
+            "Old",
+            "Old desc");
+
+    Source updated = original.withMetadata("New", "New desc");
+
+    assertThat(updated.name()).contains("New");
+    assertThat(updated.description()).contains("New desc");
+    assertThat(updated.sourceId()).isEqualTo("src-1");
+    assertThat(updated.ref()).contains("main");
+    assertThat(updated.include()).containsExactly("**/*.java");
+    assertThat(updated.ignore()).containsExactly("target");
+  }
+
+  @Test
+  void withConfigPreservesMetadata() {
+    Source original =
+        new Source(
+            "src-1", SourceType.GIT, "https://x/y.git", "main", null, null, "Repo", "A repo");
+
+    Source updated = original.withConfig("dev", List.of("**/*.md"), null);
+
+    assertThat(updated.ref()).contains("dev");
+    assertThat(updated.name()).contains("Repo");
+    assertThat(updated.description()).contains("A repo");
+  }
 }
