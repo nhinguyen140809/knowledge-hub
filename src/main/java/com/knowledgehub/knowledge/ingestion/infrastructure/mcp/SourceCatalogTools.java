@@ -29,7 +29,8 @@ public class SourceCatalogTools {
       name = "list_sources",
       description =
           "List the knowledge sources you are allowed to read, each with its id, kind (git or "
-              + "filesystem) and configured ref. Call this first to discover what you can query; "
+              + "filesystem), configured ref, and a human-facing name and description of what it "
+              + "holds. Call this first to discover what you can query and pick the right source; "
               + "then use source_status to check how fresh a source's index is. Read-only and "
               + "available to every authenticated agent.")
   public List<ReadableSourceResponse> listSources() {

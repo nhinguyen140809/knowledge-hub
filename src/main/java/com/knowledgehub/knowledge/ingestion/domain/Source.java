@@ -10,7 +10,9 @@ import java.util.Optional;
  *
  * <p>Invariant: {@code ref} (a branch/tag/commit) is meaningful only for {@link SourceType#GIT}; it
  * must be absent for a filesystem source. {@code include}/{@code ignore} are glob patterns applied
- * to paths before content is read.
+ * to paths before content is read. {@code name} and {@code description} are optional human-facing
+ * metadata — a short label and a longer explanation of what the source holds — that carry no
+ * behaviour; a blank value is normalized to absent.
  */
 public final class Source {
 
@@ -20,7 +22,10 @@ public final class Source {
   private final String ref;
   private final List<String> include;
   private final List<String> ignore;
+  private final String name;
+  private final String description;
 
+  /** Convenience constructor for a source with no human-facing metadata. */
   public Source(
       String sourceId,
       SourceType type,
@@ -28,6 +33,18 @@ public final class Source {
       String ref,
       List<String> include,
       List<String> ignore) {
+    this(sourceId, type, uriOrPath, ref, include, ignore, null, null);
+  }
+
+  public Source(
+      String sourceId,
+      SourceType type,
+      String uriOrPath,
+      String ref,
+      List<String> include,
+      List<String> ignore,
+      String name,
+      String description) {
     this.sourceId = requireText(sourceId, "sourceId");
     this.type = Objects.requireNonNull(type, "type");
     this.uriOrPath = requireText(uriOrPath, "uriOrPath");
@@ -37,6 +54,8 @@ public final class Source {
     this.ref = ref;
     this.include = include == null ? List.of() : List.copyOf(include);
     this.ignore = ignore == null ? List.of() : List.copyOf(ignore);
+    this.name = blankToNull(name);
+    this.description = blankToNull(description);
   }
 
   public String sourceId() {
@@ -66,13 +85,33 @@ public final class Source {
     return ignore;
   }
 
+  /** The human-facing label for this source, or empty if none was given. */
+  public Optional<String> name() {
+    return Optional.ofNullable(name);
+  }
+
+  /** A longer human-facing description of what this source holds, or empty if none was given. */
+  public Optional<String> description() {
+    return Optional.ofNullable(description);
+  }
+
   /**
    * Returns a copy with new editable configuration — the Git {@code ref} and the include/ignore
-   * globs — while the identity ({@code sourceId}), {@code type}, and location ({@code uriOrPath})
-   * stay unchanged. The same construction-time invariants apply (e.g. {@code ref} only for Git).
+   * globs — while the identity ({@code sourceId}), {@code type}, location ({@code uriOrPath}) and
+   * metadata ({@code name}/{@code description}) stay unchanged. The same construction-time
+   * invariants apply (e.g. {@code ref} only for Git).
    */
   public Source withConfig(String ref, List<String> include, List<String> ignore) {
-    return new Source(sourceId, type, uriOrPath, ref, include, ignore);
+    return new Source(sourceId, type, uriOrPath, ref, include, ignore, name, description);
+  }
+
+  /**
+   * Returns a copy with new human-facing metadata — the {@code name} and {@code description} —
+   * while identity, location and all ingestion configuration stay unchanged. A blank value clears
+   * that field.
+   */
+  public Source withMetadata(String name, String description) {
+    return new Source(sourceId, type, uriOrPath, ref, include, ignore, name, description);
   }
 
   private static String requireText(String value, String field) {
@@ -80,6 +119,10 @@ public final class Source {
       throw new IllegalArgumentException(field + " must not be blank");
     }
     return value;
+  }
+
+  private static String blankToNull(String value) {
+    return value == null || value.isBlank() ? null : value.strip();
   }
 
   @Override
