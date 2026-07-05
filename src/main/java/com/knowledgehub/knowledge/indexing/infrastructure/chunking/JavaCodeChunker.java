@@ -15,15 +15,14 @@ import com.github.javaparser.ast.body.VariableDeclarator;
 import com.knowledgehub.knowledge.indexing.domain.Chunk;
 import com.knowledgehub.knowledge.indexing.domain.ChunkConfig;
 import com.knowledgehub.knowledge.indexing.domain.ChunkType;
-import com.knowledgehub.knowledge.indexing.domain.Chunker;
 import com.knowledgehub.knowledge.indexing.domain.ChunkingResult;
 import com.knowledgehub.knowledge.indexing.domain.CodeEntity;
 import com.knowledgehub.knowledge.indexing.domain.CodeEntityLevel;
+import com.knowledgehub.knowledge.infrastructure.lang.JavaLanguage;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import com.knowledgehub.shared.id.IdFactory;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,19 +37,20 @@ import org.springframework.stereotype.Component;
  * text is not duplicated. It also extracts the {@link CodeEntity} hierarchy (type → methods/fields)
  * for graph linking. Leading Javadoc/comments are kept with each chunk to strengthen the signal.
  *
- * <p>Highest precedence so it wins over the document fallback for {@code .java} files. Other
- * languages fall through to the document chunker unless a language-specific AST chunker supports
- * them.
+ * <p>The Java implementation of the code-chunker strategy: it binds to {@link JavaLanguage} (so the
+ * {@code .java} extension it claims comes from that one registration) and inherits the extension
+ * test from {@link AbstractCodeChunker}. Another language is one more subclass with its own parser,
+ * never a change here. Highest precedence so it wins over the document fallback for {@code .java}
+ * files.
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
-public class CodeChunker implements Chunker {
+public class JavaCodeChunker extends AbstractCodeChunker {
 
-  private static final Logger log = LoggerFactory.getLogger(CodeChunker.class);
+  private static final Logger log = LoggerFactory.getLogger(JavaCodeChunker.class);
 
-  @Override
-  public boolean supports(RawArtifact artifact) {
-    return artifact.text() != null && artifact.path().toLowerCase(Locale.ROOT).endsWith(".java");
+  public JavaCodeChunker(JavaLanguage language) {
+    super(language);
   }
 
   @Override

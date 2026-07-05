@@ -16,8 +16,9 @@ import com.knowledgehub.knowledge.graph.application.LinkSummary;
 import com.knowledgehub.knowledge.graph.application.LinkingService;
 import com.knowledgehub.knowledge.indexing.domain.ChunkRepository;
 import com.knowledgehub.knowledge.indexing.domain.CodeEntityRepository;
-import com.knowledgehub.knowledge.indexing.infrastructure.chunking.CodeChunker;
 import com.knowledgehub.knowledge.indexing.infrastructure.chunking.DocChunker;
+import com.knowledgehub.knowledge.indexing.infrastructure.chunking.JavaCodeChunker;
+import com.knowledgehub.knowledge.infrastructure.lang.JavaLanguage;
 import com.knowledgehub.knowledge.ingestion.application.IngestionService;
 import com.knowledgehub.knowledge.ingestion.domain.FsProvenance;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
@@ -47,7 +48,7 @@ class IndexingServiceTests {
     return new IndexingService(
         ingestion,
         new AppProperties(null, null, null, null, null, null),
-        new ChunkStage(List.of(new CodeChunker(), new DocChunker())),
+        new ChunkStage(List.of(new JavaCodeChunker(new JavaLanguage()), new DocChunker())),
         new DedupStage(chunks),
         new EmbedStage(embedding),
         new StoreStage(vectorStore, chunks, entities),
