@@ -1,12 +1,23 @@
 \section{Các sản phẩm liên quan}
 
-Xu hướng hoặc các công trình liên quan, các phương pháp, nội dung các công trình đó thực hiện
+Việc cung cấp ngữ cảnh và tri thức cho AI Agent trong quy trình phát triển phần mềm là một hướng đang phát triển nhanh, với nhiều sản phẩm thương mại lẫn mã nguồn mở. Chương này khảo sát các hệ thống cùng không gian, chia theo quy mô phục vụ -- từ một lập trình viên tới cả một tổ chức -- và rút ra vị trí của Knowledge Hub trong bức tranh đó.
+
+Một chuyển dịch đáng chú ý trong giai đoạn gần đây là từ lối \textbf{RAG trên vector} (embed toàn bộ mã nguồn rồi truy xuất top-k) sang \textbf{agentic search} (agent tự đọc và tìm theo nhu cầu bằng các thao tác như mở file, grep). Trên các bộ đánh giá giải lỗi thực tế, cách để agent tự khám phá một repo cho kết quả vượt xa RAG vector thuần, bởi mã nguồn mang nhiều \textit{quan hệ cấu trúc} (import, kiểu, đồ thị lời gọi) mà embedding phẳng làm mất. Hệ quả định vị: RAG vector không còn là cách tốt nhất để một agent đọc \textit{một} repo, và giá trị của một knowledge hub dịch sang các chiều mà agentic search không tự lo được -- \textbf{đa nguồn, quan hệ liên artifact, chia sẻ cấp team và phân quyền}.
 
 \subsection{Quy mô một người dùng (single user)}
 
-Sản phẩm gì, cung cấp tính năng gì, yêu cầu những gì từ người dùng, cách dùng
+Ở quy mô một lập trình viên, phần lớn công cụ là trợ lý lập trình tích hợp trong IDE hoặc terminal, phục vụ chính người dùng đó trên máy của họ. Nhóm agentic search -- các agent như Claude Code, Cline, Aider -- không dựng chỉ mục trước mà tự grep và đọc file theo nhu cầu; chi phí chỉ là lời gọi mô hình, và tri thức không được chia sẻ ngoài phiên làm việc. Nhóm có lập chỉ mục theo repo -- tiêu biểu là Cursor -- cắt mã theo cây cú pháp, chỉ cập nhật phần thay đổi (dựa trên cây băm nội dung), và chỉ giữ vector cùng metadata thay vì mã gốc để bảo mật. Các công cụ này mạnh ở trải nghiệm cá nhân và độ trễ thấp trên một codebase, nhưng phạm vi tri thức bó trong repo đang mở và không có mô hình chia sẻ hay phân quyền cho nhiều người.
 
-Claude context
-
+Một dạng khác ở quy mô này là các MCP server cài sẵn để cắm thẳng vào agent -- ví dụ đưa tài liệu thư viện đúng phiên bản vào prompt, hoặc index một codebase vào một vector store rồi phục vụ tìm kiếm hybrid. Chúng thu hẹp một khoảng trống cụ thể (chống mô hình bịa API cũ, hay giảm ngữ cảnh so với grep thuần), nhưng vẫn hướng tới một người dùng và một nguồn tại một thời điểm.
 
 \subsection{Quy mô nhiều người dùng (teams \& enterprise)}
+
+Khi phạm vi mở sang cả một team hay tổ chức, trọng tâm chuyển từ trải nghiệm cá nhân sang \textbf{hợp nhất nhiều nguồn, chia sẻ tri thức dùng chung và tôn trọng phân quyền}. Đây là nhóm sát với Knowledge Hub nhất.
+
+Ở phía thương mại, Glean là đại diện dẫn đầu: một crawler thời gian thực nuôi tìm kiếm ngữ nghĩa và từ khóa, một knowledge graph nối nội dung với danh tính và tương tác, và điểm cốt lõi là \textbf{mọi truy xuất đều tôn trọng quyền} như tìm kiếm của người dùng, với hơn một trăm connector. Điểm mạnh là độ phủ nguồn và mô hình phân quyền; hạn chế là chi phí lớn, tối thiểu hợp đồng cao và chỉ chạy dạng dịch vụ, không tự triển khai được. Ở nhóm code, Sourcegraph Cody kết hợp embedding với đồ thị code xuyên repo cho quy mô doanh nghiệp, còn Greptile dựng một đồ thị phụ thuộc toàn codebase trước khi soát xét pull request.
+
+Ở phía mã nguồn mở, Onyx là tham chiếu gần nhất về mặt kiến trúc: tìm kiếm hybrid (embedding kết hợp BM25) cộng xếp hạng lại và knowledge graph, nhiều connector kèm tự đồng bộ, tự triển khai được kể cả trong môi trường cô lập mạng. cognee và các framework GraphRAG cho thấy cách dựng knowledge graph từ tài liệu bằng bước trích entity và quan hệ rồi tinh chỉnh đồ thị; còn thư viện chính thức ghép vector store với graph store cung cấp sẵn phần nối hai kho. Các hệ này chứng tỏ tổ hợp \textit{vector cộng graph cộng phân quyền cộng đa nguồn} là một hướng đã được kiểm chứng trong thực tế.
+
+\subsection{Định vị của Knowledge Hub}
+
+Đặt cạnh các hệ trên, Knowledge Hub không cạnh tranh với agentic search ở việc đọc \textit{một} repo -- đó là chỗ agent đã tự làm tốt. Nó nhắm vào khoảng trống còn lại: \textbf{hợp nhất nhiều nguồn của một product} (mã nguồn, tài liệu, git log, đặc tả), \textbf{biểu diễn quan hệ liên artifact} (đặc biệt là yêu cầu với mã), \textbf{đồng bộ khi nguồn đổi}, và \textbf{chia sẻ dùng chung cho cả team kèm phân quyền ở mức nguồn}. So với các sản phẩm thương mại cùng nhóm, nó hướng tới phạm vi một team trên một product thay vì cả tổ chức, ưu tiên tự triển khai và cấu hình được (kể cả giữ dữ liệu trong mạng nội bộ), và phơi tri thức qua MCP để agent cắm vào một cách tự nhiên.

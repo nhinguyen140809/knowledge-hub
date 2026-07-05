@@ -1,7 +1,27 @@
 \section{Hạn chế \& Hướng phát triển}
 
-- Chỉ parse được một ngôn ngữ lập trình do java chỉ có một thư viện java parser -> implement một service khác bằng python có thể parse được ngôn ngữ khác
+Hệ thống ở phạm vi hiện tại đã phục vụ trọn vòng thu thập, cấu trúc hóa và truy xuất tri thức cho một team, nhưng một số quyết định thiết kế được cố ý giữ ở mức tối giản để đúng phạm vi và ưu tiên tính đúng đắn hơn độ phủ. Phần này nêu các hạn chế đó cùng hướng phát triển tương ứng.
 
-- linking cross artifact chỉ dựa trên ref, đúng tên, keyword chứ không dùng semantic. Lý do là có thể dùng semantic search thì cũng sẽ ra kết quả từ nhiều nguồn, và trade off là thà không có còn hơn là không đúng -> phát triển LLM-based
+\subsection{Mở rộng ngôn ngữ phân tích}
 
+Việc trích cấu trúc mã nguồn hiện dựa trên một bộ phân tích cú pháp cho một ngôn ngữ lập trình. Mã nguồn ngoài ngôn ngữ đó vẫn được thu thập và chunk theo văn bản, nhưng không sinh ra entity và quan hệ cấu trúc, nên phần đồ thị của tri thức bị giới hạn theo ngôn ngữ. Hướng phát triển là tách việc phân tích cú pháp thành một dịch vụ riêng đứng sau cùng một ranh giới trừu tượng, cho phép mỗi ngôn ngữ có một bộ phân tích chuyên biệt (kể cả hiện thực bằng một hệ sinh thái khác mạnh về phân tích đa ngôn ngữ) mà không đụng tới phần còn lại của hệ thống. Nhờ kiến trúc cổng và bộ chuyển đổi, thêm một ngôn ngữ về nguyên tắc là thêm một bộ chuyển đổi, không phải sửa mã sẵn có.
 
+\subsection{Liên kết liên artifact bằng suy luận}
+
+Liên kết giữa tài liệu, yêu cầu và mã hiện chỉ dựa trên các tín hiệu tường minh -- tham chiếu đường dẫn, tên định danh đầy đủ, tên ghép -- kèm điểm tin cậy và ngưỡng, và cố ý \textbf{không} dùng so khớp ngữ nghĩa để khẳng định quan hệ. Đây là một đánh đổi có chủ đích: một liên kết sai gây hại hơn một liên kết thiếu, nên hệ thống thà bỏ qua một ánh xạ không chắc còn hơn nối bừa. Hệ quả là liên kết \textit{chính xác nhưng thiếu}: chỉ những ánh xạ được viết tường minh trong tài liệu mới trở thành cạnh.
+
+Hướng phát triển là bổ sung một bước \textbf{suy luận bằng LLM} để mở rộng độ phủ mà vẫn giữ tính đúng đắn: một mô hình đọc tài liệu và mã rồi đề xuất các liên kết kèm căn cứ, để hệ thống ghi lại với điểm tin cậy phân biệt rõ với các liên kết tất định. Cách này bổ khuyết cho cơ chế hiện tại đúng ở chỗ nó yếu nhất -- những quan hệ đòi hiểu ngữ cảnh chứ không có tín hiệu từ vựng tường minh -- trong khi không đánh mất nguyên tắc phân biệt liên kết chắc chắn với liên kết phỏng đoán.
+
+\subsection{Tài liệu và yêu cầu thành thực thể hạng nhất}
+
+Hiện tại một tài liệu được biểu diễn bằng node file cùng các chunk của nó, và một yêu cầu chỉ là một mã hiệu nằm trong một chunk tài liệu chứ chưa phải một node riêng. Nhờ vậy nội dung của tài liệu và yêu cầu vẫn tìm được theo ngữ nghĩa và từ khóa, nhưng hệ thống chưa thể định vị chính xác \textit{từng} yêu cầu hay duyệt đồ thị từ một yêu cầu tới đoạn mã hiện thực nó như một bước quan hệ.
+
+Hướng phát triển là materialize tài liệu và yêu cầu thành entity hạng nhất, đối xứng với cách mã nguồn được mô hình hóa: một tài liệu đóng vai trò như một file, một yêu cầu đóng vai trò như một entity con được tài liệu chứa và được chunk riêng. Điều này đòi hỏi một chiến lược chunking chuyên cho tài liệu đặc tả -- cắt theo ranh giới từng yêu cầu (nhận diện qua mã hiệu) thay vì theo đoạn -- và khi đó các cạnh yêu-cầu-hiện-thực-bởi-mã xuất phát trực tiếp từ node yêu cầu, cho phép truy vấn chính xác ở mức từng yêu cầu.
+
+\subsection{Hoàn thiện bộ từ vựng quan hệ}
+
+Bộ từ vựng quan hệ được định nghĩa trước một cách đầy đủ để lược đồ đồ thị ổn định, nhưng một số loại quan hệ chưa có bộ sinh tương ứng -- chẳng hạn lời gọi API giữa các service, tài liệu tham chiếu tài liệu, và liên kết test. Hướng phát triển là bổ sung dần các bộ sinh cho những quan hệ này khi có tín hiệu phù hợp, mà không phải thay đổi lược đồ hay các truy vấn duyệt đồ thị đã có.
+
+\subsection{Tối ưu truy xuất và tự động đồng bộ}
+
+Một số tối ưu để ngỏ cho giai đoạn sau: khai thác khả năng hybrid dense-sparse gốc của vector store thay cho phần hợp nhất ở tầng ứng dụng khi có vector thưa; thêm một bước xếp hạng lại (reranking) trên nhóm ứng viên đầu để tăng độ chính xác; và bổ sung cơ chế tự kích hoạt đồng bộ như một tùy chọn (webhook khi có commit hoặc quét định kỳ) bên cạnh cơ chế đồng bộ theo kích hoạt hiện tại.

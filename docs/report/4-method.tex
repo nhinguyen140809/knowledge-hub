@@ -1,23 +1,84 @@
 \section{Phương pháp}
 
+Chương này trình bày các phương pháp cốt lõi dựng nên và phục vụ mô hình tri thức: cách định danh tri thức để quản lý phiên bản, cách chia dữ liệu thô thành chunk, cách trích và liên kết đồ thị tri thức, cách đồng bộ khi nguồn thay đổi, cách truy xuất hybrid, và cách kiểm soát truy cập. Mỗi phần nêu nguyên tắc và cơ chế, còn lược đồ dữ liệu mà chúng thao tác lên đã trình bày ở chương Kiến trúc ứng dụng.
+
 \subsection{Quản lý phiên bản tri thức (knowledge versioning)}
 
-(định danh ổn định + tính chất bảo đảm)
+Nguồn dữ liệu của một product thay đổi liên tục: mã nguồn được sửa, tài liệu được cập nhật, file được thêm hoặc xóa. Để tri thức trong hub luôn phản ánh đúng nguồn mà không phải dựng lại toàn bộ chỉ mục sau mỗi thay đổi, hệ thống cần xác định được \textit{phần nào đã đổi, phần nào giữ nguyên, phần nào không còn tồn tại}. Cơ chế nền tảng cho việc này là \textbf{định danh ổn định dẫn xuất từ nội dung}.
+
+Mỗi đơn vị tri thức được gán một định danh \textbf{tất định}: cùng một đầu vào luôn sinh ra cùng một định danh, độc lập với thời điểm hay số lần xử lý. Định danh được dẫn xuất bằng cách băm các thành phần đặc trưng của đơn vị, theo hai chiến lược tùy bản chất:
+
+\begin{itemize}
+  \item \textbf{Định danh theo danh tính} -- áp dụng cho file và entity mã nguồn. Định danh dẫn xuất từ danh tính của đơn vị (nguồn và đường dẫn file; với entity bổ sung tên định danh đầy đủ) và không phụ thuộc nội dung. Nhờ vậy một file giữ nguyên định danh qua mọi lần chỉnh sửa: khi nội dung đổi, đơn vị được \textbf{cập nhật tại chỗ} dưới cùng một định danh, nên mọi quan hệ trỏ vào nó không bị đứt.
+  \item \textbf{Định danh theo nội dung} -- áp dụng cho chunk. Ngoài danh tính, định danh còn dẫn xuất từ content hash của chunk, nên nội dung đổi thì định danh cũng đổi: một chunk có nội dung mới là một \textit{chunk khác}, không phải cùng chunk được sửa. Lựa chọn này xuất phát từ bản chất của chunk -- giá trị của nó nằm ở embedding, mà embedding là hàm của nội dung; đồng thời ranh giới chunk dịch chuyển khi file thay đổi, nên không có một vị trí chunk bền vững để cập nhật đè lên.
+\end{itemize}
+
+Commit là trường hợp đơn giản nhất: định danh dẫn xuất từ nguồn và mã băm commit, mà bản thân mã băm đã là địa chỉ theo nội dung do Git bảo đảm; lịch sử commit bất biến và chỉ nối thêm.
+
+Định danh ổn định là nền tảng chung cho toàn bộ cơ chế đồng bộ: nó bảo đảm \textbf{tính idempotent} (xử lý lại một nguồn không đổi cho đúng tập định danh cũ, mọi thao tác ghi thành cập nhật-đè thay vì tạo bản trùng), \textbf{cập nhật tăng dần} (so tập định danh mới với tập đang lưu để biết chunk nào thêm, chunk nào không còn), \textbf{khử trùng lặp theo nội dung} (chunk không đổi cho cùng định danh nên không sinh lại embedding), và \textbf{gỡ bỏ nhất quán} (định danh chunk là khóa chung giữa hai kho, nên gỡ đúng phần lỗi thời ở cả hai cùng lúc). Khi một file được xử lý lại, các tính chất này phối hợp thành một phép hợp nhất: chunk không đổi giữ nguyên định danh và embedding sẵn có, chunk mới nhận định danh mới và được thêm, chunk cũ không còn xuất hiện bị gỡ bỏ.
 
 \subsection{Xử lý dữ liệu đầu vào (ingestion \& chunking)}
 
-(chunking mã/tài liệu, đo token, liên hệ định danh)
+Trước khi sinh embedding, dữ liệu thô phải được chia thành các đơn vị nhỏ gọi là \textbf{chunk}. Lý do là kép: mô hình embedding chỉ nhận đầu vào trong một giới hạn độ dài, và một vector duy nhất cho cả một file lớn sẽ pha loãng ngữ nghĩa đến mức truy xuất mất chính xác. Nhưng nếu cắt thô theo độ dài, ranh giới chunk sẽ rơi vào giữa một hàm hay giữa một câu, phá vỡ ý nghĩa. Do đó nguyên tắc nền tảng là \textbf{cắt theo ranh giới tự nhiên của dữ liệu, không cắt thô theo kích thước}. Vì mã nguồn và tài liệu có cấu trúc khác nhau, hệ thống áp dụng hai chiến lược và tự chọn chiến lược phù hợp cho từng đơn vị dựa trên loại của nó.
+
+\subsubsection{Chunking mã nguồn theo cấu trúc}
+
+Mã nguồn được phân tích thành cây cú pháp (AST) và cắt theo ranh giới khai báo. Chiến lược tuân theo mấy quy tắc: \textbf{mỗi hàm là một chunk trọn vẹn} (không bao giờ cắt đôi, kể cả khi vượt ngân sách token, vì một nửa hàm vừa vô nghĩa vừa gây hiểu sai); \textbf{mỗi kiểu có một chunk khung} chứa chữ ký lớp và các trường nhưng loại bỏ thân phương thức (thân đã nằm ở chunk riêng của từng phương thức, tránh lặp nội dung); và \textbf{chú thích đi kèm được giữ cùng chunk} của khai báo để tăng tín hiệu ngữ nghĩa. Song song, chiến lược này còn trích một hệ thống phân cấp entity để dựng đồ thị; một trường trở thành entity trong đồ thị nhưng không là chunk riêng -- nội dung của nó sống trong chunk khung của kiểu chứa nó.
+
+\subsubsection{Chunking tài liệu theo cấu trúc văn bản}
+
+Với tài liệu, không có AST để dựa vào, nên hệ thống cắt theo cấu trúc văn bản với thứ tự ưu tiên ranh giới giảm dần: đoạn văn $\rightarrow$ dòng $\rightarrow$ câu $\rightarrow$ từ $\rightarrow$ ký tự. Hệ thống luôn chọn ranh giới thô nhất còn nằm trong ngân sách token, chỉ hạ xuống mức mịn hơn khi một đơn vị vượt ngân sách. Điểm khác biệt quan trọng so với mã nguồn là \textbf{chồng lấn} (overlap): mỗi chunk mang theo một phần đuôi của chunk liền trước, để một ý nằm vắt qua ranh giới cắt vẫn xuất hiện trọn vẹn trong ít nhất một chunk. Mã nguồn không cần chồng lấn vì ranh giới của nó vốn đã là ranh giới ngữ nghĩa trọn vẹn.
+
+\subsubsection{Kích thước đo theo token thực}
+
+Ngân sách của một chunk được đo bằng số token, tính theo cùng cách mô hình embedding tách token, chứ không ước lượng thô theo ký tự. Nhờ đó mỗi chunk khớp với giới hạn đầu vào thật của mô hình. Ngân sách token và độ chồng lấn đều cấu hình được, với mặc định hợp lý (khoảng $512$ token mỗi chunk và $64$ token chồng lấn), kèm ràng buộc độ chồng lấn luôn nhỏ hơn ngân sách để phép cắt luôn tiến về phía trước. Chunking cũng là một điểm mở rộng: một loại dữ liệu mới được hỗ trợ bằng cách bổ sung một chiến lược cắt riêng, trong khi các loại chưa có chiến lược chuyên biệt vẫn được xử lý an toàn theo cách chunking văn bản.
 
 \subsection{Xây dựng \& liên kết đồ thị tri thức}
 
-trích quan hệ cấu trúc, liên kết liên-artifact + confidence, lịch sử commit, ghi idempotent
+Đồ thị tri thức biểu diễn loại tri thức \textit{quan hệ} mà embedding bất lực: hàm nào gọi hàm nào, yêu cầu nào được hiện thực bởi đoạn mã nào, tài liệu nào mô tả thành phần nào. Các entity là node, các quan hệ có tên là cạnh. Phần này trình bày cách các cạnh đó được \textit{tạo ra} -- đặc biệt là cách hệ thống phân biệt liên kết chắc chắn với liên kết phỏng đoán.
+
+\subsubsection{Trích quan hệ cấu trúc}
+
+Với mã nguồn, quan hệ cấu trúc được đọc trực tiếp từ cây cú pháp: câu lệnh import, mệnh đề kế thừa và hiện thực, phương thức ghi đè, lời gọi giữa các phương thức. Nguyên tắc an toàn xuyên suốt: \textbf{một tham chiếu không phân giải được về một entity đã index thì bị bỏ, không bao giờ đoán}. Đồ thị vì thế có thể thiếu một cạnh, nhưng không chứa cạnh sai -- với tri thức cung cấp cho agent, một liên kết sai gây hại hơn một liên kết thiếu. Việc phân giải đi theo tên định danh đầy đủ và được gom theo lô cho từng file; nhờ phân giải theo tên, một import trỏ tới lớp ở \textbf{nguồn khác} trong cùng product vẫn nối được xuyên ranh giới nguồn.
+
+\subsubsection{Liên kết liên artifact và điểm tin cậy}
+
+Liên kết giữa tài liệu và mã không có cú pháp để dựa vào, nên hệ thống đọc các \textbf{tín hiệu} trong nội dung tài liệu và cho điểm theo độ mạnh của tín hiệu: một \textbf{tham chiếu đường dẫn} tới file mã là bằng chứng tường minh, điểm cao; một \textbf{tên định danh đầy đủ} phân giải về đúng một entity là bằng chứng mạnh; một \textbf{tên ghép CamelCase} khớp đúng một entity là bằng chứng vừa; còn một \textbf{tên đơn hoặc nhập nhằng} thì điểm thấp và bị một ngưỡng cấu hình được loại bỏ mặc định. Chỉ ứng viên đạt ngưỡng mới được ghi; ngưỡng cho phép điều chỉnh cân bằng giữa độ phủ và độ sạch của đồ thị mà không sửa logic.
+
+Đây là một lựa chọn thiết kế then chốt, và nó phân định rạch ròi với truy xuất: \textbf{embedding chỉ dùng để truy xuất, không bao giờ để khẳng định quan hệ}. So khớp ngữ nghĩa là phép \textit{mờ} -- hữu ích để tìm thứ liên quan, nhưng dùng nó để phán ``đoạn mã này hiện thực yêu cầu kia'' sẽ đẻ ra liên kết sai. Vì vậy mọi cạnh liên artifact chỉ sinh từ bằng chứng từ vựng tường minh kèm điểm tin cậy, không từ khoảng cách vector. Một hệ quả của cách làm này: một ``yêu cầu'' hiện chỉ là một mã hiệu nằm trong một chunk tài liệu, chứ chưa phải một entity; cạnh yêu cầu-hiện-thực-bởi-mã xuất phát từ chính chunk tài liệu đó khi nó nêu kèm một tham chiếu mã tường minh. Nhờ đó liên kết yêu cầu $\rightarrow$ mã hiện tại là \textit{chính xác nhưng thiếu}: nó chỉ bắt được những ánh xạ được viết tường minh, và bỏ qua phần còn lại thay vì phỏng đoán (việc phủ rộng mà vẫn đúng thuộc về hướng phát triển ở chương sau).
+
+\subsubsection{Lịch sử commit và ghi đồ thị idempotent}
+
+Với nguồn Git, mỗi lần đồng bộ nạp thêm các commit mới nhất từ nhánh đã cấu hình; mỗi commit thành một entity mang message, tác giả và thời điểm. Diff của commit cho biết nó chạm tới file nào -- mỗi file đã được index nhận một cạnh sửa-đổi từ commit; cạnh này tất định (đọc thẳng từ diff, độ tin cậy $1$), khác với các liên kết heuristic. Message commit được embed như một đơn vị tri thức nên cả tìm kiếm ngữ nghĩa lẫn từ khóa đều với tới. Cạnh được ghi theo khóa \textit{(nguồn, đích, loại quan hệ)}, nên liên kết lại nội dung không đổi chỉ ghi đè đúng cạnh cũ; bước liên kết vì thế chạy lại thoải mái sau mỗi lần đồng bộ, để các tham chiếu trỏ tới file được index muộn hơn dần được phân giải.
 
 \subsection{Đồng bộ tri thức (sync)}
 
-diff tăng dần + eviction (từ pipeline-sync + FR-6) và append lịch sử commit (mục "Lịch sử commit" của ch7)
+Cập nhật tri thức là \textbf{theo kích hoạt} (trigger-based): thao tác đồng bộ được cung cấp qua REST và một MCP tool để agent hoặc caller chủ động kích hoạt khi nguồn thay đổi. Thao tác này \textbf{idempotent} -- kích hoạt lại khi nội dung không đổi là một no-op. Khi được kích hoạt, hệ thống nhận diện file mới, sửa đổi hoặc xóa và chỉ xử lý phần thay đổi (tăng dần), thay vì lập lại chỉ mục toàn bộ; chunk có nội dung không đổi được khử trùng lặp theo content hash nên không sinh lại embedding; và tri thức lỗi thời (khi nguồn thu hẹp hoặc bị xóa) được gỡ khỏi cả hai kho theo khóa chung.
+
+Điểm mấu chốt về mặt phương pháp là luồng đồng bộ \textbf{tái sử dụng chính các bước của luồng lập chỉ mục} trên phần dữ liệu thay đổi, thay vì nhân đôi logic: cùng bộ chia chunk, sinh embedding và liên kết được áp lên tập file đã đổi. Với nguồn Git, đồng bộ còn nối thêm phần lịch sử commit chưa có. Sau mỗi lần đồng bộ, hệ thống ghi lại độ mới của nguồn (thời điểm index gần nhất, và với nguồn Git là ref/commit đã index) để agent tra cứu và quyết định có cần đồng bộ trước khi hỏi.
 
 \subsection{Truy xuất tri thức (retrieval)}
 
+Không một kỹ thuật tìm kiếm đơn lẻ nào đủ cho tri thức phần mềm. Semantic search giỏi bắt \textit{ý} (``hàm nào xử lý việc đọc PDF'') nhưng dễ trượt một định danh chính xác; keyword search bắt trúng định danh (\texttt{parsePdf}) nhưng mù trước cách diễn đạt khác đi; và cả hai đều không thấy được thứ liên quan qua quan hệ. Vì vậy hệ thống truy xuất theo lối \textbf{hybrid}: chạy nhiều đường bổ khuyết cho nhau rồi hợp nhất thành một danh sách xếp hạng duy nhất.
+
+\subsubsection{Truy vấn là ngôn ngữ tự nhiên, không diễn giải}
+
+Đầu vào là một câu truy vấn văn bản tự do. Hệ thống \textbf{không} cố hiểu ý định của câu -- đó là vai trò của agent đứng ngoài. Đây là ranh giới phân vai cốt lõi: \textbf{hệ thống là bên truy xuất, agent là bên suy luận}. Hệ thống nhận câu hỏi, trả về ngữ cảnh liên quan kèm căn cứ; agent tự đọc và tự phán. Nhờ phân vai này, hệ thống đơn giản và dự đoán được: cùng một câu hỏi luôn cho cùng một kết quả, không phụ thuộc một tầng đoán ý nào ở giữa.
+
+\subsubsection{Các đường tìm kiếm và hợp nhất}
+
+Một truy vấn đi qua đường ống: (1) \textbf{chuẩn bị} -- sinh embedding cho câu truy vấn và xác định tập nguồn được phép đọc; (2) \textbf{semantic search song song với keyword search} -- một so khớp embedding trên vector store, một chạy BM25 trên chỉ mục full-text (văn bản chunk, tên/chữ ký entity, message commit); (3) \textbf{graph traversal} -- lấy kết quả tốt nhất của hai đường trên làm hạt giống, đi theo các cạnh của đồ thị để với tới tri thức liên quan nhưng không tự khớp với câu truy vấn, kết quả gần hạt giống được điểm cao hơn; (4) \textbf{hợp nhất} bằng Reciprocal Rank Fusion -- điểm hợp nhất tính từ \textit{thứ hạng} trong từng danh sách chứ không từ điểm thô, vì điểm của ba hệ (khoảng cách vector, BM25, độ gần đồ thị) nằm trên các thang không so được với nhau; (5) \textbf{lắp ráp và lọc cuối} -- nạp metadata đầy đủ chỉ cho các kết quả sống sót, áp bộ lọc chức năng (source, ref, loại dữ liệu) và bộ lọc phân quyền lần cuối.
+
+Chính lối hybrid này hiện thực hóa cách agent tìm tri thức cho một tính năng: một truy vấn trả về \textit{lẫn} chunk mã và chunk tài liệu (chúng cùng một không gian vector, cùng bị lọc ACL), để agent đọc cả hai rồi tự ghép mã với đặc tả. Khi giữa chúng \textit{có} một liên kết tường minh trong đồ thị, bước duyệt đồ thị tự kéo phần liên quan vào kèm chuỗi quan hệ đã đi qua -- một phần thưởng đỡ agent một bước; khi \textit{không} có, agent vẫn nhận được cả hai nhờ đồng-truy-xuất ngữ nghĩa. Đây là lý do liên kết chính xác-nhưng-thiếu ở trên vẫn đủ dùng: hệ thống cung cấp ngữ cảnh, phần phán đoán code nào ứng đặc tả nào để cho agent.
+
+\subsubsection{Kết quả và các hành vi biên}
+
+Mỗi kết quả gồm định danh, \textbf{relevance score} và metadata đủ để agent trích dẫn và tự lấy lại: loại, nguồn, đường dẫn file, khoảng dòng, loại dữ liệu, ref/commit và thời điểm index. Kết quả đến từ đường đồ thị mang thêm chuỗi quan hệ đã duyệt, để agent biết \textit{vì sao} mảnh tri thức này liên quan. Ba hành vi biên đáng chú ý: khi truy vấn khoanh vào một \textbf{ref chưa được index}, hệ thống rơi về ref canonical và đánh dấu rõ trong kết quả; khi \textbf{một đường tìm kiếm lỗi}, đường đó suy biến về danh sách rỗng thay vì làm hỏng cả truy vấn; và \textbf{truy vấn lặp lại} được cache theo cặp (nội dung truy vấn, tập nguồn được phép đọc) -- đưa tập quyền vào khóa cache là bắt buộc, để hai principal khác quyền hỏi cùng một câu không nhận chung kết quả và cache không làm rò tri thức xuyên quyền.
+
 \subsection{Cơ chế phân quyền (access control)}
 
-(ACL theo Source, fail-closed, hard filter)
+Tri thức là dùng chung cho cả team nhưng không phải ai cũng được đọc mọi nguồn, nên hệ thống kiểm soát truy cập ở \textbf{mức nguồn} qua một ACL do admin cấu hình. Mô hình theo hai bước trên mỗi request: \textbf{xác thực} (authentication) phân giải credential của request về đúng một principal; \textbf{phân quyền} (authorization) tính tập nguồn mà principal được đọc rồi lọc theo đó. Một principal không nhất thiết là một người -- có thể là một người, một service, hoặc một định danh theo nhóm chức năng; độ mịn do cách cấp phát credential quyết định.
+
+ACL gồm ba thành phần: \textbf{principal} (mỗi principal có kiểu là \texttt{subject} hoặc \texttt{group}, một vai trò \texttt{admin} hoặc \texttt{member}, kèm thành viên nhóm và credential), \textbf{grant} (nối một principal tới các nguồn nó được đọc), và một \textbf{chính sách mặc định} \texttt{deny} hoặc \texttt{allow}. Quyền hiệu lực của một principal là hợp quyền của chính nó và mọi nhóm chứa nó (đệ quy). Dưới chính sách \texttt{deny}, principal chỉ đọc nguồn được grant tường minh; dưới \texttt{allow}, principal đọc mọi nguồn trừ nguồn xuất hiện trong bất kỳ grant nào (nguồn đó trở thành hạn chế, chỉ principal được grant mới đọc được).
+
+Hai tính chất bảo đảm an toàn. Thứ nhất, bộ lọc phân quyền là \textbf{filter cứng đẩy vào trong truy vấn} trên mọi đường truy xuất -- semantic, keyword, graph và cả sau hợp nhất -- nên kết quả, node kề trong đồ thị, hay metadata có nguồn gốc từ nguồn ngoài quyền đọc không bao giờ rời khỏi kho. Thứ hai, hệ thống \textbf{fail-closed}: khi không phân giải được principal hoặc không xác định được quyền, request bị từ chối. Về vòng đời credential: admin phát hành và thu hồi credential gắn với một principal; giá trị secret chỉ hiển thị một lần lúc phát hành và lưu ở dạng không thể khôi phục; credential bị thu hồi bị từ chối ngay từ request kế tiếp. Mọi thao tác quản trị -- quản lý principal, grant, chính sách, credential và cấu hình nguồn -- chỉ principal có vai trò \texttt{admin} mới được thực hiện.

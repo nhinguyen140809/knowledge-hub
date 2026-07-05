@@ -4,7 +4,7 @@
 # packages (packaged-by-feature, then by layer); arrows are compile-time dependencies
 # labelled with the port / type / event that crosses the boundary. Dashed = domain event.
 # Detailed class views of a submodule: CLASS-INDEXING.d2, CLASS-RETRIEVAL.d2, CLASS-ACCESS.d2.
-# Render:  d2 MODULE-ARCHITECTURE.d2 module-architecture.svg   (or .pdf for LaTeX)
+# Render:  d2 COMPONENT-DIAGRAM.d2 component-diagram.svg   (or .pdf for LaTeX)
 vars: {
   d2-config: {
     layout-engine: elk
@@ -122,7 +122,8 @@ authNote: "Every REST + MCP request passes access.BearerAuthFilter before dispat
   style.italic: true
 }
 agent -> hub.retrieval: "MCP · query_knowledge"
-agent -> hub.knowledge.sync: "MCP · sync_source"
+agent -> hub.knowledge.ingestion: "MCP · list_sources"
+agent -> hub.knowledge.sync: "MCP · sync_source · source_status"
 admin -> hub.access: "REST · principals / grants / credentials"
 admin -> hub.knowledge.ingestion: "REST · register / sync sources"
 admin -> hub.retrieval: "REST · query"

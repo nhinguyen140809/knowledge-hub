@@ -1,37 +1,35 @@
 \section{Hiện thực}
 
-\subsection{Công nghệ}
+Chương này trình bày các công nghệ được chọn để hiện thực hệ thống cùng lý do đằng sau mỗi lựa chọn. Nguyên tắc xuyên suốt là \textbf{bắt đầu từ yêu cầu, không từ công nghệ}: mỗi thành phần được chốt theo cùng một mạch -- yêu cầu đặt ra, các phương án khả thi, tiêu chí đánh giá, rồi quyết định và đánh đổi. Do hệ thống mang bản chất tập trung vào dữ liệu (GraphRAG), quyết định khó đảo ngược nhất -- lưu trữ -- được chốt trước, rồi mới tới framework và các thành phần phụ trợ.
 
-\subsection{Database}
+\subsection{Cơ sở dữ liệu}
 
-Neo4j - vai trò - lý do
+Mô hình tri thức có hai mặt khác bản chất -- ngữ nghĩa (vector) và quan hệ (đồ thị) -- nên không một loại kho nào phục vụ tốt cả hai. Hệ thống dùng \textbf{Neo4j cho graph và Qdrant cho vector}, cố định ở mọi quy mô.
 
-Qdrant - vai trò - lý do
+\textbf{Neo4j} giữ đồ thị tri thức, chỉ mục từ khóa (full-text BM25) và toàn bộ ACL. Nó được chọn vì cân bằng giữa khả năng đồ thị mạnh gốc, hệ sinh thái chín (đặc biệt là ánh xạ đối tượng cho JVM), và giấy phép cộng đồng miễn phí. \textbf{Qdrant} giữ toàn bộ embedding, phục vụ tìm kiếm ngữ nghĩa. Nó được chọn vì nhẹ và tiết kiệm bộ nhớ (viết bằng Rust, hỗ trợ lưu trên đĩa và lượng tử hóa), lọc trước theo payload hiệu quả, và giấy phép mở. Việc đặt kho vector sau một cổng trừu tượng cho phép thay engine vector về sau mà không sửa nghiệp vụ.
 
-Cách sync 2 db
+Đánh đổi của mô hình hai kho là phải giữ chúng \textbf{nhất quán với nhau}: mỗi chunk được ghi vào cả hai (embedding sang Qdrant, node cùng nội dung và metadata sang Neo4j), nối bằng một định danh chung; khi một chunk lỗi thời, nó bị gỡ khỏi cả hai theo cùng định danh trong một thao tác đồng bộ. Đây là chi phí thường trực được chấp nhận để đổi lấy việc mỗi kho làm đúng việc nó giỏi nhất -- và ở quy mô lớn, đẩy vector sang Qdrant còn giúp Neo4j gọn lại, giảm tổng chi phí bộ nhớ.
 
 \subsection{Backend}
 
-Spring boot - vai trò - lý do (so với python hỗ trợ parsing nhiều ngôn ngữ hơn, thì spring boot là một framework ổn định, type rõ ràng)
+Backend hiện thực bằng \textbf{Spring Boot}. Hai hướng được cân nhắc là một framework trên nền Node và một trên nền JVM, với vai trò các thư viện tương ứng gần như một-đối-một. Spring Boot được chọn vì tích hợp tốt nhất cho một hệ lấy Neo4j làm trung tâm: ánh xạ đối tượng-đồ thị trưởng thành (Neo4j vốn chạy trên JVM), và một hệ điều phối RAG sẵn có phủ trọn vector, embedding client và cả MCP server. Đánh đổi là mức tiêu thụ bộ nhớ cao hơn (ứng dụng JVM chạy cạnh Neo4j cũng là JVM), bù lại bằng cấu trúc rõ ràng, kiểu tường minh và độ ổn định của hệ sinh thái.
 
-\subsection{Interface}
-interface HTTP - MCP
+\subsection{Giao diện}
 
-\subsection{Docker}
-Docker - 3 container độc lập cho app, 2 db
+Hệ thống phơi tri thức qua hai giao diện. \textbf{MCP} là đường chính cho AI Agent: server công bố các tool để agent tự khám phá và gọi bằng ngôn ngữ tự nhiên, dùng vận chuyển trên HTTP (không phải luồng vào-ra tiến trình) để cùng một hiện thực chạy được cả ở môi trường phát triển lẫn khi triển khai từ xa. \textbf{REST API} phục vụ quản trị, vận hành và các caller không đi qua agent. Cả hai đều yêu cầu xác thực. Chi tiết thiết kế của hai giao diện đã trình bày ở chương Kiến trúc ứng dụng.
 
+\subsection{Mô hình embedding}
 
-\subsection{Embedding model}
-API embedding - voyage ai - có thể thay đổi thông qua config để gọi model khác hoặc model local
+Việc sinh embedding gọi tới một \textbf{API bên ngoài} thay vì chạy một mô hình cục bộ, để không tốn bộ nhớ hay GPU và giữ việc gọi đơn giản với chất lượng cao. Nhà cung cấp và mô hình \textbf{cấu hình được}: có thể trỏ tới một dịch vụ đám mây, hoặc tới một mô hình cục bộ tương thích giao thức để giữ dữ liệu trong mạng nội bộ. Đánh đổi của việc gọi API là dữ liệu rời máy và chi phí tính theo lượng token mỗi lần lập lại chỉ mục; chi phí này được kiểm soát bằng khử trùng lặp theo content hash và cập nhật tăng dần (chunk không đổi không embed lại). Một ràng buộc quan trọng: một mô hình embedding phải được dùng nhất quán cho cả lúc index lẫn lúc truy vấn, nên đổi mô hình đồng nghĩa với lập lại chỉ mục toàn bộ.
 
-Implementation đang dùng model bên ngoài
+\subsection{Đóng gói bằng Docker}
+
+Toàn hệ thống được đóng gói thành \textbf{ba container độc lập} -- ứng dụng, Neo4j và Qdrant -- khởi chạy cùng nhau bằng một lệnh qua \texttt{docker compose}. Hệ thống theo mô hình modular monolith thay vì microservice, đủ cho phạm vi một team và vẫn mở đường mở rộng về sau (chạy nhiều bản service truy vấn không trạng thái, hoặc tách phần nạp dữ liệu khi cần). Nguyên tắc một artifact chạy trên nhiều môi trường qua cấu hình đã trình bày ở phần kiến trúc vật lý.
 
 \subsection{Các thành phần khác}
 
-API doc
+Một số thành phần phụ trợ hoàn thiện hệ thống. \textbf{Tài liệu API} được sinh theo chuẩn OpenAPI cho REST, kèm ví dụ request/response; riêng các tool MCP tự mô tả qua cơ chế khám phá của giao thức. \textbf{Ghi log} dùng log có cấu trúc cho mọi sự kiện nạp dữ liệu, truy vấn và lỗi, kèm định danh tương quan để tái dựng một request từ log, và các điểm cuối kiểm tra sức khỏe cùng thông tin runtime để giám sát.
 
-logging
+\subsection{Thư viện hỗ trợ}
 
-
-\subsection{Thư viện}
-Các thư viện hỗ trợ parsing, connector git, spring ai
+Ngoài các thư viện lõi của framework, hệ thống dùng thêm: một bộ phân tích cú pháp để trích cấu trúc mã nguồn thành cây cú pháp và entity; một connector Git để đọc nội dung, ref và lịch sử commit của nguồn; hệ điều phối RAG và client vector/embedding của framework để nối tới hai kho và nhà cung cấp embedding; cùng các thư viện kiểm thử cho phép chạy kiểm thử tích hợp trên Neo4j và Qdrant thật. Việc phân tích cú pháp, đọc tài liệu và so sánh khác biệt đều nằm sau các cổng trừu tượng, nên bổ sung một ngôn ngữ, định dạng hay loại nguồn mới về nguyên tắc là thêm một bộ chuyển đổi.

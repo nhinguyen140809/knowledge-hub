@@ -1,6 +1,6 @@
 # Class Diagram — knowledge / indexing submodule (Clean Architecture + Pipes & Filters)
 # Detailed class view of ONE submodule; for the whole-system module map see
-# MODULE-ARCHITECTURE.d2, and for the other detailed views CLASS-RETRIEVAL.d2 / CLASS-ACCESS.d2.
+# COMPONENT-DIAGRAM.d2, and for the other detailed views CLASS-RETRIEVAL.d2 / CLASS-ACCESS.d2.
 # Packaged by layer (domain / application / inbound / infrastructure). Dependencies point
 # inward; infrastructure realizes domain ports. The application layer is a PIPELINE of
 # single-responsibility FILTERS (stages) over a shared context — pipes & filters layered on
@@ -63,7 +63,15 @@ domain: "domain — model + ports" {
   RelationshipRepository: {
     shape: class
     class: port
-    "+merge(from, to, type, confidence)"
+    "knowledge.graph.domain": ""
+    "+upsertAll(relationships)"
+  }
+}
+
+collaborators: "collaborator — knowledge.graph" {
+  LinkingService: {
+    shape: class
+    "+link(artifact, chunks)": LinkSummary
   }
 }
 
@@ -186,7 +194,8 @@ application.DedupStage -> domain.ChunkRepository: {style.stroke-dash: 4}
 application.EmbedStage -> domain.EmbeddingPort: {style.stroke-dash: 4}
 application.StoreStage -> domain.VectorStorePort: {style.stroke-dash: 4}
 application.StoreStage -> domain.ChunkRepository: {style.stroke-dash: 4}
-application.LinkStage -> domain.RelationshipRepository: {style.stroke-dash: 4}
+application.LinkStage -> collaborators.LinkingService: {style.stroke-dash: 4}
+collaborators.LinkingService -> domain.RelationshipRepository: {style.stroke-dash: 4}
 
 # Strategy: each port has interchangeable adapters; infra realizes ports (dashed, hollow triangle)
 infraAdapters.CodeChunker -> domain.Chunker: {target-arrowhead.shape: triangle; target-arrowhead.style.filled: false; style.stroke-dash: 4}

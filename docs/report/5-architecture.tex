@@ -1,50 +1,171 @@
 \section{Kiến trúc ứng dụng}
 
+Chương này trình bày kiến trúc của Knowledge Hub ở ba lát cắt bổ trợ nhau: thiết kế cơ sở dữ liệu (dữ liệu nằm ở đâu và được tổ chức ra sao), kiến trúc logic (mã nguồn được phân tầng và đóng gói thế nào), và kiến trúc vật lý (thành phần nào chạy ở đâu); khép lại bằng cách các thành phần giao tiếp với nhau qua sự kiện nội bộ, MCP và REST.
+
 \subsection{Thiết kế cơ sở dữ liệu (database design)}
 
-(một chunk hai hình hài, mô hình đồ thị, chỉ mục, hai kho) + ch7 "Mô hình entity/Bộ từ vựng quan hệ" + diagram ERD
+Mô hình tri thức của hệ thống có hai mặt khác bản chất: \textit{ngữ nghĩa} -- chunk nào gần nghĩa với câu hỏi, trả lời bằng so khớp vector; và \textit{quan hệ} -- cái gì nối với cái gì, trả lời bằng duyệt đồ thị. Không một loại kho nào phục vụ tốt cả hai, nên hệ thống dùng hai kho chuyên biệt chạy song song: một \textbf{vector store} giữ embedding, và một \textbf{graph store} giữ đồ thị tri thức cùng toàn bộ nội dung và metadata.
+
+\subsubsection{Một chunk, hai hình hài}
+
+Đơn vị nối hai kho là \textbf{chunk}, với \textbf{định danh chunk làm khóa dùng chung}. Cùng một chunk hiện diện ở hai nơi dưới hai dạng khác nhau:
+
+\begin{itemize}
+  \item Trong \textbf{vector store}, nó là một \textit{điểm}: embedding của nội dung, kèm một \textbf{payload} nhỏ chỉ gồm những trường cần cho việc lọc và định vị -- định danh chunk, nguồn (để lọc phân quyền), đường dẫn, loại dữ liệu, khoảng dòng, và ref/commit với nguồn Git. Đáng chú ý là \textbf{văn bản gốc không nằm ở đây}: ngữ nghĩa của nó đã được mã hóa vào embedding, còn chuỗi văn bản thô thì tìm kiếm vector không cần tới.
+  \item Trong \textbf{graph store}, nó là một \textit{node}: mang đầy đủ văn bản, content hash, số token, khoảng dòng và metadata nguồn gốc, đồng thời nối bằng cạnh vào file chứa nó và (với chunk mã nguồn) vào entity mã mà nó thuộc về.
+\end{itemize}
+
+Tìm kiếm ngữ nghĩa vì thế là một phép \textbf{hai thì}: vector store trả về danh sách định danh kèm điểm số, rồi nội dung và metadata đầy đủ mới được nạp từ graph store theo định danh -- và chỉ nạp cho những kết quả sống sót sau bước hợp nhất và lọc, để không tốn công tra cứu cho kết quả sẽ bị bỏ.
+
+Chẳng hạn, chunk chứa hàm \texttt{parsePdf} tồn tại đồng thời dưới dạng một điểm vector (embedding nhiều chiều cùng payload định vị: nguồn, đường dẫn, loại \textit{code}, dòng 40--72, ref \textit{main}) và một node đồ thị mang nguyên văn thân hàm, nối \textit{thuộc về} file của nó và \textit{là chunk của} entity phương thức tương ứng. Truy vấn ngữ nghĩa chạm vào điểm vector để tìm và xếp hạng; câu trả lời cuối cùng đọc node đồ thị để lấy nội dung trích dẫn.
+
+\subsubsection{Mô hình entity và bộ từ vựng quan hệ}
+
+Graph store lưu tri thức dưới dạng các \textbf{entity} (node) nối với nhau bằng các \textbf{quan hệ có tên} (cạnh). Đồ thị chứa hai họ entity:
+
+\begin{itemize}
+  \item \textbf{Entity mã nguồn} -- các cấu trúc có tên trích từ cây cú pháp: lớp, interface, enum, phương thức, constructor, trường. Chúng xếp thành phân cấp từ mịn đến thô (constant, field, function/method, class/interface, file, module, package, project): một file \textit{khai báo} các kiểu mức đỉnh, một kiểu \textit{chứa} các thành viên và kiểu lồng bên trong. Mỗi entity mang tên định danh đầy đủ (package, kiểu bao ngoài, chữ ký thành viên) -- đây là ``địa chỉ'' để tham chiếu từ file khác, thậm chí nguồn khác, tìm về đúng nó.
+  \item \textbf{Entity phi mã nguồn} -- hiện gồm commit. Tài liệu không phải một loại node riêng mà được biểu diễn bằng chính node file cùng các chunk kiểu \textit{doc} của nó; một yêu cầu (mục có mã hiệu trong SRS) cũng chưa là node mà chỉ là một mã hiệu nằm trong chunk tài liệu. Việc nâng tài liệu và yêu cầu thành entity hạng nhất là một hướng phát triển.
+\end{itemize}
+
+Toàn bộ quan hệ được định nghĩa trước thành một bộ từ vựng đóng, chia ba nhóm theo độ chắc chắn của cách chúng được tạo ra:
+
+\begin{itemize}
+  \item \textbf{Quan hệ cấu trúc} -- đọc trực tiếp từ cú pháp, luôn chắc chắn: chứa/khai báo, gọi hàm, nhập phụ thuộc, kế thừa, hiện thực interface, ghi đè.
+  \item \textbf{Quan hệ sâu} -- cũng tất định nhưng ở độ mịn cao hơn, trích trong cùng lượt đọc cú pháp: khởi tạo, đọc/ghi trường, tham chiếu định danh, dùng kiểu, annotation, ném ngoại lệ, liên kết test.
+  \item \textbf{Quan hệ liên artifact} -- nối các loại tri thức khác nhau và \textit{xuất phát từ một chunk tài liệu} trỏ tới entity mã: tài liệu mô tả mã, yêu cầu được hiện thực bởi mã, yêu cầu được kiểm bởi test. Các quan hệ này suy luận theo heuristic nên bắt buộc kèm một \textbf{điểm tin cậy} (confidence score). Riêng commit sửa đổi file là quan hệ tất định đọc thẳng từ diff (độ tin cậy $1$); còn lời gọi API giữa các service và tài liệu tham chiếu tài liệu nằm trong từ vựng nhưng chưa có bộ sinh.
+\end{itemize}
+
+Ranh giới giữa ``chắc chắn'' và ``phỏng đoán'' được mã hóa ngay trong lược đồ: quan hệ tất định luôn ghi với độ tin cậy $1$, còn quan hệ suy luận phải khai điểm số của nó. Việc định nghĩa trước toàn bộ từ vựng -- kể cả những quan hệ chưa có bộ sinh tương ứng -- giữ cho lược đồ đồ thị và các truy vấn duyệt đồ thị ổn định, bất kể bộ sinh nào đang được bật. Cách hệ thống \textit{tạo ra} các liên kết này được trình bày ở chương Phương pháp; ở đây quan tâm tới \textit{lược đồ} mà chúng tạo thành.
+
+Mỗi loại node có một \textbf{ràng buộc duy nhất} trên định danh của nó. Kết hợp với định danh ổn định dẫn xuất từ danh tính/nội dung, mọi thao tác ghi trở thành cập nhật-đè an toàn: xử lý lại dữ liệu không tạo bản trùng, và cạnh không bao giờ trỏ vào node mồ côi. Toàn bộ thực thể, quan hệ và khóa nối giữa hai kho được tổng hợp ở sơ đồ thực thể -- quan hệ (Hình~\ref{fig:erd}).
+
+\begin{figure}[htbp]
+  \centering
+  % TODO: chèn sơ đồ ERD sau khi render (../diagrams/erd)
+  \fbox{\parbox[c][4cm][c]{0.85\linewidth}{\centering \textit{[Placeholder] Sơ đồ thực thể -- quan hệ (ERD)}}}
+  \caption{Sơ đồ thực thể -- quan hệ: mô hình tri thức trong graph store, vector trong vector store, và khóa \texttt{chunk\_id} nối hai kho.}
+  \label{fig:erd}
+\end{figure}
+
+\subsubsection{Chỉ mục cho từng kiểu truy cập}
+
+Mỗi đường truy cập dữ liệu có một cấu trúc chỉ mục riêng đỡ cho nó:
+
+\begin{itemize}
+  \item \textbf{Tìm theo từ khóa} -- graph store duy trì chỉ mục full-text (BM25) trên văn bản chunk, trên tên và chữ ký entity, và trên message commit. Các chỉ mục được truy vấn cùng lúc, nên một tên hàm dù xuất hiện trong văn xuôi, trong chữ ký mã hay trong message commit đều nổi lên được.
+  \item \textbf{Khử trùng lặp} -- chỉ mục trên content hash của chunk và của file, đỡ cho phép so sánh ``nội dung này đã index chưa'' khi đồng bộ.
+  \item \textbf{Phân giải tham chiếu} -- chỉ mục trên tên định danh đầy đủ và tên đơn của entity, đỡ cho bước liên kết tri thức tra cứu theo lô.
+  \item \textbf{Lọc phân quyền} -- mọi node tri thức và mọi payload vector đều mang định danh nguồn, và bộ lọc ACL được đẩy vào trong truy vấn ở cả hai kho như một điều kiện cứng: kết quả từ nguồn ngoài quyền đọc không bao giờ rời khỏi kho.
+\end{itemize}
+
+\subsubsection{Vì sao hai kho -- và cái giá của nó}
+
+So khớp xấp xỉ trên không gian vector nhiều chiều và duyệt quan hệ nhiều bước là hai bài toán có cấu trúc dữ liệu, chỉ mục và mẫu truy cập hoàn toàn khác nhau. Ép cả hai vào một kho hoặc làm nghèo khả năng đồ thị, hoặc làm nghèo hiệu năng vector.
+
+Cái giá phải trả là giữ hai kho \textbf{nhất quán với nhau}: một vector không còn node đối ứng (hoặc ngược lại) là tri thức chết mà truy vấn vẫn có thể trả về. Hệ thống xử lý bằng cách dùng chung một khóa định danh và gỡ bỏ theo khóa đó ở cả hai kho trong cùng một thao tác đồng bộ. Đồng thời, cả hai kho đều nằm sau các cổng trừu tượng của kiến trúc, nên thay một backend lưu trữ là thêm một adapter mới thay vì sửa nghiệp vụ.
 
 \subsection{Kiến trúc logic (logical architecture)}
 
-Kiến trúc module hóa - lý do
+Knowledge Hub phải phục vụ nhiều loại dữ liệu, hai giao diện truy cập (MCP và REST), hai kho lưu trữ khác bản chất và một provider embedding bên ngoài, mà vẫn dễ kiểm thử, dễ thay thế từng thành phần và dễ mở rộng khi thêm loại dữ liệu hay nguồn mới. Để đạt được điều đó, hệ thống được tổ chức theo \textbf{Clean Architecture}: nghiệp vụ nằm ở trung tâm, mọi phụ thuộc hướng vào trong, và các chi tiết công nghệ (web, cơ sở dữ liệu, API ngoài) chỉ là lớp vỏ ngoài cùng có thể thay thế.
 
-Class diagram mỗi module
+\subsubsection{Phân tầng theo trách nhiệm}
 
-Kiến trúc domain driven architecture - lý do
+Mỗi tính năng được chia thành ba tầng, xếp theo một chiều phụ thuộc duy nhất -- từ ngoài vào trong, không bao giờ ngược lại:
 
-Kiến trúc pipe \& filter cho quy trình xử lý dữ liệu nhiều bước
+\begin{itemize}
+  \item \textbf{Tầng miền (domain)} -- trung tâm của kiến trúc, chứa mô hình nghiệp vụ (entity, value object) và các \textbf{cổng} (port): những interface khai báo \textit{thứ mà nghiệp vụ cần} từ thế giới bên ngoài, chẳng hạn khả năng lưu trữ hay sinh embedding. Tầng này là Java thuần, không phụ thuộc framework nào, nên luật nghiệp vụ và bất biến của mô hình được biểu đạt độc lập với công nghệ triển khai. Bất biến được đặt bên trong chính đối tượng miền: một nguồn tự đảm bảo phiên bản (\texttt{ref}) chỉ có nghĩa với nguồn Git, một chunk tự dẫn xuất định danh từ nội dung của nó.
+  \item \textbf{Tầng ứng dụng (application)} -- điều phối các ca sử dụng. Tầng này phối hợp các đối tượng miền và gọi qua các cổng để hoàn thành một nghiệp vụ, nhưng không chứa luật bản chất của mô hình (đã nằm ở domain) và cũng không biết chi tiết công nghệ (nằm ở infrastructure). Nói cách khác, nó nắm \textit{nghiệp vụ diễn ra theo trình tự nào} chứ không nắm \textit{làm bằng công cụ gì}: chọn bộ xử lý phù hợp với loại nguồn, quyết định thứ tự các bước, đặt chính sách khi một bước lỗi, mở ranh giới giao dịch, và phát sự kiện khi một nghiệp vụ hoàn tất.
+  \item \textbf{Tầng hạ tầng (infrastructure)} -- các \textbf{bộ chuyển đổi} (adapter) hiện thực hóa cổng và nối hệ thống với thế giới bên ngoài, chia hai hướng: \textit{inbound} (REST controller và MCP tool -- adapter dẫn yêu cầu vào hệ thống) và \textit{outbound} (kho Neo4j, kho vector Qdrant, API embedding -- adapter mà hệ thống gọi ra). Đây là nơi duy nhất được biết đến framework và công nghệ cụ thể.
+\end{itemize}
 
-\subsubsection{Strategy pattern}
+Quy tắc phụ thuộc là bất biến kiến trúc quan trọng nhất và được kiểm chứng như một tiêu chí trước mỗi lần tích hợp: hạ tầng được phụ thuộc ứng dụng và miền; ứng dụng chỉ được phụ thuộc miền; miền không phụ thuộc gì bên ngoài. Tầng miền khai báo interface (ví dụ cổng sinh embedding) còn tầng hạ tầng hiện thực nó; tầng ứng dụng nói chuyện với \textit{cổng}, không bao giờ import trực tiếp một adapter -- việc gắn adapter cụ thể vào cổng do khung tiêm phụ thuộc lo lúc khởi động. Nhờ chiều phụ thuộc này, phần lõi nghiệp vụ kiểm thử được mà không cần cơ sở dữ liệu hay mạng, và một công nghệ hạ tầng thay thế được mà không chạm tới nghiệp vụ.
 
-\subsubsection{Adapter pattern}
+\subsubsection{Đóng gói theo tính năng}
+
+Ở cấp cao nhất, mã nguồn được chia \textbf{theo tính năng trước, rồi mới theo tầng} -- mỗi gói cấp cao là một năng lực gắn kết (một \textit{bounded context}), bên trong mới chia thành ba tầng nói trên. Cách này giữ mọi thứ liên quan tới một năng lực ở cùng một chỗ, giúp tìm, sửa hay gỡ bỏ một tính năng dễ dàng -- trái với việc gom toàn bộ controller vào một gói, toàn bộ service vào một gói, vốn khiến một thay đổi nghiệp vụ phải lan ra nhiều gói rời rạc. Hệ thống gồm bốn bounded context và một nhân dùng chung:
+
+\begin{itemize}
+  \item \textbf{\texttt{access}} -- xác thực mọi request và phân quyền truy cập tri thức ở mức nguồn (principal, grant, credential, chính sách mặc định).
+  \item \textbf{\texttt{knowledge}} -- phía \textit{ghi}, chịu trách nhiệm dựng nên mô hình tri thức; do khối lượng lớn, nó chia tiếp thành các mô-đun con: nạp dữ liệu, lập chỉ mục, dựng đồ thị tri thức, và đồng bộ/cập nhật.
+  \item \textbf{\texttt{retrieval}} -- phía \textit{đọc}, phục vụ truy vấn hybrid trên mô hình tri thức đã dựng.
+  \item \textbf{\texttt{system}} -- thông tin vận hành của hệ thống tại runtime.
+  \item \textbf{\texttt{shared}} -- nhân dùng chung, chỉ chứa các khối phi nghiệp vụ: cấu hình, xử lý lỗi tập trung, sinh định danh, khối đường ống tổng quát, và hạ tầng quan sát.
+\end{itemize}
+
+Bản đồ các bounded context, các mô-đun con bên trong \texttt{knowledge}, và các phụ thuộc biên giới giữa chúng được trình bày ở sơ đồ kiến trúc logic (Hình~\ref{fig:logical}).
+
+\begin{figure}[htbp]
+  \centering
+  % TODO: chèn sơ đồ kiến trúc logic sau khi render (../diagrams/component-diagram)
+  \fbox{\parbox[c][4cm][c]{0.85\linewidth}{\centering \textit{[Placeholder] Sơ đồ kiến trúc logic}}}
+  \caption{Kiến trúc logic: bốn bounded context, các mô-đun con của phía ghi, và chiều phụ thuộc giữa các tầng.}
+  \label{fig:logical}
+\end{figure}
+
+\subsubsection{Cổng và bộ chuyển đổi (ports \& adapters)}
+
+Nguyên tắc cổng và bộ chuyển đổi là thứ cho phép hệ thống giữ \textit{một} hợp đồng lưu trữ duy nhất trong khi đồ thị nằm ở Neo4j còn vector nằm ở Qdrant, và cho phép thay một trong hai backend mà không đụng mã nghiệp vụ. Chìa khóa là đặt cổng ở đúng ranh giới: \textbf{cổng mô tả \textit{cái gì}, không mô tả \textit{bằng cách nào}}.
+
+Những gì mang tính điều phối, kết hợp nhiều nguồn, hoặc phải cư xử như nhau bất kể backend -- dàn xếp embedding, tìm kiếm từ khóa, duyệt đồ thị, hợp nhất kết quả, lọc ACL -- thuộc \textit{trên vạch} (tầng ứng dụng). Những gì thuộc về \textit{cách} một công nghệ lưu và tìm dữ liệu -- định dạng lưu trữ, nén/lượng tử hóa, chiến lược lọc cụ thể, cơ chế ghi song song -- thuộc \textit{dưới vạch} (adapter) và tự do thay đổi mà không ảnh hưởng cổng. Khi một công nghệ có một ưu thế thực sự đáng giá mà mẫu số chung không diễn đạt được, ưu thế đó được phơi bày qua một \textbf{interface năng lực} tùy chọn: tầng ứng dụng dò xem adapter hiện tại có hỗ trợ hay không, nếu có thì đi đường nhanh, nếu không thì rơi về cơ chế tổng quát.
+
+\subsubsection{Tách phía ghi và phía đọc}
+
+Các bounded context được tách dọc theo ranh giới lệnh/truy vấn, theo tinh thần CQRS ở dạng nhẹ. Context \texttt{knowledge} là phía ghi (nạp $\rightarrow$ lập chỉ mục $\rightarrow$ liên kết $\rightarrow$ đồng bộ), nhiệm vụ duy nhất là \textit{dựng nên} mô hình đọc gồm vector và đồ thị; context \texttt{retrieval} là phía đọc, phục vụ truy vấn trên mô hình đó và không bao giờ ghi. Đây là CQRS theo nghĩa nhẹ -- tách mô hình và đường xử lý cho ghi so với đọc -- chứ không phải event sourcing và không dùng hai cơ sở dữ liệu riêng. Sự tách bạch này cho phép tối ưu, mở rộng và bảo trì hai phía một cách độc lập.
+
+\subsubsection{Đường ống và bộ lọc cho luồng dài}
+
+Luồng lập chỉ mục và luồng truy vấn đều là chuỗi nhiều bước dài, nên mỗi luồng được tổ chức thành một \textbf{đường ống các bộ lọc} (pipes \& filters): mỗi bước là một bộ lọc nhỏ, đơn trách nhiệm, nhận và truyền tiếp một ngữ cảnh có kiểu dọc theo đường ống, thay vì gộp tất cả vào một phương thức service khổng lồ. Đây là một lớp tổ chức đặt \textit{lên trên} Clean Architecture chứ không thay thế nó: các bộ lọc là thành phần tầng ứng dụng, điều phối qua cổng miền và không chạm trực tiếp vào hạ tầng.
+
+Luồng lập chỉ mục là một đường ống tuần tự: nạp $\rightarrow$ chia chunk $\rightarrow$ sinh embedding $\rightarrow$ lưu và liên kết. Luồng truy vấn là một biến thể song song theo kiểu scatter--gather: sau bước chuẩn bị, các đường tìm kiếm ngữ nghĩa và từ khóa tỏa ra chạy song song, bước duyệt đồ thị mở rộng từ kết quả của chúng, rồi một bộ lọc hợp nhất gom lại trước khi lắp ráp kết quả và áp bộ lọc cuối. Cách tổ chức này cho phép sắp xếp lại, chèn thêm hay bỏ qua một bước bằng cấu hình mà không sửa các bước khác; kiểm thử từng bước cô lập; cô lập một bước lỗi để nó không làm hỏng cả mẻ; và đo độ trễ theo từng bước. Một hệ quả quan trọng: luồng đồng bộ \textbf{tái sử dụng chính các bộ lọc của luồng lập chỉ mục} trên phần dữ liệu thay đổi, thay vì nhân đôi logic.
+
+\subsubsection{Chiến lược thay thế được (Strategy)}
+
+Ở mọi nơi mà một bước có nhiều cách hiện thực hoán đổi được cho nhau -- bộ chia chunk cho mã nguồn so với tài liệu, bộ đọc tài liệu cho Markdown so với PDF, bộ so sánh khác biệt cho nguồn Git so với thư mục, chiến lược hợp nhất kết quả, hay các adapter vector và embedding -- tầng miền khai báo \textit{một} cổng và tầng hạ tầng cung cấp \textit{nhiều} adapter. Việc chọn adapter dựa trên năng lực (adapter tự khai báo nó hỗ trợ loại nào) hoặc cấu hình, và khung tiêm phụ thuộc tự phát hiện các thành phần. Nhờ vậy, thêm một định dạng tài liệu, một loại nguồn hay một ngôn ngữ mới thường chỉ là \textbf{thêm một adapter}, không phải sửa mã sẵn có.
+
+\subsubsection{Bộ chuyển đổi (Adapter)}
+
+Mẫu Adapter là mặt hạ tầng của cổng: mỗi adapter hiện thực một cổng miền bằng một công nghệ cụ thể -- adapter Neo4j và Qdrant cho lưu trữ, adapter HTTP cho API embedding, controller REST và tool MCP cho đường vào. Vì adapter là ranh giới duy nhất chạm tới công nghệ ngoài, các mối quan tâm gắn với công nghệ được gom đúng vào đó: lời gọi tới API embedding bên ngoài được bọc bằng cơ chế thử lại kèm khoảng lùi (retry $+$ backoff) ngay tại adapter, để một trục trặc tạm thời của provider không làm hỏng cả mẻ -- chú thích về chịu lỗi đặt trên adapter, không bao giờ trên service tầng ứng dụng.
+
+\subsubsection{Giao tiếp giữa các ngữ cảnh bằng sự kiện}
+
+Những ca sử dụng \textit{kích hoạt} ca sử dụng khác được tách rời bằng cơ chế sự kiện trong tiến trình, thay vì để một service gọi thẳng service của context khác. Một context phát ra một sự kiện ở thì quá khứ -- tường thuật \textit{việc đã xảy ra} chứ không ra lệnh, chẳng hạn ``nguồn đã đăng ký'', ``nguồn đã xóa'', ``lập chỉ mục đã hoàn tất''; context nào quan tâm thì tự lắng nghe và phản ứng. Nhờ đó phía phát không cần biết ai lắng nghe, và có thể thêm phía nghe mới mà không sửa phía phát. Ví dụ, khi một nguồn bị xóa, phía đồng bộ lắng nghe để gỡ bỏ tri thức tương ứng; khi lập chỉ mục hoàn tất, phía truy xuất lắng nghe để làm mới bộ nhớ đệm -- mà phía ghi hoàn toàn không phụ thuộc phía đọc. Cơ chế này còn giữ đúng chiều phụ thuộc: nếu gọi trực tiếp sẽ buộc một mô-đun cấp thấp phụ thuộc mô-đun cấp cao, thì sự kiện đảo ngược sự phụ thuộc đó. Sự kiện là trong tiến trình, không dùng message broker; nếu về sau hệ thống được tách thành nhiều dịch vụ, chính những sự kiện này trở thành đường ghép nối tự nhiên.
 
 \subsection{Kiến trúc vật lý (physical architecture)}
 
-Các thành phần nào chạy ở đâu
+Về triển khai, hệ thống là một \textbf{modular monolith}: một ứng dụng duy nhất chia thành các mô-đun (nạp dữ liệu, truy xuất, API, MCP) như trình bày ở kiến trúc logic, chứ không tách thành microservice từ đầu. Ứng dụng cùng hai kho lưu trữ được đóng gói thành \textbf{ba container độc lập} -- ứng dụng, graph store (Neo4j) và vector store (Qdrant) -- khởi chạy cùng nhau bằng một lệnh qua \texttt{docker compose}. Ứng dụng gọi hai kho qua mạng nội bộ của cụm; agent và caller bên ngoài chỉ chạm tới ứng dụng, qua MCP hoặc REST. Cách phân bố này được minh họa ở sơ đồ triển khai (Hình~\ref{fig:deployment}).
 
-diagram deployment + phần triển khai của TECH-STACK
+\begin{figure}[htbp]
+  \centering
+  % TODO: chèn sơ đồ triển khai sau khi render (../diagrams/deployment-architecture)
+  \fbox{\parbox[c][4cm][c]{0.85\linewidth}{\centering \textit{[Placeholder] Sơ đồ kiến trúc triển khai}}}
+  \caption{Kiến trúc triển khai: ba container (ứng dụng $+$ graph store $+$ vector store) trong một cụm, đường vào qua MCP và REST.}
+  \label{fig:deployment}
+\end{figure}
+
+Cùng một image ứng dụng chạy được ở nhiều môi trường (dev, server, cloud) mà không build lại: hành vi theo môi trường do cấu hình bơm vào lúc runtime quyết định (biến môi trường, file profile, secret), không hard-code vào image. Nhờ đó chuyển giữa các môi trường chỉ là đổi cấu hình -- địa chỉ và thông tin đăng nhập của hai kho, embedding provider và khóa của nó, mức tài nguyên -- trong khi mã nguồn và image giữ nguyên. Về mở rộng, service truy vấn không mang trạng thái nên có thể chạy nhiều bản sau một bộ cân bằng tải để gánh thêm tải, còn hai kho mở rộng riêng theo cơ chế của chúng; khi cần, phần nạp dữ liệu (nặng, chạy nền) có thể tách khỏi phần truy vấn (nhạy độ trễ) thành hai tiến trình. Lý do chọn từng công nghệ cụ thể được trình bày ở chương Hiện thực.
 
 \subsection{Communication}
 
-Các thành phần giao tiếp với nhau bằng gì, các module trong ứng dụng giao tiếp với nhau thế nào
+Phần này mô tả các thành phần trong hệ thống giao tiếp với nhau bằng gì: giữa các mô-đun nội bộ là sự kiện trong tiến trình, còn ra bên ngoài là hai giao diện MCP và REST.
 
-\subsubsection{Giao tiếp giữa các module}
+\subsubsection{Giao tiếp giữa các mô-đun}
 
+Bên trong ứng dụng, các mô-đun không gọi thẳng nhau mà giao tiếp qua \textbf{sự kiện trong tiến trình} như đã mô tả ở kiến trúc logic: phía phát công bố một sự kiện ở thì quá khứ, phía quan tâm tự lắng nghe. Nhờ đó ranh giới giữa các bounded context được giữ tách bạch, phía ghi không phụ thuộc phía đọc, và có thể thêm một phía nghe mới mà không sửa phía phát. Với cổng lưu trữ và embedding, các mô-đun tầng ứng dụng gọi nhau qua \textit{cổng} miền chứ không qua adapter cụ thể, nên một backend đổi đi không kéo theo thay đổi ở mô-đun gọi.
 
 \subsubsection{Thiết kế MCP Tools}
 
-MCP server công bố các tool để agent tự khám phá và gọi bằng ngôn ngữ tự nhiên của nó: 
+MCP server công bố các tool để agent tự khám phá và gọi bằng ngôn ngữ tự nhiên của nó:
 
 \begin{itemize}
   \item \textbf{Tool liệt kê nguồn}: cho agent khám phá các source nó được phép đọc, mỗi source kèm id, tên, mô tả, loại (git hay filesystem) và ref cấu hình. Tập trả về chính là tập mà mọi truy vấn bị giới hạn truy cập; agent mới kết nối gọi tool này trước tiên để biết mình có thể hỏi về những gì.
   \item \textbf{Tool truy vấn tri thức}: nhận câu truy vấn văn bản tự do cùng các tham số tùy chọn (số kết quả tối đa, khoanh theo source, khoanh theo ref, khoanh theo loại dữ liệu), trả về danh sách kết quả xếp hạng. Mô tả tool nói rõ cho agent biết mỗi kết quả kèm điểm tin cậy và metadata trích dẫn, và kết quả đã được giới hạn trong phạm vi nguồn agent được đọc.
-  \item \textbf{Tool đồng bộ nguồn}: cho agent chủ động kích hoạt cập nhật một nguồn khi nghi ngờ tri thức đã cũ (ví dụ sau khi chính nó vừa sửa code). Kết quả trả về gồm số file được index/re-index/gỡ bỏ và số commit mới được nạp vào đồ thị. 
+  \item \textbf{Tool đồng bộ nguồn}: cho agent chủ động kích hoạt cập nhật một nguồn khi nghi ngờ tri thức đã cũ (ví dụ sau khi chính nó vừa sửa code). Kết quả trả về gồm số file được index/re-index/gỡ bỏ và số commit mới được nạp vào đồ thị.
   \item \textbf{Tool trạng thái nguồn}: cho agent kiểm tra độ mới của một nguồn: đã từng đồng bộ chưa, lần đồng bộ gần nhất, và (với nguồn git) ref/commit đã index để quyết định có cần đồng bộ trước lúc hỏi. Tool này chỉ đọc, mở cho mọi agent đã xác thực.
   \item \textbf{Tool thông tin hệ thống}: cho agent xem thông tin vận hành runtime của hệ thống.
 \end{itemize}
 
-Các tool này ghép thành vòng làm việc tự nhiên của agent: \textit{khám phá nguồn $\rightarrow$ kiểm tra độ mới $\rightarrow$ (nếu cần) đồng bộ $\rightarrow$ truy vấn $\rightarrow$ trích dẫn}. Các tool đều yêu cầu agent xác thực bằng credential đã phát hành, riêng tool sync tri thức thì agent phải được ủy quyền quản trị viên.
-
+Các tool này ghép thành vòng làm việc tự nhiên của agent: \textit{khám phá nguồn $\rightarrow$ kiểm tra độ mới $\rightarrow$ (nếu cần) đồng bộ $\rightarrow$ truy vấn $\rightarrow$ trích dẫn}. Các tool đều yêu cầu agent xác thực bằng credential đã phát hành, riêng tool đồng bộ tri thức thì agent phải được ủy quyền quản trị viên.
 
 \subsubsection{Thiết kế REST API}
 
@@ -61,8 +182,7 @@ Các thao tác quản trị đòi hỏi vai trò admin; mọi endpoint -- kể c
 
 \subsubsection{Cấu trúc kết quả truy vấn}
 
-Kết quả trả về là JSON có cấu trúc, mỗi mục kèm relevance score và metadata: \\
-
+Kết quả trả về là JSON có cấu trúc, mỗi mục kèm relevance score và metadata:
 
 \begin{lstlisting}
 {
@@ -97,16 +217,13 @@ Kết quả trả về là JSON có cấu trúc, mỗi mục kèm relevance scor
   ],
   "servedFromCanonicalRef": false
 }
-
 \end{lstlisting}
-
 
 Cấu trúc này cho agent ba thứ nó cần: xếp hạng để chọn ngữ cảnh, tọa độ trích dẫn (nguồn, file, dòng, phiên bản) để dẫn nguồn và tự lấy lại nội dung, và dấu vết suy luận (\texttt{viaPath} -- chuỗi quan hệ đã duyệt) cho kết quả đến từ đường đồ thị. Cờ \texttt{servedFromCanonicalRef} báo khi kết quả được phục vụ từ ref canonical do ref yêu cầu chưa được index.
 
 \subsubsection{Mô hình lỗi thống nhất}
 
-Mọi lỗi bất kể từ endpoint nào đều trả về theo chuẩn RFC 7807, gồm mã HTTP Status Code, một mã lỗi ổn định cho máy đọc, thông điệp cho người đọc, và định danh tương quan để tra log: \\
-
+Mọi lỗi bất kể từ endpoint nào đều trả về theo chuẩn RFC 7807, gồm mã HTTP status, một mã lỗi ổn định cho máy đọc, thông điệp cho người đọc, và định danh tương quan để tra log:
 
 \begin{lstlisting}
 {
@@ -120,4 +237,4 @@ Mọi lỗi bất kể từ endpoint nào đều trả về theo chuẩn RFC 780
 
 \subsection{Logging}
 
-Thông tin, nội dung log, trace request
+Khả năng quan sát được xử lý nhất quán ở nhân dùng chung và tầng hạ tầng. Mỗi request được gắn một \textbf{định danh tương quan} (trace id) xuyên suốt vòng đời của nó, để có thể tái dựng lại toàn bộ một request chỉ từ log -- chính \texttt{traceId} trong mô hình lỗi ở trên là định danh này. Hệ thống dùng \textbf{log có cấu trúc} và ghi log cho mọi sự kiện nạp dữ liệu, truy vấn và lỗi, kèm các điểm cuối kiểm tra sức khỏe và thông tin runtime để giám sát vận hành. Lời gọi phụ thuộc bên ngoài (embedding provider) ghi lại mọi lần thử lại và lỗi, nên một sự cố tạm thời của provider truy vết được từ log mà không cần dựng lại hiện trường.
