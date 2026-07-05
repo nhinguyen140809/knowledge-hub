@@ -136,14 +136,14 @@ inbound: "inbound adapters" {
 }
 
 infraAdapters: "infrastructure — port adapters (Strategy)" {
-  CodeChunker: {
+  JavaCodeChunker: {
     shape: class
-    +supports(type): boolean
+    "extends AbstractCodeChunker": "(one strategy per language)"
     +chunk(raw): "List<Chunk>"
   }
   DocChunker: {
     shape: class
-    +supports(type): boolean
+    "structure-aware fallback": "(any text)"
     +chunk(raw): "List<Chunk>"
   }
   EmbeddingApiAdapter: {
@@ -198,7 +198,7 @@ application.LinkStage -> collaborators.LinkingService: {style.stroke-dash: 4}
 collaborators.LinkingService -> domain.RelationshipRepository: {style.stroke-dash: 4}
 
 # Strategy: each port has interchangeable adapters; infra realizes ports (dashed, hollow triangle)
-infraAdapters.CodeChunker -> domain.Chunker: {target-arrowhead.shape: triangle; target-arrowhead.style.filled: false; style.stroke-dash: 4}
+infraAdapters.JavaCodeChunker -> domain.Chunker: {target-arrowhead.shape: triangle; target-arrowhead.style.filled: false; style.stroke-dash: 4}
 infraAdapters.DocChunker -> domain.Chunker: {target-arrowhead.shape: triangle; target-arrowhead.style.filled: false; style.stroke-dash: 4}
 infraAdapters.EmbeddingApiAdapter -> domain.EmbeddingPort: {target-arrowhead.shape: triangle; target-arrowhead.style.filled: false; style.stroke-dash: 4}
 infraAdapters.QdrantVectorAdapter -> domain.VectorStorePort: {target-arrowhead.shape: triangle; target-arrowhead.style.filled: false; style.stroke-dash: 4}
