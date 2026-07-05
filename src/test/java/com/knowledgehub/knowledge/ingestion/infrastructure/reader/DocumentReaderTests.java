@@ -30,16 +30,15 @@ class DocumentReaderTests {
   }
 
   @Test
-  void markdownReaderExtractsBodyText() {
+  void markdownReaderKeepsHeadingsVerbatim() {
     var reader = new MarkdownReader();
 
     assertThat(reader.supports(MediaTypes.MARKDOWN)).isTrue();
-    String text =
-        reader.extractText(
-            artifact("R.md", MediaTypes.MARKDOWN, "# Title\n\nHello world from markdown."));
+    String source = "# Title\n\nHello world from markdown.";
+    String text = reader.extractText(artifact("R.md", MediaTypes.MARKDOWN, source));
 
-    // Spring AI surfaces the heading as document metadata; the body becomes the extracted text.
-    assertThat(text).contains("Hello world from markdown.");
+    // Verbatim: the heading marker survives so the document chunker can section on it.
+    assertThat(text).isEqualTo(source);
   }
 
   @Test
@@ -48,5 +47,16 @@ class DocumentReaderTests {
 
     assertThat(reader.supports(MediaTypes.OCTET_STREAM)).isTrue();
     assertThat(reader.supports("anything/else")).isTrue();
+  }
+
+  @Test
+  void tikaReaderExtractsRichDocumentsAsMarkdown() {
+    var reader = new TikaReader();
+    String html = "<!DOCTYPE html><html><body><h1>Title</h1><p>Body text.</p></body></html>";
+
+    String text = reader.extractText(artifact("doc.html", MediaTypes.OCTET_STREAM, html));
+
+    // The heading becomes a Markdown '#' heading, so structure survives for the chunker.
+    assertThat(text).contains("# Title").contains("Body text.");
   }
 }
