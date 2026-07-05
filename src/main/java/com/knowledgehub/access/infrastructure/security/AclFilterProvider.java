@@ -1,7 +1,10 @@
 package com.knowledgehub.access.infrastructure.security;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.knowledgehub.access.domain.AuthenticatedPrincipal;
 import com.knowledgehub.access.domain.Authorizer;
+import com.knowledgehub.shared.config.AppProperties;
 import java.util.Set;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -11,14 +14,23 @@ import org.springframework.stereotype.Component;
  * Supplies the readable-source set for the current request, read from the security context the
  * authentication filter populated. Retrieval threads this set into every search path as a hard
  * pre-filter. If there is no authenticated principal, nothing is readable (fail-closed).
+ *
+ * <p>Resolving the set hits the graph store, and a single query re-checks it on every search path,
+ * so the result is cached per principal for a short TTL: repeated requests from the same caller
+ * skip the lookup. The TTL is kept short so a grant or policy change takes effect promptly; the
+ * admin inspection path resolves permissions directly (uncached) and so always sees the current
+ * truth.
  */
 @Component
 public class AclFilterProvider {
 
   private final Authorizer authorizer;
+  private final Cache<String, Set<String>> readableSourcesCache;
 
-  public AclFilterProvider(Authorizer authorizer) {
+  public AclFilterProvider(Authorizer authorizer, AppProperties properties) {
     this.authorizer = authorizer;
+    this.readableSourcesCache =
+        Caffeine.newBuilder().expireAfterWrite(properties.security().aclCacheTtl()).build();
   }
 
   /**
@@ -43,6 +55,7 @@ public class AclFilterProvider {
         || !(authentication.getPrincipal() instanceof AuthenticatedPrincipal principal)) {
       return Set.of();
     }
-    return authorizer.readableSources(principal);
+    return readableSourcesCache.get(
+        principal.principalId(), id -> authorizer.readableSources(principal));
   }
 }
