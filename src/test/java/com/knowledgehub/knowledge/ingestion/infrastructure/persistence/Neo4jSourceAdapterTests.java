@@ -27,7 +27,9 @@ class Neo4jSourceAdapterTests {
             "https://example.com/repo.git",
             "main",
             List.of("**/*.java"),
-            List.of("target"));
+            List.of("target"),
+            "Example repo",
+            "The example service source code");
     try {
       repository.save(source);
 
@@ -37,6 +39,8 @@ class Neo4jSourceAdapterTests {
       assertThat(found.ref()).contains("main");
       assertThat(found.include()).containsExactly("**/*.java");
       assertThat(found.ignore()).containsExactly("target");
+      assertThat(found.name()).contains("Example repo");
+      assertThat(found.description()).contains("The example service source code");
     } finally {
       repository.deleteById("it-git");
     }
@@ -50,6 +54,8 @@ class Neo4jSourceAdapterTests {
     Source found = repository.findById("it-fs").orElseThrow();
     assertThat(found.type()).isEqualTo(SourceType.FS);
     assertThat(found.ref()).isEmpty();
+    assertThat(found.name()).isEmpty();
+    assertThat(found.description()).isEmpty();
     assertThat(repository.findAll()).extracting(Source::sourceId).contains("it-fs");
 
     repository.deleteById("it-fs");

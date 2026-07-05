@@ -32,19 +32,29 @@ class SourceNode {
   @Property("ignore")
   private final List<String> ignore;
 
+  @Property("name")
+  private final String name;
+
+  @Property("description")
+  private final String description;
+
   SourceNode(
       String sourceId,
       String type,
       String uriOrPath,
       String ref,
       List<String> include,
-      List<String> ignore) {
+      List<String> ignore,
+      String name,
+      String description) {
     this.sourceId = sourceId;
     this.type = type;
     this.uriOrPath = uriOrPath;
     this.ref = ref;
     this.include = include;
     this.ignore = ignore;
+    this.name = name;
+    this.description = description;
   }
 
   String sourceId() {
@@ -69,5 +79,13 @@ class SourceNode {
 
   List<String> ignore() {
     return ignore;
+  }
+
+  String name() {
+    return name;
+  }
+
+  String description() {
+    return description;
   }
 }
