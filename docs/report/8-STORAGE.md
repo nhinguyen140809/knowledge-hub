@@ -24,7 +24,7 @@ Mỗi loại node có **ràng buộc duy nhất** trên định danh của nó. 
 
 Mỗi đường truy cập dữ liệu có cấu trúc chỉ mục riêng đỡ cho nó:
 
-- **Tìm theo từ khóa** — graph store duy trì chỉ mục **full-text (BM25)** trên văn bản chunk và trên tên/chữ ký entity. Hai chỉ mục được truy vấn cùng lúc, nên một tên hàm xuất hiện trong văn xuôi hay trong chữ ký mã đều nổi lên được.
+- **Tìm theo từ khóa** — graph store duy trì chỉ mục **full-text (BM25)** trên văn bản chunk, trên tên/chữ ký entity, và trên message commit. Các chỉ mục được truy vấn cùng lúc, nên một tên hàm xuất hiện trong văn xuôi, trong chữ ký mã hay trong message commit đều nổi lên được.
 - **Khử trùng lặp** — chỉ mục trên content hash của chunk và của file, đỡ cho phép so sánh "nội dung này đã index chưa" khi đồng bộ (FR-6.3).
 - **Phân giải tham chiếu** — chỉ mục trên tên định danh đầy đủ và tên đơn của entity, đỡ cho bước liên kết tri thức tra cứu theo lô.
 - **Lọc phân quyền** — mọi node tri thức và mọi payload vector đều mang định danh nguồn, và bộ lọc ACL được **đẩy vào trong truy vấn** ở cả hai kho như một điều kiện cứng: kết quả từ nguồn ngoài quyền đọc không bao giờ rời khỏi kho (FR-8.6).

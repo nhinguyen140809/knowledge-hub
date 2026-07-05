@@ -24,8 +24,10 @@ authorization in the ACL.
 - **Structural** — solid: CONTAINS, DECLARES, CALLS, IMPORTS, EXTENDS, IMPLEMENTS, OVERRIDES.
 - **Deeper structural (optional)** — INSTANTIATES, READS/WRITES, REFERENCES, HAS_TYPE,
   ANNOTATED_WITH, THROWS, TESTS (between `CodeEntity` nodes).
-- **Cross-artifact** — dashed: DESCRIBES, IMPLEMENTED_BY, VERIFIED_BY, MODIFIES, CONSUMES,
-  LINKS_TO. Heuristic links carry a **confidence** score; cross-source links allowed.
+- **Cross-artifact** — dashed: DESCRIBES, IMPLEMENTED_BY, VERIFIED_BY, CONSUMES, LINKS_TO.
+  Heuristic links carry a **confidence** score; cross-source links allowed. MODIFIES
+  (Commit → File) is drawn solid: it crosses artifacts but is read from the commit's diff,
+  so it is deterministic (confidence 1).
 
 **Hierarchy levels** are one `CodeEntity` table with a `level` enum + self `CONTAINS`, from fine
 (constant/field) to coarse (project).
@@ -63,7 +65,10 @@ unit (ACL). The hard ACL filter pushes the allowed `source_id` set into every re
 
 ## 3. Incremental sync & eviction (insert / update / delete)
 
-Triggered on demand via REST or an MCP tool; idempotent and incremental.
+Triggered on demand via REST or an MCP tool; idempotent and incremental. For a git source each
+sync also appends the commits that arrived since the last run (messages embedded, `MODIFIES`
+edges to the indexed files they touched) — after the file steps so the edge targets exist, and
+even when no file changed, since commit history is append-only.
 
 ![Incremental sync & eviction](pipeline-sync.svg)
 

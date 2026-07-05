@@ -1,0 +1,144 @@
+\section*{Bảng thuật ngữ}
+
+\textbf{Bối cảnh \& đối tượng}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{4cm}p{11cm}}
+\toprule
+Thuật ngữ & Giải thích \\
+\midrule
+\textbf{AI Agent} & Chương trình dùng LLM kết hợp với các công cụ (tool) để tự lập kế hoạch và thực hiện tác vụ; trong tài liệu này là bên sử dụng tri thức của hệ thống. \\
+\textbf{SDLC} (Software Development Life Cycle) & Vòng đời phát triển phần mềm, từ phân tích, thiết kế, lập trình, kiểm thử đến bảo trì. \\
+\textbf{SRS} (Software Requirements Specification) & Tài liệu đặc tả yêu cầu phần mềm. \\
+\textbf{Agentic search} & Cách agent tự tìm kiếm qua nhiều bước bằng công cụ (đọc, grep file), thay cho một lần truy xuất RAG. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Phạm vi \& nguồn dữ liệu}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{3cm}p{12cm}}
+\toprule
+Thuật ngữ & Giải thích \\
+\midrule
+\textbf{Product} (dự án / sản phẩm) & Sản phẩm phần mềm mà một hub được scope tới; gồm nhiều source liên quan (source mã nguồn, source tài liệu). Là phạm vi tri thức của một hub. \\
+\textbf{Source} (nguồn) & Một nguồn dữ liệu được cấu hình để nạp vào hub: một Git repository hoặc một thư mục filesystem, chứa mã nguồn hoặc tài liệu. \\
+\textbf{Repository} (repo) & Một loại source dạng kho Git (có version control). Một product có thể gồm nhiều repo. \\
+\textbf{Connector} & Thành phần kết nối tới một nguồn dữ liệu cụ thể, ví dụ Git hoặc hệ thống tài liệu. \\
+\textbf{Filesystem (fs) connector} & Connector nạp dữ liệu từ một thư mục local, dùng cho nguồn không có Git; versioning dựa trên content hash thay vì commit. \\
+\textbf{Default branch} & Branch chính của một repo, thường là \texttt{main}. \\
+\textbf{ref} & Tham chiếu tới một phiên bản mã nguồn cụ thể: tên branch hoặc commit. \\
+\textbf{commit\_sha} & Mã băm định danh duy nhất của một commit Git. \\
+\textbf{Canonical} & Phiên bản tri thức chính thức, dùng chung của team; mặc định lấy từ default branch. \\
+\textbf{Multi-tenancy} & Khả năng phục vụ nhiều tổ chức hoặc team tách biệt trên cùng một hệ thống. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Nạp \& xử lý dữ liệu}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{3cm}p{12cm}}
+\toprule
+Thuật ngữ & Giải thích \\
+\midrule
+\textbf{Ingestion} & Quá trình nạp dữ liệu nguồn vào hệ thống: thu thập, xử lý rồi lưu trữ. \\
+\textbf{Chunk / Chunking} & Việc chia dữ liệu lớn thành các đoạn nhỏ trước khi sinh embedding. \\
+\textbf{AST} (Abstract Syntax Tree) & Cây cú pháp của mã nguồn, dùng để chunk code theo cấu trúc thay vì cắt thô. \\
+\textbf{Vector Embedding} (embedding) & Biểu diễn dữ liệu (văn bản, mã nguồn) dưới dạng vector số thực, cho phép so khớp theo ngữ nghĩa. \\
+\textbf{Embedding provider} & Nguồn sinh embedding, có thể là API bên ngoài hoặc local model. \\
+\textbf{Local model} & Mô hình chạy cục bộ trong hạ tầng của team, giúp dữ liệu không rời mạng nội bộ. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Truy xuất (Retrieval)}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{3cm}p{12cm}}
+\toprule
+Thuật ngữ & Giải thích \\
+\midrule
+\textbf{RAG} (Retrieval-Augmented Generation) & Kỹ thuật truy xuất dữ liệu liên quan rồi đưa vào ngữ cảnh của LLM để sinh câu trả lời chính xác hơn. \\
+\textbf{Semantic search} (vector search) & Tìm kiếm theo độ tương đồng ngữ nghĩa, dựa trên khoảng cách giữa các embedding. \\
+\textbf{Keyword search} & Tìm kiếm theo độ khớp từ khóa trên văn bản, ví dụ thuật toán BM25. \\
+\textbf{Hybrid search} (hybrid retrieval) & Kết hợp nhiều phương pháp truy xuất (vector, keyword, graph) rồi hợp nhất kết quả. \\
+\textbf{Graph traversal} & Duyệt theo các quan hệ trong Knowledge Graph để mở rộng ngữ cảnh truy xuất. \\
+\textbf{Fusion} & Hợp nhất kết quả từ nhiều phương pháp truy xuất thành một bảng xếp hạng (ví dụ RRF). \\
+\textbf{Relevance score} & Điểm thể hiện mức độ liên quan của một kết quả đối với truy vấn. \\
+\textbf{top-k} & Số lượng kết quả liên quan nhất được trả về cho một truy vấn. \\
+\textbf{Metadata} & Dữ liệu mô tả đi kèm mỗi kết quả, ví dụ đường dẫn file, ngôn ngữ, vị trí dòng. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Biểu diễn \& lưu trữ tri thức}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{3cm}p{12cm}}
+\toprule
+Thuật ngữ & Giải thích \\
+\midrule
+\textbf{Knowledge Graph} & Đồ thị tri thức gồm các entity (node) và quan hệ (edge) giữa chúng. \\
+\textbf{Entity} & Một thực thể trong Knowledge Graph, ví dụ hàm, lớp, file hoặc một yêu cầu trong tài liệu đặc tả. \\
+\textbf{GraphRAG} & Biến thể của RAG, kết hợp Knowledge Graph với truy xuất vector để khai thác thêm quan hệ giữa các entity. \\
+\textbf{Vector store} & Thành phần lưu trữ và tìm kiếm vector embedding, ví dụ Neo4j hoặc Qdrant. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Đồng bộ \& cập nhật}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{2.5cm}p{12.6cm}}
+\toprule
+Thuật ngữ & Giải thích \\
+\midrule
+\textbf{Content hash / Dedup} & Giá trị băm theo nội dung của một chunk, dùng để khử trùng lặp và phát hiện thay đổi. \\
+\textbf{Incremental update} & Cập nhật chỉ phần dữ liệu đã thay đổi, không re-index toàn bộ. \\
+\textbf{Eviction} & Gỡ bỏ tri thức lỗi thời khỏi chỉ mục khi nguồn bị xóa hoặc thay đổi. \\
+\textbf{Webhook} & Cơ chế để nguồn dữ liệu chủ động báo cho hệ thống khi có thay đổi (ví dụ commit mới). \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Giao tiếp \& kiến trúc}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{3cm}p{12cm}}
+\toprule
+Thuật ngữ & Giải thích \\
+\midrule
+\textbf{Core} & Tầng nghiệp vụ trung tâm chứa logic xử lý và truy xuất \\
+\textbf{MCP} (Model Context Protocol) & Giao thức chuẩn cho phép AI Agent kết nối tới dữ liệu và công cụ bên ngoài qua một interface thống nhất. \\
+\textbf{REST API} & Giao diện lập trình theo kiến trúc REST, giao tiếp qua HTTP. \\
+\textbf{OpenAPI} & Chuẩn mô tả REST API (request/response), dùng để sinh tài liệu API. \\
+\textbf{Docker} & Nền tảng đóng gói ứng dụng thành container để triển khai nhất quán giữa các môi trường. \\
+\textbf{Runtime} & Thời điểm hệ thống đang chạy và phục vụ truy vấn. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Bảo mật \& phân quyền}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{3cm}p{12cm}}
+\toprule
+Thuật ngữ & Giải thích \\
+\midrule
+\textbf{Access Control List (ACL)} & Tập quy tắc xác định principal nào được thực hiện thao tác nào trên tài nguyên nào. \\
+\textbf{Principal} & Chủ thể được định danh và phân quyền khi gọi hệ thống: một người, một service, hoặc một nhóm. \\
+\textbf{Grant} & Một quy tắc trong ACL cấp một quyền cụ thể cho một principal trên một tập tài nguyên. \\
+\textbf{Default policy} & Quy tắc mặc định áp dụng khi không có grant tường minh nào khớp, thường là \texttt{deny} (từ chối) hoặc \texttt{allow} (cho phép). \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -94,11 +94,14 @@ knowledge: "Knowledge graph (Neo4j) · vectors in Qdrant" {
 
   Commit: {
     shape: sql_table
-    commit_sha: string {constraint: primary_key}
+    commit_id: string {constraint: primary_key}
     source_id: string {constraint: foreign_key}
+    sha: string
     author: string
-    message: string
-    committed_at: datetime
+    message: "string - embedded, vector in Qdrant"
+    authored_at: datetime
+    ref: string
+    indexed_at: datetime
   }
 }
 
@@ -148,12 +151,14 @@ knowledge.Chunk.file_id -> knowledge.File.file_id: PART_OF
 knowledge.Chunk -> knowledge.CodeEntity: CHUNK_OF
 knowledge.Chunk -> knowledge.Document: CHUNK_OF
 
+# --- Commit history: deterministic, read from each commit's diff ---
+knowledge.Commit -> knowledge.File: "MODIFIES\n(from commit diff)"
+
 # --- Cross-artifact links, heuristic + confidence ------------------
 knowledge.Document -> knowledge.CodeEntity: "DESCRIBES \n{confidence}" {style.stroke-dash: 4}
 knowledge.Requirement -> knowledge.CodeEntity: "IMPLEMENTED_BY \n{confidence}" {style.stroke-dash: 4}
 knowledge.Requirement -> knowledge.CodeEntity: "VERIFIED_BY \n{confidence}" {style.stroke-dash: 4}
 knowledge.Document -> knowledge.Requirement.requirement_id: DEFINES {style.stroke-dash: 4}
-knowledge.Commit -> knowledge.File: MODIFIES {style.stroke-dash: 4}
 knowledge.CodeEntity -> knowledge.CodeEntity: "CONSUMES (cross-source)" {style.stroke-dash: 4}
 knowledge.Document -> knowledge.Document: LINKS_TO {style.stroke-dash: 4}
 

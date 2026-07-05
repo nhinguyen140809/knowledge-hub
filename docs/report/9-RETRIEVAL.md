@@ -11,8 +11,8 @@ Không một kỹ thuật tìm kiếm đơn lẻ nào đủ cho tri thức phầ
 Một truy vấn đi qua đường ống các bước sau:
 
 1. **Chuẩn bị** — sinh embedding cho câu truy vấn và xác định tập nguồn được phép đọc của principal (dùng cho bộ lọc phân quyền ở mọi bước sau).
-2. **Semantic search ∥ keyword search** — hai đường chạy **song song**: một so khớp embedding trên vector store, một chạy BM25 trên chỉ mục full-text (cả văn bản chunk lẫn tên/chữ ký entity). Mỗi đường trả về danh sách định danh kèm điểm số riêng của nó.
-3. **Graph traversal** — lấy các kết quả tốt nhất của hai đường trên làm **hạt giống**, đi theo các cạnh của Knowledge Graph (gọi hàm, mô tả, hiện thực yêu cầu…) để với tới những mảnh tri thức *liên quan nhưng không tự khớp* với câu truy vấn; kết quả gần hạt giống được điểm cao hơn kết quả xa.
+2. **Semantic search ∥ keyword search** — hai đường chạy **song song**: một so khớp embedding trên vector store, một chạy BM25 trên chỉ mục full-text (văn bản chunk, tên/chữ ký entity, và message commit). Mỗi đường trả về danh sách định danh kèm điểm số riêng của nó.
+3. **Graph traversal** — lấy các kết quả tốt nhất của hai đường trên làm **hạt giống**, đi theo các cạnh của Knowledge Graph (gọi hàm, mô tả, hiện thực yêu cầu, commit sửa đổi…) để với tới những mảnh tri thức *liên quan nhưng không tự khớp* với câu truy vấn; kết quả gần hạt giống được điểm cao hơn kết quả xa.
 4. **Hợp nhất (RRF)** — ba danh sách được trộn bằng **Reciprocal Rank Fusion**: điểm hợp nhất của một kết quả tính từ *thứ hạng* của nó trong từng danh sách, không từ điểm thô. Chọn RRF vì điểm số của ba hệ (khoảng cách vector, BM25, độ gần đồ thị) nằm trên các thang không so được với nhau — hạng thì luôn so được. Kết quả xuất hiện trên nhiều đường tự nhiên trồi lên đầu.
 5. **Lắp ráp và lọc cuối** — nạp metadata đầy đủ từ graph store *chỉ cho các kết quả sống sót*, áp các bộ lọc chức năng (source, ref, loại dữ liệu — FR-4.4) và bộ lọc phân quyền lần cuối, rồi trả về danh sách xếp hạng.
 

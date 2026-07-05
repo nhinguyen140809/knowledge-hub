@@ -10,6 +10,8 @@ Mỗi đơn vị tri thức — file, entity mã nguồn, chunk — được gá
 
 - **Định danh theo nội dung** — áp dụng cho chunk. Ngoài danh tính, định danh còn dẫn xuất từ **content hash** của chunk, nên nội dung đổi thì định danh cũng đổi: một chunk có nội dung mới là một *chunk khác*, không phải cùng chunk được sửa. Lựa chọn này xuất phát từ bản chất của chunk — giá trị của một chunk nằm ở embedding của nó, mà embedding là hàm của nội dung; đồng thời ranh giới chunk dịch chuyển khi file thay đổi, nên không tồn tại một vị trí chunk bền vững để cập nhật đè lên.
 
+Commit là trường hợp đơn giản nhất của sơ đồ này: định danh dẫn xuất từ *(nguồn, mã băm commit)*, mà bản thân mã băm đã là địa chỉ theo nội dung do Git bảo đảm. Lịch sử commit bất biến và chỉ nối thêm, nên commit không bao giờ được xử lý lại hay gỡ bỏ lẻ — mỗi lần đồng bộ chỉ nạp những commit chưa có trong chỉ mục.
+
 ## Các tính chất được bảo đảm
 
 Định danh ổn định là nền tảng chung cho toàn bộ cơ chế đồng bộ và cập nhật (FR-6):
