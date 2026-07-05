@@ -33,4 +33,13 @@ public final class IdFactory {
   public static String fileId(String sourceId, String path) {
     return stableId(sourceId, path);
   }
+
+  /**
+   * Stable commit id from its source and commit hash. Scoped by source so two sources tracking the
+   * same repository never share a node (each source's knowledge, including its ACL boundary, stays
+   * its own).
+   */
+  public static String commitId(String sourceId, String sha) {
+    return stableId(sourceId, sha);
+  }
 }

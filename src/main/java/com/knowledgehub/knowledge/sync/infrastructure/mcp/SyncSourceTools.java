@@ -48,7 +48,7 @@ public class SyncSourceTools {
           "Bring a knowledge source's index up to date with its origin, then report what changed. "
               + "Call this before querying when you need the freshest results. Idempotent: syncing "
               + "an unchanged source does nothing. Returns counts of indexed, re-indexed, evicted, "
-              + "and skipped files.")
+              + "and skipped files, plus how many new commits were indexed for a git source.")
   public SyncResult syncSource(
       @ToolParam(description = "The id of the source to sync") String sourceId) {
     return ToolErrors.mapped(() -> syncService.sync(sourceId));

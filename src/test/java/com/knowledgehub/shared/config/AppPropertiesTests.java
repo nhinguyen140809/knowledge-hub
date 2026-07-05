@@ -30,7 +30,7 @@ class AppPropertiesTests {
 
   @Test
   void everyTunableGetsADefaultAndPassesValidation() {
-    AppProperties properties = new AppProperties(null, null, null, null, null);
+    AppProperties properties = new AppProperties(null, null, null, null, null, null);
 
     // Assert a default *exists* (value present), not the exact number — so tuning a default
     // never breaks this test.
@@ -39,6 +39,7 @@ class AppPropertiesTests {
     assertThat(properties.embedding().retryMaxAttempts()).isNotNull();
     assertThat(properties.embedding().retryBackoffMs()).isNotNull();
     assertThat(properties.chunk().maxTokens()).isNotNull();
+    assertThat(properties.commits().historyDepth()).isNotNull();
     assertThat(properties.retrieval().topK()).isNotNull();
     assertThat(properties.retrieval().weights().vector()).isNotNull();
     assertThat(properties.retrieval().cacheTtl()).isNotNull();
@@ -50,21 +51,22 @@ class AppPropertiesTests {
   @Test
   void unknownEmbeddingProviderFailsValidation() {
     AppProperties properties =
-        new AppProperties(new Embedding("anthropic", null, null, null), null, null, null, null);
+        new AppProperties(
+            new Embedding("anthropic", null, null, null), null, null, null, null, null);
 
     assertThat(validator.validate(properties)).isNotEmpty();
   }
 
   @Test
   void negativeChunkSizeFailsValidation() {
-    AppProperties properties = new AppProperties(null, new Chunk(-1, 0), null, null, null);
+    AppProperties properties = new AppProperties(null, new Chunk(-1, 0), null, null, null, null);
 
     assertThat(validator.validate(properties)).isNotEmpty();
   }
 
   @Test
   void confidenceThresholdOutOfRangeFailsValidation() {
-    AppProperties properties = new AppProperties(null, null, null, new Linking(1.5), null);
+    AppProperties properties = new AppProperties(null, null, null, null, new Linking(1.5), null);
 
     assertThat(validator.validate(properties)).isNotEmpty();
   }

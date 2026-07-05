@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 class RetrievalCacheTests {
 
   private final RetrievalCache cache =
-      new RetrievalCache(new AppProperties(null, null, null, null, null));
+      new RetrievalCache(new AppProperties(null, null, null, null, null, null));
 
   @Test
   void computesOncePerQueryThenServesFromCache() {

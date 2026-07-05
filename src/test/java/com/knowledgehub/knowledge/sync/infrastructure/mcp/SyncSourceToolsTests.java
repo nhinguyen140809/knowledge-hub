@@ -19,7 +19,7 @@ class SyncSourceToolsTests {
 
   @Test
   void delegatesToTheSyncServiceAndReturnsItsResult() {
-    SyncResult result = SyncResult.noChange("s-1", 3, 12L, "abc123");
+    SyncResult result = SyncResult.noChange("s-1", 3, 0, 12L, "abc123");
     when(syncService.sync("s-1")).thenReturn(result);
 
     assertThat(tools.syncSource("s-1")).isSameAs(result);

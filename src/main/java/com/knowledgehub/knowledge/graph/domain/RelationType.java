@@ -7,10 +7,12 @@ package com.knowledgehub.knowledge.graph.domain;
  * non-deterministic type is inferred and must carry a heuristic confidence.
  *
  * <p>This is the full graph vocabulary. Not every type has a producer yet: {@code TESTS} needs a
- * signal beyond single-file syntax, and {@code MODIFIES} (commit to changed code), {@code CONSUMES}
- * (an API call across services) and {@code LINKS_TO} (document to document) depend on node kinds
- * and signals sourced from other ingestion paths. Defining them up front keeps the schema and
- * traversal stable regardless of which producers exist.
+ * signal beyond single-file syntax, and {@code CONSUMES} (an API call across services) and {@code
+ * LINKS_TO} (document to document) depend on node kinds and signals sourced from other ingestion
+ * paths. Defining them up front keeps the schema and traversal stable regardless of which producers
+ * exist. {@code MODIFIES} (commit to changed file) is produced by commit indexing; it is grouped
+ * with the cross-artifact types because it crosses artifacts, but it is read straight from the
+ * commit's diff and therefore always written with confidence 1.
  */
 public enum RelationType {
 
@@ -59,9 +61,10 @@ public enum RelationType {
   /**
    * Whether the linking step owns edges of this type and may drop and rebuild them. {@code
    * CONTAINS} and {@code DECLARES} are the entity hierarchy, written by indexing together with the
-   * entities themselves; every other type is produced by linking.
+   * entities themselves, and {@code MODIFIES} is written by commit indexing; every other type is
+   * produced by linking.
    */
   public boolean linkerOwned() {
-    return this != CONTAINS && this != DECLARES;
+    return this != CONTAINS && this != DECLARES && this != MODIFIES;
   }
 }
