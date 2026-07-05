@@ -4,8 +4,9 @@ import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 
 /**
  * Cuts an artifact into chunks (and, for code, extracts entities). A Strategy: each variant handles
- * one kind of input ({@code CodeChunker}, {@code DocChunker}); the selector injects the whole set
- * and picks the first that {@link #supports} the artifact, so adding a language is one new adapter.
+ * one kind of input — one per source language ({@code JavaCodeChunker}) plus the {@code DocChunker}
+ * fallback; the selector injects the whole set and picks the first that {@link #supports} the
+ * artifact, so adding a language is one new adapter.
  */
 public interface Chunker {
 
