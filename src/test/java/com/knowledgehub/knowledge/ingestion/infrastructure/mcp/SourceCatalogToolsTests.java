@@ -27,8 +27,8 @@ class SourceCatalogToolsTests {
 
     assertThat(sources)
         .containsExactly(
-            new ReadableSourceResponse("s-a", SourceType.GIT, "main"),
-            new ReadableSourceResponse("s-b", SourceType.FS, null));
+            new ReadableSourceResponse("s-a", SourceType.GIT, "main", "Repo s-a", "code for s-a"),
+            new ReadableSourceResponse("s-b", SourceType.FS, null, "Repo s-b", "code for s-b"));
   }
 
   @Test
@@ -41,10 +41,25 @@ class SourceCatalogToolsTests {
 
   private static Source git(String id, String ref) {
     return new Source(
-        id, SourceType.GIT, "git@example.com:" + id + ".git", ref, List.of(), List.of());
+        id,
+        SourceType.GIT,
+        "git@example.com:" + id + ".git",
+        ref,
+        List.of(),
+        List.of(),
+        "Repo " + id,
+        "code for " + id);
   }
 
   private static Source fs(String id) {
-    return new Source(id, SourceType.FS, "/data/" + id, null, List.of(), List.of());
+    return new Source(
+        id,
+        SourceType.FS,
+        "/data/" + id,
+        null,
+        List.of(),
+        List.of(),
+        "Repo " + id,
+        "code for " + id);
   }
 }

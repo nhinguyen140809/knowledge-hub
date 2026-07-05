@@ -14,10 +14,12 @@ public record SourceSpec(
     String uriOrPath,
     String ref,
     List<String> include,
-    List<String> ignore) {
+    List<String> ignore,
+    String name,
+    String description) {
 
   /** Builds the domain entity, applying its construction-time invariants. */
   public Source toSource() {
-    return new Source(id, type, uriOrPath, ref, include, ignore);
+    return new Source(id, type, uriOrPath, ref, include, ignore, name, description);
   }
 }

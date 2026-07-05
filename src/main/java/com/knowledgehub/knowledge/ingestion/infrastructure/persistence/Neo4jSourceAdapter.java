@@ -49,7 +49,9 @@ class Neo4jSourceAdapter implements SourceRepository {
         source.uriOrPath(),
         source.ref().orElse(null),
         source.include(),
-        source.ignore());
+        source.ignore(),
+        source.name().orElse(null),
+        source.description().orElse(null));
   }
 
   private static Source toDomain(SourceNode node) {
@@ -59,6 +61,8 @@ class Neo4jSourceAdapter implements SourceRepository {
         node.uriOrPath(),
         node.ref(),
         node.include(),
-        node.ignore());
+        node.ignore(),
+        node.name(),
+        node.description());
   }
 }

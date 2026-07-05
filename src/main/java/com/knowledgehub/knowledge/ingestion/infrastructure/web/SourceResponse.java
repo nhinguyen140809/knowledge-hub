@@ -11,7 +11,9 @@ public record SourceResponse(
     String uriOrPath,
     String ref,
     List<String> include,
-    List<String> ignore) {
+    List<String> ignore,
+    String name,
+    String description) {
 
   static SourceResponse from(Source source) {
     return new SourceResponse(
@@ -20,6 +22,8 @@ public record SourceResponse(
         source.uriOrPath(),
         source.ref().orElse(null),
         source.include(),
-        source.ignore());
+        source.ignore(),
+        source.name().orElse(null),
+        source.description().orElse(null));
   }
 }
