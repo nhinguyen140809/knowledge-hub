@@ -6,8 +6,11 @@ import com.knowledgehub.access.domain.AuthenticatedPrincipal;
 import com.knowledgehub.access.domain.Authorizer;
 import com.knowledgehub.access.domain.Role;
 import com.knowledgehub.shared.config.AppProperties;
+import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -75,5 +78,40 @@ class AclFilterProviderTests {
   void returnsNothingWhenUnauthenticated() {
     assertThat(provider.currentAllowedSources()).isEmpty();
     assertThat(resolutions.get()).isZero(); // fail-closed, no resolution attempted
+  }
+
+  @Test
+  void picksUpAGrantChangeWithinTheCacheTtl() {
+    // A runtime ACL change: the authorizer starts granting one source, then a second is added.
+    AtomicReference<Set<String>> readable = new AtomicReference<>(Set.of("docs"));
+    Authorizer changing =
+        new Authorizer() {
+          @Override
+          public Set<String> readableSources(AuthenticatedPrincipal principal) {
+            return readable.get();
+          }
+
+          @Override
+          public boolean isAdmin(AuthenticatedPrincipal principal) {
+            return principal.isAdmin();
+          }
+        };
+    // A hand-driven clock so TTL expiry is deterministic (no sleeps); default aclCacheTtl is 5s.
+    AtomicLong clock = new AtomicLong();
+    AclFilterProvider ttlProvider =
+        new AclFilterProvider(
+            changing, new AppProperties(null, null, null, null, null, null), clock::get);
+    authenticateAs("alice");
+
+    assertThat(ttlProvider.currentAllowedSources()).containsExactly("docs");
+
+    readable.set(Set.of("docs", "shared-lib")); // admin grants a new source at runtime
+
+    // Still within the TTL: the cached set is served, so the change is not visible yet.
+    assertThat(ttlProvider.currentAllowedSources()).containsExactly("docs");
+
+    // Past the TTL (<= 5s bound): the next request re-resolves and reflects the change, no restart.
+    clock.addAndGet(Duration.ofSeconds(6).toNanos());
+    assertThat(ttlProvider.currentAllowedSources()).containsExactlyInAnyOrder("docs", "shared-lib");
   }
 }

@@ -2,6 +2,7 @@ package com.knowledgehub.access.infrastructure.security;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.Ticker;
 import com.knowledgehub.access.domain.AuthenticatedPrincipal;
 import com.knowledgehub.access.domain.Authorizer;
 import com.knowledgehub.shared.config.AppProperties;
@@ -28,9 +29,17 @@ public class AclFilterProvider {
   private final Cache<String, Set<String>> readableSourcesCache;
 
   public AclFilterProvider(Authorizer authorizer, AppProperties properties) {
+    this(authorizer, properties, Ticker.systemTicker());
+  }
+
+  // Visible for testing: a custom ticker lets a test drive TTL expiry deterministically.
+  AclFilterProvider(Authorizer authorizer, AppProperties properties, Ticker ticker) {
     this.authorizer = authorizer;
     this.readableSourcesCache =
-        Caffeine.newBuilder().expireAfterWrite(properties.security().aclCacheTtl()).build();
+        Caffeine.newBuilder()
+            .expireAfterWrite(properties.security().aclCacheTtl())
+            .ticker(ticker)
+            .build();
   }
 
   /**
