@@ -1,0 +1,123 @@
+\section{Kiến trúc ứng dụng}
+
+\subsection{Thiết kế cơ sở dữ liệu (database design)}
+
+(một chunk hai hình hài, mô hình đồ thị, chỉ mục, hai kho) + ch7 "Mô hình entity/Bộ từ vựng quan hệ" + diagram ERD
+
+\subsection{Kiến trúc logic (logical architecture)}
+
+Kiến trúc module hóa - lý do
+
+Class diagram mỗi module
+
+Kiến trúc domain driven architecture - lý do
+
+Kiến trúc pipe \& filter cho quy trình xử lý dữ liệu nhiều bước
+
+\subsubsection{Strategy pattern}
+
+\subsubsection{Adapter pattern}
+
+\subsection{Kiến trúc vật lý (physical architecture)}
+
+Các thành phần nào chạy ở đâu
+
+diagram deployment + phần triển khai của TECH-STACK
+
+\subsection{Communication}
+
+Các thành phần giao tiếp với nhau bằng gì, các module trong ứng dụng giao tiếp với nhau thế nào
+
+\subsubsection{Giao tiếp giữa các module}
+
+
+\subsubsection{Thiết kế MCP Tools}
+
+MCP server công bố các tool để agent tự khám phá và gọi bằng ngôn ngữ tự nhiên của nó: 
+
+\begin{itemize}
+  \item \textbf{Tool liệt kê nguồn}: cho agent khám phá các source nó được phép đọc, mỗi source kèm id, tên, mô tả, loại (git hay filesystem) và ref cấu hình. Tập trả về chính là tập mà mọi truy vấn bị giới hạn truy cập; agent mới kết nối gọi tool này trước tiên để biết mình có thể hỏi về những gì.
+  \item \textbf{Tool truy vấn tri thức}: nhận câu truy vấn văn bản tự do cùng các tham số tùy chọn (số kết quả tối đa, khoanh theo source, khoanh theo ref, khoanh theo loại dữ liệu), trả về danh sách kết quả xếp hạng. Mô tả tool nói rõ cho agent biết mỗi kết quả kèm điểm tin cậy và metadata trích dẫn, và kết quả đã được giới hạn trong phạm vi nguồn agent được đọc.
+  \item \textbf{Tool đồng bộ nguồn}: cho agent chủ động kích hoạt cập nhật một nguồn khi nghi ngờ tri thức đã cũ (ví dụ sau khi chính nó vừa sửa code). Kết quả trả về gồm số file được index/re-index/gỡ bỏ và số commit mới được nạp vào đồ thị. 
+  \item \textbf{Tool trạng thái nguồn}: cho agent kiểm tra độ mới của một nguồn: đã từng đồng bộ chưa, lần đồng bộ gần nhất, và (với nguồn git) ref/commit đã index để quyết định có cần đồng bộ trước lúc hỏi. Tool này chỉ đọc, mở cho mọi agent đã xác thực.
+  \item \textbf{Tool thông tin hệ thống}: cho agent xem thông tin vận hành runtime của hệ thống.
+\end{itemize}
+
+Các tool này ghép thành vòng làm việc tự nhiên của agent: \textit{khám phá nguồn $\rightarrow$ kiểm tra độ mới $\rightarrow$ (nếu cần) đồng bộ $\rightarrow$ truy vấn $\rightarrow$ trích dẫn}. Các tool đều yêu cầu agent xác thực bằng credential đã phát hành, riêng tool sync tri thức thì agent phải được ủy quyền quản trị viên.
+
+
+\subsubsection{Thiết kế REST API}
+
+REST API có tiền tố phiên bản (\texttt{/api/v1}) và chia theo nhóm tài nguyên (resource):
+
+\begin{itemize}
+  \item \textbf{Truy vấn} (\texttt{POST /query}): nhận cùng cấu trúc truy vấn với tool MCP, cho các caller không đi qua agent.
+  \item \textbf{Quản trị nguồn dữ liệu} (CRUD \texttt{/admin/sources}): đăng ký, liệt kê, xem, sửa cấu hình và xóa nguồn; kích hoạt đồng bộ (\texttt{POST .../sync}) và xem trạng thái độ mới (\texttt{GET .../status}) cho từng nguồn.
+  \item \textbf{Quản trị phân quyền} (CRUD \texttt{/admin/...}): quản lý principal (kèm thành viên nhóm và credential), grant, và chính sách mặc định; đủ để quản trị viên vận hành trọn vòng đời ACL qua API.
+  \item \textbf{Thông tin hệ thống} (\texttt{GET /system/info}): cho thông tin vận hành runtime.
+\end{itemize}
+
+Các thao tác quản trị đòi hỏi vai trò admin; mọi endpoint -- kể cả truy vấn -- đều yêu cầu xác thực bằng credential đã phát hành.
+
+\subsubsection{Cấu trúc kết quả truy vấn}
+
+Kết quả trả về là JSON có cấu trúc, mỗi mục kèm relevance score và metadata: \\
+
+
+\begin{lstlisting}
+{
+  "hits": [
+    {
+      "id": "c7f3...",
+      "relevanceScore": 0.93,
+      "metadata": {
+        "kind": "chunk",
+        "sourceId": "docs-service",
+        "path": "src/reader/PdfReader.java",
+        "lineStart": 40,
+        "lineEnd": 72,
+        "type": "code",
+        "ref": "main",
+        "commitSha": "8a41...",
+        "indexedAt": "2026-07-01T09:30:00Z",
+        "viaPath": []
+      }
+    },
+    {
+      "id": "e91b...",
+      "relevanceScore": 0.71,
+      "metadata": {
+        "kind": "chunk",
+        "sourceId": "docs-service",
+        "path": "docs/architecture.md",
+        "type": "doc",
+        "viaPath": ["DESCRIBES"]
+      }
+    }
+  ],
+  "servedFromCanonicalRef": false
+}
+
+\end{lstlisting}
+
+
+Cấu trúc này cho agent ba thứ nó cần: xếp hạng để chọn ngữ cảnh, tọa độ trích dẫn (nguồn, file, dòng, phiên bản) để dẫn nguồn và tự lấy lại nội dung, và dấu vết suy luận (\texttt{viaPath} -- chuỗi quan hệ đã duyệt) cho kết quả đến từ đường đồ thị. Cờ \texttt{servedFromCanonicalRef} báo khi kết quả được phục vụ từ ref canonical do ref yêu cầu chưa được index.
+
+\subsubsection{Mô hình lỗi thống nhất}
+
+Mọi lỗi bất kể từ endpoint nào đều trả về theo chuẩn RFC 7807, gồm mã HTTP Status Code, một mã lỗi ổn định cho máy đọc, thông điệp cho người đọc, và định danh tương quan để tra log: \\
+
+
+\begin{lstlisting}
+{
+  "title": "Not Found",
+  "status": 404,
+  "detail": "source docs-service not found",
+  "code": "SOURCE_NOT_FOUND",
+  "traceId": "5f2..."
+}
+\end{lstlisting}
+
+\subsection{Logging}
+
+Thông tin, nội dung log, trace request

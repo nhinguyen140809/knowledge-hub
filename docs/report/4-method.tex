@@ -1,0 +1,23 @@
+\section{Phương pháp}
+
+\subsection{Quản lý phiên bản tri thức (knowledge versioning)}
+
+(định danh ổn định + tính chất bảo đảm)
+
+\subsection{Xử lý dữ liệu đầu vào (ingestion \& chunking)}
+
+(chunking mã/tài liệu, đo token, liên hệ định danh)
+
+\subsection{Xây dựng \& liên kết đồ thị tri thức}
+
+trích quan hệ cấu trúc, liên kết liên-artifact + confidence, lịch sử commit, ghi idempotent
+
+\subsection{Đồng bộ tri thức (sync)}
+
+diff tăng dần + eviction (từ pipeline-sync + FR-6) và append lịch sử commit (mục "Lịch sử commit" của ch7)
+
+\subsection{Truy xuất tri thức (retrieval)}
+
+\subsection{Cơ chế phân quyền (access control)}
+
+(ACL theo Source, fail-closed, hard filter)
