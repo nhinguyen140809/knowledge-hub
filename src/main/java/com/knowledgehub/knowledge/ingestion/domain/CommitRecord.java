@@ -1,5 +1,6 @@
 package com.knowledgehub.knowledge.ingestion.domain;
 
+import com.knowledgehub.shared.id.IdFactory;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -28,5 +29,14 @@ public record CommitRecord(
     Objects.requireNonNull(author, "author");
     Objects.requireNonNull(authoredAt, "authoredAt");
     changedPaths = changedPaths == null ? List.of() : List.copyOf(changedPaths);
+  }
+
+  /**
+   * Derives the stable id of the commit with these coordinates, scoped by source so two sources
+   * tracking the same repository never share a node (each source's knowledge, including its ACL
+   * boundary, stays its own). Mirrors what {@code IdFactory.commitId} used to do.
+   */
+  public static String deriveId(String sourceId, String sha) {
+    return IdFactory.stableId(sourceId, sha);
   }
 }

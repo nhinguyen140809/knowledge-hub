@@ -8,7 +8,6 @@ import com.knowledgehub.knowledge.ingestion.domain.CommitHistoryPort;
 import com.knowledgehub.knowledge.ingestion.domain.CommitRecord;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
 import com.knowledgehub.shared.config.AppProperties;
-import com.knowledgehub.shared.id.IdFactory;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -113,7 +112,7 @@ public class CommitIndexingService {
       CommitRecord commit = fresh.get(i);
       vectors.add(
           new ChunkVector(
-              IdFactory.commitId(sourceId, commit.sha()),
+              CommitRecord.deriveId(sourceId, commit.sha()),
               embeddings.get(i),
               metadata(sourceId, ref, commit)));
     }

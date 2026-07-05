@@ -4,7 +4,8 @@ package com.knowledgehub.shared.id;
  * The id scheme: derives <strong>stable, idempotent</strong> ids by hashing an ordered set of
  * identity parts, so re-running ingestion/indexing on unchanged input produces the same id and
  * writes upsert instead of duplicating. Each entity owns which parts make up its id (e.g. {@code
- * Chunk.create}, {@code CodeEntity.deriveId}); this class only defines how parts become an id.
+ * Chunk.create}, {@code CodeEntity.deriveId}, {@code CommitRecord.deriveId}); this class only
+ * defines how parts become an id.
  */
 public final class IdFactory {
 
@@ -32,14 +33,5 @@ public final class IdFactory {
    */
   public static String fileId(String sourceId, String path) {
     return stableId(sourceId, path);
-  }
-
-  /**
-   * Stable commit id from its source and commit hash. Scoped by source so two sources tracking the
-   * same repository never share a node (each source's knowledge, including its ACL boundary, stays
-   * its own).
-   */
-  public static String commitId(String sourceId, String sha) {
-    return stableId(sourceId, sha);
   }
 }
