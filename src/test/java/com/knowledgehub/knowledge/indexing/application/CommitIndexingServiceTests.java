@@ -21,7 +21,6 @@ import com.knowledgehub.knowledge.ingestion.domain.Source;
 import com.knowledgehub.knowledge.ingestion.domain.SourceType;
 import com.knowledgehub.shared.config.AppProperties;
 import com.knowledgehub.shared.config.AppProperties.Commits;
-import com.knowledgehub.shared.id.IdFactory;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -67,7 +66,7 @@ class CommitIndexingServiceTests {
     ArgumentCaptor<List<ChunkVector>> vectors = ArgumentCaptor.forClass(List.class);
     verify(vectorStore).upsert(vectors.capture());
     assertThat(vectors.getValue()).hasSize(1);
-    assertThat(vectors.getValue().get(0).chunkId()).isEqualTo(IdFactory.commitId("g", "c2"));
+    assertThat(vectors.getValue().get(0).chunkId()).isEqualTo(CommitRecord.deriveId("g", "c2"));
     assertThat(vectors.getValue().get(0).metadata())
         .containsEntry("type", "commit")
         .containsEntry("source_id", "g")
