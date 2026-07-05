@@ -60,16 +60,24 @@ public class SourceController {
 
   @PatchMapping("/{id}")
   @Operation(
-      summary = "Update a source's ref and include/ignore globs (partial update)",
+      summary = "Update a source's ref, globs, name and description (partial update)",
       description =
           """
           Partial update — only the fields you send change. For each field: an omitted field \
-          (or null) keeps its current value, an empty array [] clears the list, and a non-empty \
-          array replaces it. The id, type and location cannot be changed here. The index is not \
-          touched — run a sync afterwards to apply the new globs.""")
+          (or null) keeps its current value, an empty array [] clears a glob list and a non-empty \
+          array replaces it, and a blank name/description clears it. The id, type and location \
+          cannot be changed here. Only glob changes affect the index, and even then it is not \
+          touched — run a sync afterwards to apply them.""")
   public SourceResponse update(
       @PathVariable String id, @Valid @RequestBody UpdateSourceRequest request) {
-    Source updated = sourceService.update(id, request.ref(), request.include(), request.ignore());
+    Source updated =
+        sourceService.update(
+            id,
+            request.ref(),
+            request.include(),
+            request.ignore(),
+            request.name(),
+            request.description());
     return SourceResponse.from(updated);
   }
 

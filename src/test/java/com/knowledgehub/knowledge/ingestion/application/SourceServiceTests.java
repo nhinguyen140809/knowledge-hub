@@ -24,7 +24,8 @@ class SourceServiceTests {
   private final SourceService service = new SourceService(repository, events);
 
   private static SourceSpec spec(String id) {
-    return new SourceSpec(id, SourceType.FS, "/data", null, List.of(), List.of());
+    return new SourceSpec(
+        id, SourceType.FS, "/data", null, List.of(), List.of(), "Docs " + id, "A folder of docs");
   }
 
   @Test
@@ -35,6 +36,8 @@ class SourceServiceTests {
     Source saved = service.register(spec("s1"));
 
     assertThat(saved.sourceId()).isEqualTo("s1");
+    assertThat(saved.name()).contains("Docs s1");
+    assertThat(saved.description()).contains("A folder of docs");
     ArgumentCaptor<SourceRegistered> event = ArgumentCaptor.forClass(SourceRegistered.class);
     verify(events).publishEvent(event.capture());
     assertThat(event.getValue().sourceId()).isEqualTo("s1");
@@ -64,7 +67,7 @@ class SourceServiceTests {
     when(repository.findById("s1")).thenReturn(Optional.of(existing));
     when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-    Source updated = service.update("s1", "dev", List.of("**/*.md"), List.of("target"));
+    Source updated = service.update("s1", "dev", List.of("**/*.md"), List.of("target"), null, null);
 
     assertThat(updated.ref()).contains("dev");
     assertThat(updated.include()).containsExactly("**/*.md");
@@ -72,6 +75,43 @@ class SourceServiceTests {
     ArgumentCaptor<Source> saved = ArgumentCaptor.forClass(Source.class);
     verify(repository).save(saved.capture());
     assertThat(saved.getValue().uriOrPath()).isEqualTo("https://x/y.git");
+  }
+
+  @Test
+  void updateChangesNameAndDescription() {
+    Source existing =
+        new Source(
+            "s1",
+            SourceType.GIT,
+            "https://x/y.git",
+            "main",
+            List.of(),
+            List.of(),
+            "Old name",
+            "Old description");
+    when(repository.findById("s1")).thenReturn(Optional.of(existing));
+    when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    Source updated = service.update("s1", null, null, null, "New name", "New description");
+
+    assertThat(updated.name()).contains("New name");
+    assertThat(updated.description()).contains("New description");
+    // config is left untouched
+    assertThat(updated.ref()).contains("main");
+  }
+
+  @Test
+  void updateClearsMetadataWhenBlank() {
+    Source existing =
+        new Source(
+            "s1", SourceType.FS, "/data", null, List.of(), List.of(), "Some name", "Some desc");
+    when(repository.findById("s1")).thenReturn(Optional.of(existing));
+    when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    Source updated = service.update("s1", null, null, null, " ", "");
+
+    assertThat(updated.name()).isEmpty();
+    assertThat(updated.description()).isEmpty();
   }
 
   @Test
@@ -88,7 +128,7 @@ class SourceServiceTests {
     when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
     // change only ignore; ref and include passed as null must keep their current value
-    Source updated = service.update("s1", null, null, List.of("build"));
+    Source updated = service.update("s1", null, null, List.of("build"), null, null);
 
     assertThat(updated.ref()).contains("main");
     assertThat(updated.include()).containsExactly("**/*.java");
@@ -99,7 +139,7 @@ class SourceServiceTests {
   void updateThrowsWhenMissing() {
     when(repository.findById("nope")).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> service.update("nope", null, null, null))
+    assertThatThrownBy(() -> service.update("nope", null, null, null, null, null))
         .isInstanceOf(SourceNotFoundException.class);
     verify(repository, never()).save(any());
   }

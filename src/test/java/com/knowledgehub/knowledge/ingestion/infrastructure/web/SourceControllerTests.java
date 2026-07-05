@@ -1,7 +1,10 @@
 package com.knowledgehub.knowledge.ingestion.infrastructure.web;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -14,10 +17,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.knowledgehub.knowledge.ingestion.application.DuplicateSourceException;
 import com.knowledgehub.knowledge.ingestion.application.SourceNotFoundException;
 import com.knowledgehub.knowledge.ingestion.application.SourceService;
+import com.knowledgehub.knowledge.ingestion.application.SourceSpec;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
 import com.knowledgehub.knowledge.ingestion.domain.SourceType;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -35,7 +40,14 @@ class SourceControllerTests {
 
   private static Source gitSource() {
     return new Source(
-        "s1", SourceType.GIT, "https://x/y.git", "main", List.of("**/*.java"), List.of("target"));
+        "s1",
+        SourceType.GIT,
+        "https://x/y.git",
+        "main",
+        List.of("**/*.java"),
+        List.of("target"),
+        "My repo",
+        "A git repository of code");
   }
 
   @Test
@@ -49,13 +61,51 @@ class SourceControllerTests {
                 .content(
                     """
                     {"id":"s1","type":"GIT","uriOrPath":"https://x/y.git","ref":"main",
-                     "include":["**/*.java"],"ignore":["target"]}
+                     "include":["**/*.java"],"ignore":["target"],
+                     "name":"My repo","description":"A git repository of code"}
                     """))
         .andExpect(status().isCreated())
         .andExpect(header().string("Location", "http://localhost/api/v1/admin/sources/s1"))
         .andExpect(jsonPath("$.id").value("s1"))
         .andExpect(jsonPath("$.type").value("GIT"))
-        .andExpect(jsonPath("$.ref").value("main"));
+        .andExpect(jsonPath("$.ref").value("main"))
+        .andExpect(jsonPath("$.name").value("My repo"))
+        .andExpect(jsonPath("$.description").value("A git repository of code"));
+  }
+
+  @Test
+  void createPassesNameAndDescriptionToService() throws Exception {
+    when(sourceService.register(any())).thenReturn(gitSource());
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/sources")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"id":"s1","type":"FS","uriOrPath":"/data",
+                     "name":"Design docs","description":"Team design notes"}
+                    """))
+        .andExpect(status().isCreated());
+
+    ArgumentCaptor<SourceSpec> spec = ArgumentCaptor.forClass(SourceSpec.class);
+    verify(sourceService).register(spec.capture());
+    assertThat(spec.getValue().name()).isEqualTo("Design docs");
+    assertThat(spec.getValue().description()).isEqualTo("Team design notes");
+  }
+
+  @Test
+  void updatePassesNameAndDescriptionToService() throws Exception {
+    when(sourceService.update(any(), any(), any(), any(), any(), any())).thenReturn(gitSource());
+
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/sources/s1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Renamed\",\"description\":\"New notes\"}"))
+        .andExpect(status().isOk());
+
+    verify(sourceService).update(eq("s1"), any(), any(), any(), eq("Renamed"), eq("New notes"));
   }
 
   @Test
@@ -94,7 +144,7 @@ class SourceControllerTests {
 
   @Test
   void updateReturns200WithUpdatedBody() throws Exception {
-    when(sourceService.update(any(), any(), any(), any())).thenReturn(gitSource());
+    when(sourceService.update(any(), any(), any(), any(), any(), any())).thenReturn(gitSource());
 
     mockMvc
         .perform(
@@ -108,7 +158,7 @@ class SourceControllerTests {
 
   @Test
   void updateReturns404WhenMissing() throws Exception {
-    when(sourceService.update(any(), any(), any(), any()))
+    when(sourceService.update(any(), any(), any(), any(), any(), any()))
         .thenThrow(new SourceNotFoundException("nope"));
 
     mockMvc
