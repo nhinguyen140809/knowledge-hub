@@ -22,7 +22,7 @@ class SemanticSearchStageTests {
   private final EmbeddingPort embeddingPort = mock(EmbeddingPort.class);
   private final SemanticSearchStage stage =
       new SemanticSearchStage(
-          vectorStore, embeddingPort, new AppProperties(null, null, null, null, null));
+          vectorStore, embeddingPort, new AppProperties(null, null, null, null, null, null));
 
   @Test
   void embedsTheQueryHereThenSearchesTheVectorStore() {

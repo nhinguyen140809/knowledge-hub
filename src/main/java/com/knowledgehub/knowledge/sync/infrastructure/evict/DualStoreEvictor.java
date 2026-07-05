@@ -36,8 +36,8 @@ class DualStoreEvictor implements Evictor {
       "UNWIND $ids AS id MATCH (c:Chunk {chunk_id: id}) DETACH DELETE c";
 
   private static final String DELETE_SOURCE =
-      "MATCH (n) WHERE n.source_id = $sourceId AND (n:File OR n:Chunk OR n:CodeEntity)"
-          + " DETACH DELETE n";
+      "MATCH (n) WHERE n.source_id = $sourceId"
+          + " AND (n:File OR n:Chunk OR n:CodeEntity OR n:Commit) DETACH DELETE n";
 
   private final Neo4jClient client;
   private final VectorStorePort vectorStore;

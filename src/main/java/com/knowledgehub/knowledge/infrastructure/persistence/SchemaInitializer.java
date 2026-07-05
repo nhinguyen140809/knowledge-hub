@@ -41,8 +41,8 @@ public class SchemaInitializer implements ApplicationRunner {
               + " FOR (d:Document) REQUIRE d.document_id IS UNIQUE",
           "CREATE CONSTRAINT requirement_id IF NOT EXISTS"
               + " FOR (r:Requirement) REQUIRE r.requirement_id IS UNIQUE",
-          "CREATE CONSTRAINT commit_sha IF NOT EXISTS"
-              + " FOR (c:Commit) REQUIRE c.commit_sha IS UNIQUE",
+          "CREATE CONSTRAINT commit_id IF NOT EXISTS"
+              + " FOR (c:Commit) REQUIRE c.commit_id IS UNIQUE",
           "CREATE CONSTRAINT principal_id IF NOT EXISTS"
               + " FOR (p:Principal) REQUIRE p.principal_id IS UNIQUE",
           "CREATE CONSTRAINT credential_id IF NOT EXISTS"
@@ -58,6 +58,8 @@ public class SchemaInitializer implements ApplicationRunner {
           "CREATE FULLTEXT INDEX chunk_text IF NOT EXISTS FOR (c:Chunk) ON EACH [c.text]",
           "CREATE FULLTEXT INDEX entity_name IF NOT EXISTS"
               + " FOR (e:CodeEntity) ON EACH [e.name, e.signature]",
+          "CREATE FULLTEXT INDEX commit_message IF NOT EXISTS"
+              + " FOR (c:Commit) ON EACH [c.message]",
           // fast dedup by content hash
           "CREATE INDEX chunk_hash IF NOT EXISTS FOR (c:Chunk) ON (c.content_hash)",
           "CREATE INDEX file_hash IF NOT EXISTS FOR (f:File) ON (f.content_hash)",
@@ -66,7 +68,9 @@ public class SchemaInitializer implements ApplicationRunner {
               + " FOR (e:CodeEntity) ON (e.qualified_name)",
           "CREATE INDEX entity_name_lookup IF NOT EXISTS FOR (e:CodeEntity) ON (e.name)",
           "CREATE INDEX entity_source IF NOT EXISTS FOR (e:CodeEntity) ON (e.source_id)",
-          "CREATE INDEX file_path IF NOT EXISTS FOR (f:File) ON (f.path)");
+          "CREATE INDEX file_path IF NOT EXISTS FOR (f:File) ON (f.path)",
+          // commit dedup during history indexing
+          "CREATE INDEX commit_source_sha IF NOT EXISTS FOR (c:Commit) ON (c.source_id, c.sha)");
 
   private final Neo4jClient neo4jClient;
   private final QdrantClient qdrantClient;

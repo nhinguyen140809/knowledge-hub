@@ -29,7 +29,7 @@ class SyncControllerTests {
   @Test
   void triggersSyncAndReturnsTheResult() throws Exception {
     when(syncService.sync("s1"))
-        .thenReturn(new SyncResult("s1", 2, 1, 3, 0, 123L, "abc123", false));
+        .thenReturn(new SyncResult("s1", 2, 1, 3, 0, 0, 123L, "abc123", false));
 
     mockMvc
         .perform(post("/api/v1/admin/sources/s1/sync"))

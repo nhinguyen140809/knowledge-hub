@@ -69,6 +69,8 @@ app:
   chunk:
     max-tokens: ${APP_CHUNK_MAX_TOKENS:512}
     overlap: ${APP_CHUNK_OVERLAP:64}
+  commits:
+    history-depth: ${APP_COMMITS_HISTORY_DEPTH:100}   # newest commits indexed per source; 0 disables commit indexing
   retrieval:
     top-k: ${APP_RETRIEVAL_TOP_K:10}
     candidate-k: ${APP_RETRIEVAL_CANDIDATE_K:50}   # candidates each path fetches before fusion
