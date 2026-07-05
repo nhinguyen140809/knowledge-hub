@@ -3,12 +3,15 @@ package com.knowledgehub.knowledge.ingestion.infrastructure.reader;
 import com.knowledgehub.knowledge.ingestion.domain.DocumentReader;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import com.knowledgehub.knowledge.ingestion.infrastructure.MediaTypes;
-import org.springframework.ai.reader.markdown.MarkdownDocumentReader;
-import org.springframework.ai.reader.markdown.config.MarkdownDocumentReaderConfig;
+import java.nio.charset.StandardCharsets;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-/** Reads Markdown into clean text, preserving heading/paragraph structure, via Spring AI. */
+/**
+ * Reads Markdown verbatim as UTF-8. The source is already Markdown, so keeping the exact bytes
+ * preserves the heading markers ({@code #}) the structure-aware document chunker sections on — a
+ * parse-and-re-render step would strip them into metadata and flatten the structure.
+ */
 @Component
 @Order(0)
 class MarkdownReader implements DocumentReader {
@@ -20,9 +23,6 @@ class MarkdownReader implements DocumentReader {
 
   @Override
   public String extractText(RawArtifact artifact) {
-    var reader =
-        new MarkdownDocumentReader(
-            ReaderSupport.resource(artifact), MarkdownDocumentReaderConfig.builder().build());
-    return ReaderSupport.joinText(reader.get());
+    return new String(artifact.content(), StandardCharsets.UTF_8);
   }
 }
