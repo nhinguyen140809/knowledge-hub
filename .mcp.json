@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "knowledge-hub": {
+      "type": "http",
+      "url": "http://localhost:8000/mcp",
+      "headers": { "Authorization": "Bearer ${KH_TOKEN}" }
+    }
+  }
+}

@@ -11,6 +11,11 @@ if ! command -v just >/dev/null 2>&1; then
     | sudo bash -s -- --to /usr/local/bin
 fi
 
+echo "==> Installing Claude Code CLI (if missing)"
+if ! command -v claude >/dev/null 2>&1; then
+  npm install -g @anthropic-ai/claude-code
+fi
+
 # --- Generate .env from Codespaces secrets (never overwrite an existing one) ---
 # upsert KEY=VALUE in .env: replace the line if present, append if not.
 upsert() {
