@@ -11,12 +11,12 @@ Mô hình tri thức của hệ thống có hai mặt khác bản chất: \texti
 
 \begin{itemize}
   \item Trong vector store, chunk được biểu diễn dưới dạng vector embedding của nội dung, kèm metadata chỉ gồm những trường cần cho việc lọc và định vị: định danh chunk, nguồn (để lọc phân quyền), đường dẫn, loại dữ liệu, khoảng dòng, và ref/commit với nguồn Git. Nội dung văn bản gốc không được lưu tại đây vì quá trình tìm kiếm ngữ nghĩa chỉ sử dụng embedding và metadata để lọc kết quả.
-  \item Trong graph store, chunk là một \textit{node}: mang đầy đủ văn bản, content hash, số token, khoảng dòng và metadata nguồn gốc, đồng thời nối bằng cạnh vào file chứa chunk đó và (với chunk mã nguồn) vào entity code tương ứng.
+  \item Trong graph store, chunk là một \textit{node}: mang đầy đủ văn bản (phục vụ chỉ mục từ khóa toàn văn, không phải để trả về), content hash, số token, khoảng dòng và metadata nguồn gốc, đồng thời nối bằng cạnh vào file chứa chunk đó và (với chunk mã nguồn) vào entity code tương ứng.
 \end{itemize}
 
-Tìm kiếm ngữ nghĩa vì thế diễn ra qua hai bước: vector store trả về danh sách định danh kèm điểm số, rồi nội dung và metadata đầy đủ mới được nạp từ graph store theo định danh -- và chỉ nạp cho những kết quả còn lại sau bước hợp nhất và lọc, để không tốn công tra cứu cho kết quả sẽ bị bỏ.
+Tìm kiếm ngữ nghĩa vì thế diễn ra qua hai bước: vector store trả về danh sách định danh kèm điểm số, rồi metadata trích dẫn (đường dẫn, khoảng dòng, ref/commit, thời điểm index...) mới được nạp từ graph store theo định danh -- và chỉ nạp cho những kết quả còn lại sau bước hợp nhất và lọc, để không tốn công tra cứu cho kết quả sẽ bị bỏ. Nội dung văn bản thật của chunk không nằm trong kết quả trả về: hệ thống chỉ đưa đủ tọa độ để agent tự trích dẫn và tự lấy lại nội dung khi cần.
 
-\textit{Ví dụ:} chunk chứa hàm \texttt{parsePdf} tồn tại đồng thời dưới dạng một điểm vector (embedding nhiều chiều cùng payload định vị: nguồn, đường dẫn, loại \textit{code}, dòng 40--72, ref \textit{main}) và một node đồ thị mang nguyên văn thân hàm, nối \textit{thuộc về} file chứa hàm đó và \textit{là chunk của} entity phương thức tương ứng. Truy vấn ngữ nghĩa chạm vào điểm vector để tìm và xếp hạng; câu trả lời cuối cùng đọc node đồ thị để lấy nội dung trích dẫn.
+\textit{Ví dụ:} chunk chứa hàm \texttt{parsePdf} tồn tại đồng thời dưới dạng một điểm vector (embedding nhiều chiều cùng payload định vị: nguồn, đường dẫn, loại \textit{code}, dòng 40--72, ref \textit{main}) và một node đồ thị mang nguyên văn thân hàm, nối \textit{thuộc về} file chứa hàm đó và \textit{là chunk của} entity phương thức tương ứng. Truy vấn ngữ nghĩa chạm vào điểm vector để tìm và xếp hạng; kết quả trả về là tọa độ trích dẫn nạp từ node đồ thị (đường dẫn, dòng 40--72, ref \textit{main}), không phải nguyên văn thân hàm.
 
 \subsubsection{Mô hình entity và bộ từ vựng quan hệ}
 
@@ -108,7 +108,7 @@ Bản đồ các bounded context, các module con bên trong \texttt{knowledge},
 
 Nguyên tắc port và bộ chuyển đổi là thứ cho phép hệ thống giữ một hợp đồng lưu trữ duy nhất trong khi đồ thị nằm ở Neo4j còn vector nằm ở Qdrant, và cho phép thay một trong hai backend mà không đụng mã nghiệp vụ. Chìa khóa là đặt port ở đúng ranh giới: port mô tả \textit{cái gì}, không mô tả \textit{bằng cách nào}.
 
-Những gì mang tính điều phối, kết hợp nhiều nguồn, hoặc phải cư xử như nhau bất kể backend -- dàn xếp embedding, tìm kiếm từ khóa, duyệt đồ thị, hợp nhất kết quả, lọc ACL -- đứng trên port, thuộc tầng Application. Những gì thuộc về cách một công nghệ lưu và tìm dữ liệu -- định dạng lưu trữ, nén/lượng tử hóa, chiến lược lọc cụ thể, cơ chế ghi song song -- đứng dưới port, thuộc adapter, và tự do thay đổi mà không ảnh hưởng port. Khi một công nghệ có một ưu thế thực sự đáng giá mà mẫu số chung không diễn đạt được, ưu thế đó được phơi bày qua một interface năng lực tùy chọn: tầng Application dò xem adapter hiện tại có hỗ trợ hay không, nếu có thì đi đường nhanh, nếu không thì rơi về cơ chế tổng quát.
+Những gì mang tính điều phối, kết hợp nhiều nguồn, hoặc phải cư xử như nhau bất kể backend -- dàn xếp embedding, tìm kiếm từ khóa, duyệt đồ thị, hợp nhất kết quả, lọc ACL -- đứng trên port, thuộc tầng Application. Những gì thuộc về cách một công nghệ lưu và tìm dữ liệu -- định dạng lưu trữ, nén/lượng tử hóa, chiến lược lọc cụ thể, cơ chế ghi song song -- đứng dưới port, thuộc adapter, và tự do thay đổi mà không ảnh hưởng port. Khi một công nghệ có một ưu thế thực sự đáng giá mà mẫu số chung không diễn đạt được, ưu thế đó được cung cấp qua một interface năng lực tùy chọn: tầng Application dò xem adapter hiện tại có hỗ trợ hay không, nếu có thì đi đường nhanh, nếu không thì rơi về cơ chế tổng quát.
 
 \subsubsection{Tách phía ghi và phía đọc}
 
