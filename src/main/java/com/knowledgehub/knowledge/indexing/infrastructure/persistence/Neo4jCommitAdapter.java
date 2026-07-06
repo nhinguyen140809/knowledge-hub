@@ -2,7 +2,6 @@ package com.knowledgehub.knowledge.indexing.infrastructure.persistence;
 
 import com.knowledgehub.knowledge.indexing.domain.CommitRepository;
 import com.knowledgehub.knowledge.ingestion.domain.CommitRecord;
-import com.knowledgehub.shared.id.IdFactory;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
@@ -85,7 +84,7 @@ class Neo4jCommitAdapter implements CommitRepository {
 
   private static Map<String, Object> toRow(String sourceId, CommitRecord commit) {
     Map<String, Object> row = new HashMap<>();
-    row.put("commit_id", IdFactory.commitId(sourceId, commit.sha()));
+    row.put("commit_id", CommitRecord.deriveId(sourceId, commit.sha()));
     row.put("sha", commit.sha());
     row.put("message", commit.message());
     row.put("author", commit.author());
