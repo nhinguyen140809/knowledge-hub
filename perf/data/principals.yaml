@@ -1,0 +1,19 @@
+# Query-side principals. Callers authenticate as members (agents never use the admin
+# token to query). The default policy is deny-by-default, so a member reads only the
+# sources it is explicitly granted. Seed issues each principal a fresh credential and
+# records the secret in results/state.json for the bench step to use.
+
+principals:
+  # Broad caller: reads every seeded source. Used for latency, concurrency, quality
+  # and availability, and as the low-restriction baseline for the ACL comparison.
+  - id: member-broad
+    type: SUBJECT
+    role: MEMBER
+    grants: [eval-corpus, perf-incremental]
+
+  # Scoped caller: reads only the incremental source. Used as the ACL-restricted arm
+  # and as the principal whose access is widened at runtime in the propagation test.
+  - id: member-scoped
+    type: SUBJECT
+    role: MEMBER
+    grants: [perf-incremental]

@@ -1,0 +1,23 @@
+# Sources seeded into the app before benchmarking. Paths are the locations the app
+# container sees — perf/data is bind-mounted to /perf-data by perf/compose.perf.yml,
+# so keep these under /perf-data.
+#
+# type: FS (a plain folder) or GIT (a repository uri). FS is used here so seeding is
+# self-contained and needs no external repo.
+
+sources:
+  - id: eval-corpus
+    type: FS
+    uri_or_path: /perf-data/corpus
+    name: Evaluation corpus
+    description: Labelled knowledge corpus reused from the retrieval gold set.
+    include: []
+    ignore: []
+
+  - id: perf-incremental
+    type: FS
+    uri_or_path: /perf-data/incremental
+    name: Incremental-update fixture
+    description: Small mutable source used to time incremental sync and availability.
+    include: []
+    ignore: []
