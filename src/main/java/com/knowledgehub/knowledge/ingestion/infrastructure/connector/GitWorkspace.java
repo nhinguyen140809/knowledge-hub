@@ -46,9 +46,15 @@ final class GitWorkspace implements AutoCloseable {
     Path temp = null;
     try {
       temp = Files.createTempDirectory("kh-git-");
-      var clone = Git.cloneRepository().setURI(source.uriOrPath()).setDirectory(temp.toFile());
-      source.ref().ifPresent(clone::setBranch);
-      return new GitWorkspace(clone.call(), temp);
+      Git git = Git.cloneRepository().setURI(source.uriOrPath()).setDirectory(temp.toFile()).call();
+      // Checked out after cloning, not via CloneCommand.setBranch: that API only accepts a
+      // branch/tag name, so a pinned commit sha (a valid ref per the Source contract) would fail
+      // to resolve against the remote before the clone ever completes. An explicit checkout here
+      // accepts a branch, tag, or commit sha alike — the same thing the local-repo path above does.
+      if (source.ref().isPresent()) {
+        git.checkout().setName(source.ref().get()).call();
+      }
+      return new GitWorkspace(git, temp);
     } catch (IOException | GitAPIException e) {
       deleteRecursively(temp);
       throw new IllegalStateException("Failed to clone Git source " + source.sourceId(), e);
