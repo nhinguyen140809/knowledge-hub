@@ -25,18 +25,24 @@ def run(ctx: Context) -> ScenarioResult:
     if not files:
         return ScenarioResult(name="incremental", error=f"no files under {src_dir}")
 
-    # Touch up to n files with fresh content so the sync has real work to do.
+    # Touch up to n files with fresh content so the sync has real work to do. Original bytes are
+    # saved first and restored in `finally`, so this fixture (tracked in git) is never left dirty.
     stamp = time.strftime("%H:%M:%S")
     changed = files[:n]
-    for i, f in enumerate(changed):
-        f.write_text(
-            f"# incremental doc\n\nRevision {stamp} change {i}. "
-            f"Line added to force a content-hash change and re-embed.\n"
-        )
+    originals = {f: f.read_bytes() for f in changed}
+    try:
+        for i, f in enumerate(changed):
+            f.write_text(
+                f"# incremental doc\n\nRevision {stamp} change {i}. "
+                f"Line added to force a content-hash change and re-embed.\n"
+            )
 
-    t0 = time.perf_counter()
-    resp = admin.sync(source_id)
-    seconds = time.perf_counter() - t0
+        t0 = time.perf_counter()
+        resp = admin.sync(source_id)
+        seconds = time.perf_counter() - t0
+    finally:
+        for f, original in originals.items():
+            f.write_bytes(original)
 
     result = ScenarioResult(
         name="incremental",
