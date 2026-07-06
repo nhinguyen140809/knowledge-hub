@@ -23,6 +23,22 @@ PERF_DIR = HARNESS_DIR.parent
 REPO_ROOT = PERF_DIR.parent
 
 
+def _load_dotenv(path: Path) -> None:
+    """Populate os.environ from a KEY=VALUE .env file, without overriding vars
+    already exported in the shell (so `export API_KEY=…` still wins)."""
+    if not path.exists():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        os.environ.setdefault(key.strip(), value.strip())
+
+
+_load_dotenv(REPO_ROOT / ".env")
+
+
 def _interpolate(value: Any) -> Any:
     if isinstance(value, str):
         def repl(match: re.Match[str]) -> str:
