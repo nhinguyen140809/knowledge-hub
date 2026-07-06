@@ -29,6 +29,7 @@ Thuật ngữ & Giải thích \\
 \textbf{Repository} (repo) & Một loại source dạng kho Git (có version control). Một product có thể gồm nhiều repo. \\
 \textbf{Connector} & Thành phần kết nối tới một nguồn dữ liệu cụ thể, ví dụ Git hoặc hệ thống tài liệu. \\
 \textbf{Filesystem (fs) connector} & Connector nạp dữ liệu từ một thư mục local, dùng cho nguồn không có Git; versioning dựa trên content hash thay vì commit. \\
+\textbf{Provenance} & Metadata nguồn gốc của một artifact, gồm source, đường dẫn file, content hash, thời điểm index, và với source Git còn có ref và commit\_sha. \\
 \textbf{Default branch} & Branch chính của một repo, thường là \texttt{main}. \\
 \textbf{ref} & Tham chiếu tới một phiên bản mã nguồn cụ thể: tên branch hoặc commit. \\
 \textbf{commit\_sha} & Mã băm định danh duy nhất của một commit Git. \\
@@ -46,6 +47,7 @@ Thuật ngữ & Giải thích \\
 \toprule
 Thuật ngữ & Giải thích \\
 \midrule
+\textbf{Artifact} & Một sản phẩm của quá trình phát triển phần mềm mà hệ thống nạp và liên kết: file mã nguồn, tài liệu, đặc tả, hoặc lịch sử commit. \\
 \textbf{Ingestion} & Quá trình nạp dữ liệu nguồn vào hệ thống: thu thập, xử lý rồi lưu trữ. \\
 \textbf{Chunk / Chunking} & Việc chia dữ liệu lớn thành các đoạn nhỏ trước khi sinh embedding. \\
 \textbf{AST} (Abstract Syntax Tree) & Cây cú pháp của mã nguồn, dùng để chunk code theo cấu trúc thay vì cắt thô. \\

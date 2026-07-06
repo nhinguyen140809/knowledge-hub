@@ -4,36 +4,46 @@ Chương này trình bày cách hệ thống được đánh giá: môi trườn
 
 \subsection{Môi trường và kịch bản đánh giá}
 
-Hệ thống được đánh giá khi chạy trong một môi trường phát triển đám mây (GitHub Codespaces) và kết nối với một AI Agent thực tế (Claude) qua MCP, phản ánh đúng cách hệ thống được dùng: agent khám phá nguồn, truy vấn bằng ngôn ngữ tự nhiên và nhận về ngữ cảnh có cấu trúc. Quy mô dự án dùng để đánh giá ở mức nhỏ tới trung bình, đúng với phạm vi mục tiêu là một team trên một product. Toàn hệ thống khởi chạy bằng một lệnh, nên kịch bản đánh giá tái lập được từ đầu.
+Hệ thống được đánh giá khi chạy trong một môi trường phát triển đám mây (GitHub Codespaces) và kết nối với một AI Agent thực tế (Claude) qua MCP, phản ánh đúng cách hệ thống được dùng: agent khám phá nguồn, truy vấn bằng ngôn ngữ tự nhiên và nhận về ngữ cảnh có cấu trúc. Quy mô dự án dùng để đánh giá ở mức nhỏ tới trung bình, phù hợp với phạm vi mục tiêu là một team trên một product. Toàn hệ thống khởi chạy bằng một lệnh, nên kịch bản đánh giá tái lập được từ đầu.
 
 \subsection{Kiểm thử chức năng}
 
 Đúng đắn về chức năng được bảo đảm ở ba mức:
 
 \begin{itemize}
-  \item \textbf{Kiểm thử đơn vị} phủ các luật nghiệp vụ và bất biến của tầng miền cùng logic điều phối của tầng ứng dụng, chạy độc lập không cần cơ sở dữ liệu hay mạng nhờ nghiệp vụ chỉ phụ thuộc các cổng.
-  \item \textbf{Kiểm thử tích hợp} chạy trên Neo4j và Qdrant thật (dựng trong container), kiểm chứng các bộ chuyển đổi lưu trữ, luồng lập chỉ mục và truy xuất đầu-cuối, và đặc biệt là tính nhất quán giữa hai kho qua các lần đồng bộ.
-  \item \textbf{Kiểm thử chấp nhận} do vai trò quản trị thực hiện qua tài liệu API (giao diện Swagger): đăng ký nguồn, kích hoạt đồng bộ, quản lý phân quyền và truy vấn, kiểm chứng trọn vòng đời vận hành qua API. Kèm theo là kiểm thử kết nối với AI Agent qua MCP, xác nhận agent khám phá và gọi được các tool như thiết kế.
+  \item Kiểm thử đơn vị phủ các luật nghiệp vụ và bất biến của tầng Domain cùng logic điều phối của tầng Application, chạy độc lập không cần cơ sở dữ liệu hay mạng nhờ nghiệp vụ chỉ phụ thuộc các cổng.
+  \item Kiểm thử tích hợp chạy trên Neo4j và Qdrant thật (dựng trong container), kiểm chứng các bộ chuyển đổi lưu trữ, luồng lập chỉ mục và truy xuất đầu-cuối, và đặc biệt là tính nhất quán giữa hai cơ sở dữ liệu qua các lần đồng bộ.
+  \item Kiểm thử chấp nhận do vai trò quản trị thực hiện qua tài liệu API (giao diện Swagger): đăng ký nguồn, kích hoạt đồng bộ, quản lý phân quyền và truy vấn, kiểm chứng trọn vòng đời vận hành qua API. Kèm theo là kiểm thử kết nối với AI Agent qua MCP, xác nhận agent khám phá và gọi được các tool như thiết kế.
 \end{itemize}
 
-Một nhóm kiểm thử riêng tập trung vào \textbf{không rò rỉ phân quyền}: với một principal không có quyền đọc một nguồn, không kết quả nào -- kể cả kết quả đến từ duyệt đồ thị và sau hợp nhất -- được có nguồn gốc từ nguồn đó. Nhóm này phủ từng đường truy xuất (ngữ nghĩa, từ khóa, đồ thị) để bảo đảm bộ lọc cứng có hiệu lực ở mọi đường.
+Một nhóm kiểm thử riêng tập trung vào việc không để rò rỉ phân quyền: với một principal không có quyền đọc một nguồn, không kết quả nào -- kể cả kết quả đến từ duyệt đồ thị và sau hợp nhất -- được có nguồn gốc từ nguồn đó. Nhóm này phủ từng đường truy xuất (ngữ nghĩa, từ khóa, đồ thị) để bảo đảm bộ lọc cứng có hiệu lực ở mọi đường.
 
 \subsection{Đánh giá hiệu năng}
 
-Hiệu năng được đo trên kho đã index, tách khỏi độ trễ của nhà cung cấp embedding bên ngoài:
+Hiệu năng được đo trên cơ sở dữ liệu đã index, tách khỏi độ trễ của nhà cung cấp embedding bên ngoài:
 
 \begin{itemize}
-  \item \textbf{Độ trễ truy vấn} -- đo phân vị p50 và p95 cho truy vấn top-k, với ngưỡng đặt ra là p95 trong khoảng $2$ giây và p50 dưới $0.8$ giây; truy vấn trùng nội dung đã cache trả về dưới $100$ ms. Kết quả đo: \textit{[cần điền số đo p50/p95 và cache]}.
-  \item \textbf{Sử dụng bộ nhớ} -- đo mức tiêu thụ RAM của ứng dụng và của hai kho ở cấu hình đánh giá. Kết quả đo: \textit{[cần điền mức RAM từng thành phần]}.
-  \item \textbf{Truy vấn đồng thời} -- kiểm chứng độ trễ p95 không tăng quá hai lần khi có nhiều truy vấn song song so với tải đơn. Kết quả đo: \textit{[cần điền số đo dưới tải song song]}.
+  \item Độ trễ truy vấn -- đo phân vị p50 và p95 cho truy vấn top-k, với ngưỡng đặt ra là p95 trong khoảng $2$ giây và p50 dưới $0.8$ giây; truy vấn trùng nội dung đã cache trả về dưới $100$ ms. Kết quả đo: \textit{[cần điền số đo p50/p95 và cache]}.
+  \item Sử dụng bộ nhớ -- đo mức tiêu thụ RAM của ứng dụng và của hai cơ sở dữ liệu ở cấu hình đánh giá. Kết quả đo: \textit{[cần điền mức RAM từng thành phần]}.
+\end{itemize}
+
+\subsection{Đánh giá cập nhật và chi phí bảo mật}
+
+Nhóm tiêu chí này đo hiệu quả của cơ chế cập nhật tăng dần và của phân quyền, mỗi tiêu chí kèm ngưỡng đặt ra:
+
+\begin{itemize}
+  \item Thời gian cập nhật incremental -- bấm giờ một lần đồng bộ cho một commit thay đổi $\leq 50$ file, từ lúc kích hoạt tới khi chỉ mục phản ánh thay đổi; ngưỡng là $\leq 2$ phút, không tính độ trễ của embedding provider. Kết quả đo: \textit{[cần điền thời gian cập nhật]}.
+  \item Chi phí độ trễ của phân quyền -- so độ trễ p95 của cùng một truy vấn khi có và không áp bộ lọc ACL, trên cùng cơ sở dữ liệu và cùng mức tải; ngưỡng là mức tăng $\leq 10\%$. Kết quả đo: \textit{[cần điền p95 có/không ACL và phần trăm chênh]}.
+  \item Độ trễ áp dụng thay đổi cấu hình -- thay đổi một cấu hình runtime (một grant trong ACL) rồi truy vấn lại, kiểm chứng thay đổi có hiệu lực trong $\leq 5$ giây mà không cần restart. Tiêu chí này được bảo đảm bằng một kiểm thử tự động khai thác thời hạn của bộ đệm phân quyền (đã mô tả ở phần Caching).
+  \item Không hard-code secret -- quét mã nguồn bằng công cụ dò secret, xác nhận không khóa API hay mật khẩu nào nằm trong mã. Kết quả: \textit{[cần điền kết quả quét]}.
 \end{itemize}
 
 \subsection{Đánh giá chất lượng truy xuất}
 
-Chất lượng truy xuất được đo trên một bộ truy vấn có nhãn (gold set gồm ít nhất $50$ truy vấn) bằng hai độ đo: \textbf{Recall@10} và \textbf{MRR}, với ngưỡng đặt ra lần lượt là $\geq 0.85$ và $\geq 0.70$. Đồng thời, để kiểm chứng giá trị của lối hybrid, cấu hình đầy đủ (ngữ nghĩa kết hợp từ khóa và đồ thị) được so với cấu hình chỉ dùng tìm kiếm ngữ nghĩa trên cùng bộ truy vấn; kỳ vọng hybrid cải thiện Recall@10 một biên đo được. Kết quả đo: \textit{[cần điền Recall@10, MRR, và mức cải thiện của hybrid so với semantic thuần]}.
+Chất lượng truy xuất được đo trên một bộ truy vấn có nhãn (gold set gồm ít nhất $50$ truy vấn) bằng hai độ đo Recall@10 và MRR, với ngưỡng đặt ra lần lượt là $\geq 0.85$ và $\geq 0.70$. Đồng thời, để kiểm chứng giá trị của lối hybrid, cấu hình đầy đủ (ngữ nghĩa kết hợp từ khóa và đồ thị) được so với cấu hình chỉ dùng tìm kiếm ngữ nghĩa trên cùng bộ truy vấn; kỳ vọng hybrid cải thiện Recall@10 một biên đo được. Kết quả đo: \textit{[cần điền Recall@10, MRR, và mức cải thiện của hybrid so với semantic thuần]}.
 
 \subsection{So sánh với agentic search và tính đầy đủ của kết quả}
 
-Ngoài các độ đo trên, hệ thống được đánh giá ở hai khía cạnh gắn với định vị của nó. Thứ nhất, \textbf{tốc độ truy vấn trên một dự án lớn} được đối chiếu với cách agent tự khám phá (agentic search): với tri thức đã được index và liên kết sẵn, một truy vấn trả về ngữ cảnh liên quan trong một lần gọi, thay vì nhiều vòng đọc và grep -- lợi thế rõ nhất khi tri thức trải trên nhiều nguồn. Kết quả đo: \textit{[cần điền so sánh thời gian/số bước với agentic search]}.
+Ngoài các độ đo trên, hệ thống được đánh giá ở hai khía cạnh gắn với định vị của hệ thống. Thứ nhất, tốc độ truy vấn trên một dự án lớn được đối chiếu với cách agent tự khám phá (agentic search): với tri thức đã được index và liên kết sẵn, một truy vấn trả về ngữ cảnh liên quan trong một lần gọi, thay vì nhiều vòng đọc và grep -- lợi thế rõ nhất khi tri thức trải trên nhiều nguồn. Kết quả đo: \textit{[cần điền so sánh thời gian/số bước với agentic search]}.
 
-Thứ hai, \textbf{tính đầy đủ của dữ liệu trả về} được đánh giá qua việc kết quả có đủ để agent trích dẫn và tự lấy lại nội dung hay không: mỗi kết quả kèm điểm liên quan, tọa độ trích dẫn (nguồn, đường dẫn, khoảng dòng, phiên bản) và, với kết quả đến từ đồ thị, chuỗi quan hệ đã duyệt. Tiêu chí đạt là agent dựng lại được câu trả lời có dẫn nguồn chỉ từ kết quả trả về, không phải khám phá lại tri thức của dự án.
+Thứ hai, tính đầy đủ của dữ liệu trả về được đánh giá qua việc kết quả có đủ để agent trích dẫn và tự lấy lại nội dung hay không: mỗi kết quả kèm điểm liên quan, tọa độ trích dẫn (nguồn, đường dẫn, khoảng dòng, phiên bản) và, với kết quả đến từ đồ thị, chuỗi quan hệ đã duyệt. Tiêu chí đạt là agent dựng lại được câu trả lời có dẫn nguồn chỉ từ kết quả trả về, không phải khám phá lại tri thức của dự án.
