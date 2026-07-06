@@ -1,10 +1,32 @@
 \section{Đánh giá}
 
-Chương này trình bày cách hệ thống được đánh giá: môi trường và kịch bản đánh giá, các mức kiểm thử chức năng, và các phép đo hiệu năng cùng chất lượng truy xuất. Với mỗi tiêu chí, phần này nêu phương pháp đo và ngưỡng đặt ra; các con số đo được cụ thể được điền vào các chỗ đánh dấu tương ứng.
+\subsection{Môi trường đánh giá}
 
-\subsection{Môi trường và kịch bản đánh giá}
+Hệ thống được đánh giá khi chạy trong một môi trường phát triển đám mây (GitHub Codespaces) và kết nối với một AI Agent thực tế (Claude) qua MCP, phản ánh đúng cách hệ thống được dùng: agent khám phá nguồn, truy vấn bằng ngôn ngữ tự nhiên và nhận về ngữ cảnh có cấu trúc. Toàn hệ thống gồm ba container -- ứng dụng, Neo4j và Qdrant -- khởi chạy bằng một lệnh, nên kịch bản đánh giá tái lập được từ đầu. Quy mô dự án dùng để đánh giá ở mức nhỏ tới trung bình, phù hợp với phạm vi mục tiêu là một team trên một product.
 
-Hệ thống được đánh giá khi chạy trong một môi trường phát triển đám mây (GitHub Codespaces) và kết nối với một AI Agent thực tế (Claude) qua MCP, phản ánh đúng cách hệ thống được dùng: agent khám phá nguồn, truy vấn bằng ngôn ngữ tự nhiên và nhận về ngữ cảnh có cấu trúc. Quy mô dự án dùng để đánh giá ở mức nhỏ tới trung bình, phù hợp với phạm vi mục tiêu là một team trên một product. Toàn hệ thống khởi chạy bằng một lệnh, nên kịch bản đánh giá tái lập được từ đầu.
+Mọi phép đo tác động vào hệ thống qua đúng interface mà người dùng thật sử dụng, REST API và MCP. Việc sinh embedding gọi tới Voyage AI model voyage-3, nên độ trễ truy vấn có thể bị ảnh hưởng bởi độ trễ của dịch vụ này.
+
+\subsection{Dữ liệu đánh giá}
+
+Các phép đo dùng chung một tập dữ liệu cố định, khai báo tách rời khỏi code:
+
+\begin{itemize}
+  \item Một corpus tri thức có nhãn, đăng ký như một nguồn và được lập chỉ mục đầy đủ trước khi đo, đóng vai trò kho tri thức chung cho mọi truy vấn.
+  \item Một bộ truy vấn có nhãn (gold set) gồm 52 truy vấn, mỗi truy vấn gắn với tài liệu liên quan đã biết trước, dùng để chấm Recall@10 và MRR.
+  \item Một tập truy vấn tải (workload) dạng văn bản tự do, dùng cho các phép đo độ trễ.
+  \item Một nguồn nhỏ có thể thay đổi được, dùng để đo thời gian cập nhật tăng dần bằng cách sửa một số file rồi đồng bộ lại.
+  \item Hai principal đại diện cho hai mức quyền khác nhau: một principal đọc được mọi nguồn và một principal chỉ đọc một nguồn, phục vụ các phép đo liên quan tới phân quyền.
+\end{itemize}
+
+\subsection{Tự động hóa đánh giá}
+
+Các tiêu chí hiệu năng, chi phí cập nhật và bảo mật, cùng chất lượng truy xuất được đo bằng một bộ công cụ đánh giá tự động (test harness) điều khiển hệ thống qua REST API như một client thật. Test harness hiện thực bằng Python, thiết kế theo data-driven approach: REST API được gọi qua thư viện httpx, còn ngưỡng đạt, workload, danh sách nguồn và principal đều khai báo trong các tệp YAML và JSON, tách khỏi phần logic đo và thống kê, được vận hành qua một CLI.
+
+Quy trình chạy chia làm hai bước:
+\begin{itemize}
+  \item Bước chuẩn bị (seed) đăng ký nguồn, index toàn bộ corpus -- bước tốn kém nhất vì phải sinh embedding -- rồi tạo các principal cùng quyền đọc tương ứng, và chỉ cần chạy một lần. 
+  \item Bước đánh giá (benchmark) đọc lại trạng thái đã chuẩn bị và thực thi từng kịch bản, nên lặp lại được nhiều lần mà không phải index lại.
+\end{itemize}
 
 \subsection{Kiểm thử chức năng}
 
@@ -33,7 +55,7 @@ Nhóm tiêu chí này đo hiệu quả của cơ chế cập nhật tăng dần 
 
 \begin{itemize}
   \item Thời gian cập nhật incremental -- bấm giờ một lần đồng bộ cho một commit thay đổi $\leq 50$ file, từ lúc kích hoạt tới khi chỉ mục phản ánh thay đổi; ngưỡng là $\leq 2$ phút, không tính độ trễ của embedding provider. Kết quả đo: \textit{[cần điền thời gian cập nhật]}.
-  \item Chi phí độ trễ của phân quyền -- so độ trễ p95 của cùng một truy vấn khi có và không áp bộ lọc ACL, trên cùng cơ sở dữ liệu và cùng mức tải; ngưỡng là mức tăng $\leq 10\%$. Kết quả đo: \textit{[cần điền p95 có/không ACL và phần trăm chênh]}.
+  \item Chi phí độ trễ của phân quyền -- vì mọi truy vấn qua API đều đi qua bộ lọc phân quyền, phép đo so độ trễ p95 của cùng một truy vấn giữa một principal đọc được mọi nguồn và một principal bị giới hạn ở một nguồn, trên cùng cơ sở dữ liệu và cùng mức tải; đây là chi phí của một tập quyền hẹp so với một tập quyền rộng, với ngưỡng là mức tăng $\leq 10\%$. Kết quả đo: \textit{[cần điền p95 hai mức quyền và phần trăm chênh]}.
   \item Độ trễ áp dụng thay đổi cấu hình -- thay đổi một cấu hình runtime (một grant trong ACL) rồi truy vấn lại, kiểm chứng thay đổi có hiệu lực trong $\leq 5$ giây mà không cần restart. Tiêu chí này được bảo đảm bằng một kiểm thử tự động khai thác thời hạn của bộ đệm phân quyền (đã mô tả ở phần Caching).
   \item Không hard-code secret -- quét mã nguồn bằng công cụ dò secret, xác nhận không khóa API hay mật khẩu nào nằm trong mã. Kết quả: \textit{[cần điền kết quả quét]}.
 \end{itemize}
