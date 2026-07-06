@@ -1,0 +1,5 @@
+# Run artifacts and local Python state — never committed.
+results/
+.venv/
+__pycache__/
+*.pyc
