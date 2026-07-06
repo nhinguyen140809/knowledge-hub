@@ -1,0 +1,63 @@
+# Which scenarios run and with what knobs. Every scenario can be turned off with
+# enabled:false, or selected/skipped on the command line (--only / --skip).
+# Knobs live here (data), not in code, so a run can be re-shaped without edits.
+
+latency:
+  enabled: true
+  # The broad member principal (all sources readable) issues the workload.
+  principal: member-broad
+  # Cold samples = len(queries) * iterations. iterations>1 appends a nonce to force
+  # a distinct query text (cache miss + fresh embedding) for extra cold samples.
+  iterations: 2
+  warmup: 5           # untimed queries to warm JIT/caches before measuring
+  top_k: 10
+
+concurrency:
+  enabled: true
+  principal: member-broad
+  workers: 20         # parallel callers (report targets >= 20)
+  total_requests: 200
+  top_k: 10
+
+incremental:
+  enabled: true
+  source: perf-incremental
+  change_files: 25    # files touched before the timed sync (report uses <= 50)
+
+acl:
+  enabled: true
+  broad_principal: member-broad     # sees every source
+  scoped_principal: member-scoped   # restricted to one source
+  iterations: 3
+  top_k: 10
+
+config_propagation:
+  enabled: true
+  principal: member-scoped
+  # Source the scoped principal does NOT initially read; the grant is added at runtime
+  # and the harness times how long until queries start returning hits from it.
+  target_source: eval-corpus
+  probe_query: "How does reciprocal rank fusion combine ranked lists?"
+  poll_interval_s: 0.5
+  timeout_s: 20
+
+quality:
+  enabled: true
+  principal: member-broad
+  top_k: 10           # Recall@10 / MRR@10
+
+availability:
+  enabled: true
+  principal: member-broad
+  source: perf-incremental   # the source re-indexed mid-load
+  workers: 10
+  duration_s: 30
+  top_k: 10
+
+memory:
+  enabled: true      # requires the `docker` CLI on the host
+
+secret_scan:
+  enabled: true      # static scan of ../src/main — does not need a running system
+  scan_paths:
+    - src/main

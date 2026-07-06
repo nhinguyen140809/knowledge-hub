@@ -1,0 +1,21 @@
+# Free-text query workload for the latency and concurrency scenarios. These are the
+# texts fired at POST /api/v1/query. Add or remove lines to reshape the workload;
+# cold-sample count scales with this list (see scenarios.yaml: latency.iterations).
+# The quality scenario uses the labelled gold-set.json instead, not this list.
+
+queries:
+  - How does reciprocal rank fusion combine ranked lists?
+  - Explain BM25 term frequency saturation.
+  - What is a dense vector embedding used for?
+  - How does the HNSW graph speed up nearest neighbour search?
+  - Why store a knowledge graph in Neo4j?
+  - How does Qdrant filter results by payload metadata?
+  - What is content-based deduplication by hash?
+  - How does incremental sync avoid re-embedding unchanged chunks?
+  - How is a bearer token validated on each request?
+  - What does an access-control list grant a principal?
+  - How does cache eviction use a TTL?
+  - Why count tokens with the model's own encoding?
+  - How does a correlation id trace a request through logs?
+  - What problem does dependency injection solve?
+  - How does cosine similarity rank two vectors?

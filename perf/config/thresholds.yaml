@@ -1,0 +1,44 @@
+# Pass/fail thresholds — the numeric acceptance criteria from the evaluation chapter
+# (docs/report/7-evaluation.tex). Editing a number here changes the gate without
+# touching any code: the harness compares each measured value against these.
+#
+# op is how the measured value is compared to `value`:
+#   le  -> measured <= value       ge  -> measured >= value
+#   lt  -> measured <  value        gt  -> measured >  value
+
+latency:
+  # Uncached top-k query latency (full pipeline; includes the query-embedding call).
+  p50_ms: { op: le, value: 800 }
+  p95_ms: { op: le, value: 2000 }
+  # Cached repeat of an identical query (served from the result cache, no pipeline).
+  cache_p95_ms: { op: le, value: 100 }
+
+concurrency:
+  # p95 under parallel load must stay within this multiple of the serial p95.
+  p95_slowdown_ratio: { op: le, value: 2.0 }
+
+incremental:
+  # Wall-clock of one incremental sync over a change of <= change_files files.
+  sync_seconds: { op: le, value: 120 }
+
+acl:
+  # Extra p95 latency of a scoped (ACL-restricted) caller vs a broad caller.
+  overhead_pct: { op: le, value: 10 }
+
+config_propagation:
+  # A grant change must take effect (without restart) within this many seconds.
+  effective_within_s: { op: le, value: 5 }
+
+quality:
+  recall_at_10: { op: ge, value: 0.85 }
+  mrr: { op: ge, value: 0.70 }
+
+availability:
+  # Fraction of queries that succeed while a re-index runs under load.
+  success_rate: { op: ge, value: 0.99 }
+
+secret_scan:
+  # Number of hardcoded-secret findings in application source. Must be zero.
+  findings: { op: le, value: 0 }
+
+# memory has no hard threshold in the report — it is measured and reported only.

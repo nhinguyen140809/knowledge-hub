@@ -1,0 +1,28 @@
+# Sources seeded into the app before benchmarking. FS paths are the locations the app
+# container sees — perf/data is bind-mounted to /perf-data by perf/compose.perf.yml, so
+# keep those under /perf-data. type: FS (a plain folder) or GIT (a repository uri).
+#
+# eval-corpus is GIT so the quality gold set (data/gold-set.json) is graded against a
+# real, small (~9k LOC) public repo instead of a curated fixture — real source code gives
+# BM25 exact-identifier matches a genuine edge over semantic-only, which the app's own
+# hybrid-over-semantic eval (see the Java RetrievalEvalThresholdTests) needs to mean
+# something. ref pins the exact commit the gold set was hand-checked against, so it stays
+# valid even if the upstream repo changes later. Needs outbound network access to GitHub.
+
+sources:
+  - id: eval-corpus
+    type: GIT
+    uri_or_path: https://github.com/sindresorhus/globby.git
+    ref: 47e7f658b87c1f48a4e62600a47dc0eca6dae249
+    name: Evaluation corpus
+    description: Real ~9k LOC public repo, pinned to the commit the gold set matches.
+    include: []
+    ignore: []
+
+  - id: perf-incremental
+    type: FS
+    uri_or_path: /perf-data/incremental
+    name: Incremental-update fixture
+    description: Small mutable source used to time incremental sync and availability.
+    include: []
+    ignore: []

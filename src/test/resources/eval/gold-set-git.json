@@ -1,0 +1,142 @@
+[
+  {
+    "id": "g001",
+    "query": "What does the gitignore option in globby do?",
+    "relevantPath": "readme.md"
+  },
+  {
+    "id": "g002",
+    "query": "How does globby find the global gitignore file configured via git config core.excludesfile?",
+    "relevantPath": "readme.md"
+  },
+  {
+    "id": "g003",
+    "query": "What does globbyStream return compared to globby and globbySync?",
+    "relevantPath": "index.js"
+  },
+  {
+    "id": "g004",
+    "query": "How does isDynamicPattern determine whether a glob pattern is dynamic?",
+    "relevantPath": "index.js"
+  },
+  {
+    "id": "g005",
+    "query": "What TypeScript type represents a glob task with patterns and options?",
+    "relevantPath": "index.d.ts"
+  },
+  {
+    "id": "g006",
+    "query": "What does the expandDirectories option type allow besides a plain boolean?",
+    "relevantPath": "index.d.ts"
+  },
+  {
+    "id": "g007",
+    "query": "How does the benchmark script compare globby against the upstream main branch?",
+    "relevantPath": "bench.js"
+  },
+  {
+    "id": "g008",
+    "query": "What benchmarking library does the bench script use to run globby performance comparisons?",
+    "relevantPath": "bench.js"
+  },
+  {
+    "id": "g009",
+    "query": "Which utility functions does the globby test suite import for normalizing negative patterns?",
+    "relevantPath": "tests/globby.js"
+  },
+  {
+    "id": "g010",
+    "query": "How does the globby test suite verify isDynamicPattern behavior?",
+    "relevantPath": "tests/globby.js"
+  },
+  {
+    "id": "g011",
+    "query": "How does the test suite assert that generateGlobTasks and generateGlobTasksSync return the same result?",
+    "relevantPath": "tests/generate-glob-tasks.js"
+  },
+  {
+    "id": "g012",
+    "query": "What error message is expected when the cwd option is not a directory in generateGlobTasks tests?",
+    "relevantPath": "tests/generate-glob-tasks.js"
+  },
+  {
+    "id": "g013",
+    "query": "How does the test suite create a temporary global gitignore config for testing?",
+    "relevantPath": "tests/global-gitignore.js"
+  },
+  {
+    "id": "g014",
+    "query": "Which functions from ignore.js are tested for building the global gitignore predicate?",
+    "relevantPath": "tests/global-gitignore.js"
+  },
+  {
+    "id": "g015",
+    "query": "What TypeScript types does the type-test file check for globby's return values?",
+    "relevantPath": "index.test-d.ts"
+  },
+  {
+    "id": "g016",
+    "query": "How does the type-test file verify globby's expandDirectories option accepts an array of patterns?",
+    "relevantPath": "index.test-d.ts"
+  },
+  {
+    "id": "g017",
+    "query": "How does convertPathToPattern handle special glob characters like parentheses and brackets in literal paths?",
+    "relevantPath": "tests/convert-path-to-pattern.js"
+  },
+  {
+    "id": "g018",
+    "query": "Why does the test suite create a folder with Next.js dynamic route brackets to test convertPathToPattern?",
+    "relevantPath": "tests/convert-path-to-pattern.js"
+  },
+  {
+    "id": "g019",
+    "query": "How does the comprehensive gitignore test suite set up directories and files declaratively?",
+    "relevantPath": "tests/gitignore-comprehensive.js"
+  },
+  {
+    "id": "g020",
+    "query": "Which globby functions does the comprehensive gitignore test suite exercise together?",
+    "relevantPath": "tests/gitignore-comprehensive.js"
+  },
+  {
+    "id": "g021",
+    "query": "What error is thrown when globalGitignore is used with a custom fs that lacks a stat function?",
+    "relevantPath": "tests/global-gitignore-custom-fs.js"
+  },
+  {
+    "id": "g022",
+    "query": "How does the test suite create a custom Git global config file for testing globalGitignore?",
+    "relevantPath": "tests/global-gitignore-custom-fs.js"
+  },
+  {
+    "id": "g023",
+    "query": "How does the ignore test suite verify isGitIgnored and isIgnoredByIgnoreFiles behave the same synchronously and asynchronously?",
+    "relevantPath": "tests/ignore.js"
+  },
+  {
+    "id": "g024",
+    "query": "Which functions from ignore.js does the ignore test suite import for testing ignore-file patterns?",
+    "relevantPath": "tests/ignore.js"
+  },
+  {
+    "id": "g025",
+    "query": "How does the test suite create a virtual git filesystem to test parent directory gitignore patterns?",
+    "relevantPath": "tests/parent-directory-patterns.js"
+  },
+  {
+    "id": "g026",
+    "query": "Which utility functions handle adjusting ignore patterns for parent directories?",
+    "relevantPath": "tests/parent-directory-patterns.js"
+  },
+  {
+    "id": "g027",
+    "query": "What does PROJECT_ROOT represent in the shared test utilities file?",
+    "relevantPath": "tests/utilities.js"
+  },
+  {
+    "id": "g028",
+    "query": "How does createContextAwareFs wrap the real fs module for tests?",
+    "relevantPath": "tests/utilities.js"
+  }
+]

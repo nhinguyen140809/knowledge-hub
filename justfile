@@ -20,9 +20,23 @@ compile:
 build:
     {{mvn}} -B -DskipTests package
 
-# run tests (needs Docker for Testcontainers)
+# run tests (needs Docker for Testcontainers). SPRING_PROFILES_ACTIVE is cleared because
+# dotenv-load pulls in .env's SPRING_PROFILES_ACTIVE=prod for the app container, and the prod
+# profile requires a real SPRING_NEO4J_URI — breaking Testcontainers' own dynamic URI override.
 test:
-    {{mvn}} -B test
+    SPRING_PROFILES_ACTIVE= {{mvn}} -B test
+
+# same suite, explicit name: embedding is mocked deterministically, no network calls, safe for CI
+test-mock: test
+
+# real-provider retrieval eval: live embedding calls against EMBEDDING_API_KEY in .env — needs a
+# working (non-rate-limited) provider and a model whose dimension matches app.embedding.dimension
+test-real:
+    SPRING_PROFILES_ACTIVE= EVAL_ASSERT_THRESHOLDS=true {{mvn}} -B test -Dtest=RetrievalEvalThresholdTests
+
+# live Git-connector indexing against a real public repo — needs outbound network to GitHub
+test-git-live:
+    SPRING_PROFILES_ACTIVE= GIT_LIVE_TEST=true {{mvn}} -B test -Dtest=GitSourceLiveIndexingTests
 
 # format check + build + tests
 verify:
@@ -56,8 +70,22 @@ up:
 down:
     docker compose down
 
+# stop the stack and delete volumes (wipes Neo4j + Qdrant data)
+down-v:
+    docker compose down -v
+
 # restart the stack
 restart: down up
+
+# pause the running containers without removing them — frees the RAM/CPU they were using
+# (handy for a Codespace left idle for hours) while keeping all data and network state, so
+# `just resume` brings the exact same stack back with no rebuild and no re-seed
+pause:
+    docker compose stop
+
+# resume a stack paused with `just pause` — much faster than `up`, nothing to rebuild
+resume:
+    docker compose start
 
 # tail application logs
 logs:

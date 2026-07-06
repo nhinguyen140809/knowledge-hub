@@ -1,0 +1,30 @@
+# Connection + run settings for the performance harness.
+# Values of the form ${ENV:default} are read from the environment at load time.
+
+# Base URL of the running Knowledge Hub app (the `app` container publishes 8000).
+base_url: ${KH_BASE_URL:http://localhost:8000}
+
+# API prefix added centrally by the app's WebConfig.
+api_prefix: /api/v1
+
+# Bootstrap admin secret. MUST match the API_KEY the app container was started with
+# (see .env / docker-compose.yml). Used only for administration (register sources,
+# sync, create principals, grants) — never for the query workload.
+admin_token: ${API_KEY:}
+
+# Per-request HTTP timeout in seconds (a slow embedding provider can push cold
+# queries well past the default, so keep this generous).
+request_timeout_s: ${KH_REQUEST_TIMEOUT:60}
+
+# Where seed writes its state (issued member credentials + resolved source ids) and
+# where bench writes its reports. bench reads state.json produced by seed.
+output_dir: results
+state_file: results/state.json
+
+# Docker Compose project name + service names, used by the memory scenario to read
+# `docker stats`. Match `name:` in docker-compose.yml.
+compose_project: knowledge-hub
+services:
+  app: app
+  graph: neo4j
+  vector: qdrant

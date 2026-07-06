@@ -1,0 +1,11 @@
+# Compose override for the performance harness. Bind-mounts the harness seed data into
+# the app container so FS sources under /perf-data resolve, and the incremental fixture
+# is writable from the host (the harness edits files there to trigger re-syncs).
+#
+# Run from the repo root so relative paths resolve against it:
+#   docker compose -f docker-compose.yml -f perf/compose.perf.yml up -d --build
+
+services:
+  app:
+    volumes:
+      - ./perf/data:/perf-data

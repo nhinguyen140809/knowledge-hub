@@ -3,6 +3,7 @@ package com.knowledgehub.knowledge.infrastructure.persistence;
 import com.knowledgehub.shared.config.AppProperties;
 import io.qdrant.client.QdrantClient;
 import io.qdrant.client.grpc.Collections.Distance;
+import io.qdrant.client.grpc.Collections.PayloadSchemaType;
 import io.qdrant.client.grpc.Collections.VectorParams;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -27,6 +28,8 @@ import org.springframework.stereotype.Component;
 public class SchemaInitializer implements ApplicationRunner {
 
   private static final Logger log = LoggerFactory.getLogger(SchemaInitializer.class);
+
+  private static final String SOURCE_ID = "source_id";
 
   private static final List<String> CONSTRAINTS_AND_INDEXES =
       List.of(
@@ -102,19 +105,28 @@ public class SchemaInitializer implements ApplicationRunner {
         embeddingDimension);
   }
 
-  /** Creates the Qdrant collection (cosine, configured dimension) if it does not exist yet. */
+  /**
+   * Creates the Qdrant collection (cosine, configured dimension) if it does not exist yet, and
+   * ensures a payload index on {@code source_id} — the field every ACL-filtered search matches on.
+   * Without it, a highly selective filter (a principal granted only a small source) makes Qdrant's
+   * HNSW search traverse far more of the graph to satisfy top-k, inflating tail latency. Both calls
+   * are idempotent, so this also backfills the index on a collection created before this existed.
+   */
   private void ensureQdrantCollection() {
     try {
-      if (Boolean.TRUE.equals(qdrantClient.collectionExistsAsync(collectionName).get())) {
-        return;
+      if (!Boolean.TRUE.equals(qdrantClient.collectionExistsAsync(collectionName).get())) {
+        qdrantClient
+            .createCollectionAsync(
+                collectionName,
+                VectorParams.newBuilder()
+                    .setSize(embeddingDimension)
+                    .setDistance(Distance.Cosine)
+                    .build())
+            .get();
       }
       qdrantClient
-          .createCollectionAsync(
-              collectionName,
-              VectorParams.newBuilder()
-                  .setSize(embeddingDimension)
-                  .setDistance(Distance.Cosine)
-                  .build())
+          .createPayloadIndexAsync(
+              collectionName, SOURCE_ID, PayloadSchemaType.Keyword, null, null, null, null)
           .get();
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
