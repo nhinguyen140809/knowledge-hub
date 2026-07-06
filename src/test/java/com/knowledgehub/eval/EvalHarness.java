@@ -45,7 +45,11 @@ final class EvalHarness {
   record EvalReport(String name, double recallAt10, double mrr) {}
 
   static List<EvalCase> loadGoldSet() {
-    try (InputStream in = new ClassPathResource("eval/gold-set.json").getInputStream()) {
+    return loadGoldSet("eval/gold-set.json");
+  }
+
+  static List<EvalCase> loadGoldSet(String classpathResource) {
+    try (InputStream in = new ClassPathResource(classpathResource).getInputStream()) {
       return new ObjectMapper().readValue(in, new TypeReference<List<EvalCase>>() {});
     } catch (IOException e) {
       throw new UncheckedIOException(e);
@@ -53,8 +57,18 @@ final class EvalHarness {
   }
 
   static void indexCorpus(IndexingService indexing, SourceRepository sources) {
-    sources.save(new Source(SOURCE, SourceType.FS, CORPUS.toString(), null, List.of(), List.of()));
-    indexing.index(SOURCE);
+    indexCorpus(
+        indexing,
+        sources,
+        new Source(SOURCE, SourceType.FS, CORPUS.toString(), null, List.of(), List.of()));
+  }
+
+  /**
+   * Indexes an arbitrary source (e.g. a real Git repo) under its own id instead of {@link #SOURCE}.
+   */
+  static void indexCorpus(IndexingService indexing, SourceRepository sources, Source source) {
+    sources.save(source);
+    indexing.index(source.sourceId());
   }
 
   static void cleanUp(
@@ -63,11 +77,21 @@ final class EvalHarness {
       CodeEntityRepository entities,
       VectorStorePort vectorStore,
       SourceRepository sources) {
+    cleanUp(cache, chunks, entities, vectorStore, sources, SOURCE);
+  }
+
+  static void cleanUp(
+      RetrievalCache cache,
+      ChunkRepository chunks,
+      CodeEntityRepository entities,
+      VectorStorePort vectorStore,
+      SourceRepository sources,
+      String sourceId) {
     cache.invalidateAll();
-    chunks.deleteBySource(SOURCE);
-    entities.deleteBySource(SOURCE);
-    vectorStore.deleteBySource(SOURCE);
-    sources.deleteById(SOURCE);
+    chunks.deleteBySource(sourceId);
+    entities.deleteBySource(sourceId);
+    vectorStore.deleteBySource(sourceId);
+    sources.deleteById(sourceId);
   }
 
   static Function<String, List<String>> hybridRanking(RetrievalService retrievalService) {
