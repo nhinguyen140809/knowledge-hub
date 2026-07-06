@@ -6,19 +6,9 @@
   // Node is only here so the Claude Code CLI can be installed if you want it in-terminal.
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
-    "ghcr.io/devcontainers/features/node:1": { "version": "lts" }
-  },
-
-  // Pass Codespaces secrets (Settings > Codespaces secrets) through to the container.
-  // Any that are unset stay empty and post-create.sh leaves them blank in .env.
-  "containerEnv": {
-    "NEO4J_PASSWORD": "${localEnv:NEO4J_PASSWORD}",
-    "API_KEY": "${localEnv:API_KEY}",
-    "EMBEDDING_API_KEY": "${localEnv:EMBEDDING_API_KEY}",
-    "EMBEDDING_PROVIDER": "${localEnv:EMBEDDING_PROVIDER}",
-    "EMBEDDING_MODEL": "${localEnv:EMBEDDING_MODEL}",
-    "EMBEDDING_BASE_URL": "${localEnv:EMBEDDING_BASE_URL}",
-    "EMBEDDING_DIMENSION": "${localEnv:EMBEDDING_DIMENSION}"
+    "ghcr.io/devcontainers/features/node:1": { "version": "lts" },
+    // python3 is preinstalled but without pip/venv — needed for perf/ (perf/README.md)
+    "ghcr.io/devcontainers/features/python:1": { "installTools": false }
   },
 
   "forwardPorts": [8000, 7474, 7687, 6333, 6334],
@@ -30,7 +20,13 @@
     "6334": { "label": "qdrant gRPC" }
   },
 
-  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  // Codespaces secrets (Settings > Codespaces secrets) / host env vars are resolved here,
+  // once, only for this command — NOT via containerEnv, which would bake them (often empty,
+  // if unset on the host) into every later shell and permanently shadow .env edits, since
+  // docker compose and `just`'s dotenv-load both treat an already-exported var (even empty)
+  // as set and skip reading .env for it. Unset ones simply resolve to "" here; post-create.sh
+  // leaves those blank in .env for you to fill in by hand.
+  "postCreateCommand": "NEO4J_PASSWORD='${localEnv:NEO4J_PASSWORD}' API_KEY='${localEnv:API_KEY}' EMBEDDING_API_KEY='${localEnv:EMBEDDING_API_KEY}' EMBEDDING_PROVIDER='${localEnv:EMBEDDING_PROVIDER}' EMBEDDING_MODEL='${localEnv:EMBEDDING_MODEL}' EMBEDDING_BASE_URL='${localEnv:EMBEDDING_BASE_URL}' EMBEDDING_DIMENSION='${localEnv:EMBEDDING_DIMENSION}' bash .devcontainer/post-create.sh",
 
   // Runs on every Codespace *start* (including resume from stopped). Brings the
   // datastores up automatically so you can `just dev` right away. Use `just up`

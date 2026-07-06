@@ -17,6 +17,7 @@ HELP.md
 .project
 .classpath
 .settings/
+**/settings.*
 
 # --- OS ---
 .DS_Store

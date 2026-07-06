@@ -56,6 +56,10 @@ up:
 down:
     docker compose down
 
+# stop the stack and delete volumes (wipes Neo4j + Qdrant data)
+down-v:
+    docker compose down -v
+
 # restart the stack
 restart: down up
 
