@@ -16,6 +16,16 @@ if ! command -v claude >/dev/null 2>&1; then
   npm install -g @anthropic-ai/claude-code
 fi
 
+echo "==> Installing d2 (diagram renderer) (if missing)"
+if ! command -v d2 >/dev/null 2>&1; then
+  curl -fsSL https://d2lang.com/install.sh | sh -s --
+fi
+
+echo "==> Installing rsvg-convert for SVG->PDF diagram export (if missing)"
+if ! command -v rsvg-convert >/dev/null 2>&1; then
+  sudo apt-get update -qq && sudo apt-get install -y -qq librsvg2-bin
+fi
+
 # --- Generate .env from Codespaces secrets (never overwrite an existing one) ---
 # upsert KEY=VALUE in .env: replace the line if present, append if not.
 upsert() {

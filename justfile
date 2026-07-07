@@ -98,3 +98,7 @@ ps:
 # enable the git pre-commit hook (auto-format on commit)
 hooks:
     git config core.hooksPath .githooks && echo "git hooks enabled"
+
+# render D2 diagrams to SVG + PDF (all, or `just diagrams ERD` for one)
+diagrams *NAMES:
+    docs/diagrams/render.sh {{NAMES}}

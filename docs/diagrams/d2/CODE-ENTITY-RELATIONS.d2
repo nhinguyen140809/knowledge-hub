@@ -17,7 +17,7 @@
 
 vars: {
   d2-config: {
-    layout-engine: elk
+    layout-engine: dagre
     pad: 16
   }
 }
@@ -43,7 +43,7 @@ codeentity: "CodeEntity (:CodeEntity in Neo4j) — one label, split by level" {
   Type: "Type — structural declaration" {
     style.fill: "#eef2ff"
     style.stroke: "#818cf8"
-    Class: { style.fill: "#d47100"; style.stroke: "#ffe0c6" }
+    ClassDecl: "Class" { style.fill: "#d47100"; style.stroke: "#ffe0c6" }
     Interface: { style.fill: "#d47100"; style.stroke: "#ffe0c6" }
     Enum: { style.fill: "#d47100"; style.stroke: "#ffe0c6" }
   }
@@ -65,13 +65,15 @@ codeentity.schema -> codeentity.Member: "level = METHOD | CONSTRUCTOR | FIELD" {
 # valid Java — e.g. an interface never declares a constructor — but every pair
 # that does occur uses this same edge type) --------------------------------------
 codeentity.Type -> codeentity.Member: CONTAINS
-codeentity.Type -> codeentity.Type: "CONTAINS (nested type)"
+# nested-type containment shown on Class as the representative Type (dagre has no container self-loop)
+codeentity.Type.ClassDecl -> codeentity.Type.ClassDecl: "CONTAINS (nested type)"
 
 # --- Type-to-type structural relations (JavaStructuralExtractor) ----------------
-codeentity.Type -> codeentity.Type: IMPORTS
-codeentity.Type.Class -> codeentity.Type.Class: EXTENDS
-codeentity.Type.Enum -> codeentity.Type.Class: EXTENDS
-codeentity.Type.Class -> codeentity.Type.Interface: IMPLEMENTS
+# IMPORTS is any-Type -> any-Type; drawn on Class as the representative Type for dagre
+codeentity.Type.ClassDecl -> codeentity.Type.ClassDecl: IMPORTS
+codeentity.Type.ClassDecl -> codeentity.Type.ClassDecl: EXTENDS
+codeentity.Type.Enum -> codeentity.Type.ClassDecl: EXTENDS
+codeentity.Type.ClassDecl -> codeentity.Type.Interface: IMPLEMENTS
 codeentity.Type.Enum -> codeentity.Type.Interface: IMPLEMENTS
 
 # --- Method-to-method structural relations --------------------------------------
@@ -79,7 +81,7 @@ codeentity.Member.Method -> codeentity.Member.Method: OVERRIDES
 codeentity.Member.Method -> codeentity.Member.Method: "CALLS (same enclosing type only)"
 
 # --- Member-to-Type / Member-to-Member relations --------------------------------
-codeentity.Member -> codeentity.Type.Class: INSTANTIATES
+codeentity.Member -> codeentity.Type.ClassDecl: INSTANTIATES
 codeentity.Member.Method -> codeentity.Member.Field: "READS / WRITES (same type only)"
 codeentity.Member.Constructor -> codeentity.Member.Field: "READS / WRITES (same type only)"
 codeentity.Member.Method -> codeentity.Type: REFERENCES
@@ -89,13 +91,13 @@ codeentity.Member.Field -> codeentity.Type: HAS_TYPE
 # --- Annotation usage (target never actually resolves to Enum: annotation
 # declarations parse as CLASS-level entities, a JavaParser classification gap
 # noted in CodeEntityLevel) -------------------------------------------------------
-codeentity.Type -> codeentity.Type.Class: ANNOTATED_WITH
+codeentity.Type -> codeentity.Type.ClassDecl: ANNOTATED_WITH
 codeentity.Type -> codeentity.Type.Interface: ANNOTATED_WITH
-codeentity.Member.Method -> codeentity.Type.Class: ANNOTATED_WITH
+codeentity.Member.Method -> codeentity.Type.ClassDecl: ANNOTATED_WITH
 codeentity.Member.Method -> codeentity.Type.Interface: ANNOTATED_WITH
-codeentity.Member.Constructor -> codeentity.Type.Class: ANNOTATED_WITH
+codeentity.Member.Constructor -> codeentity.Type.ClassDecl: ANNOTATED_WITH
 codeentity.Member.Constructor -> codeentity.Type.Interface: ANNOTATED_WITH
 
 # --- Declared checked exceptions -------------------------------------------------
-codeentity.Member.Method -> codeentity.Type.Class: THROWS
-codeentity.Member.Constructor -> codeentity.Type.Class: THROWS
+codeentity.Member.Method -> codeentity.Type.ClassDecl: THROWS
+codeentity.Member.Constructor -> codeentity.Type.ClassDecl: THROWS
