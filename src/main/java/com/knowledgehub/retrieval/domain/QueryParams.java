@@ -16,6 +16,24 @@ package com.knowledgehub.retrieval.domain;
 public record QueryParams(Integer topK, String sourceId, String ref, String type) {
 
   /**
+   * Normalizes a blank {@code sourceId}/{@code ref}/{@code type} to {@code null} — every caller
+   * (REST body, MCP tool params) means "no restriction" by either omitting the field or sending it
+   * blank, but only {@code null} is special-cased downstream. Without this, a caller that sends
+   * {@code ""} instead of omitting the field (e.g. Swagger UI's "Try it out", which pre-fills
+   * optional string fields empty) would filter on an empty string that matches nothing and silently
+   * get zero results.
+   */
+  public QueryParams {
+    sourceId = blankToNull(sourceId);
+    ref = blankToNull(ref);
+    type = blankToNull(type);
+  }
+
+  private static String blankToNull(String value) {
+    return (value == null || value.isBlank()) ? null : value;
+  }
+
+  /**
    * Parameters with nothing set - default top-k, every readable source, canonical ref, any type.
    */
   public static QueryParams defaults() {

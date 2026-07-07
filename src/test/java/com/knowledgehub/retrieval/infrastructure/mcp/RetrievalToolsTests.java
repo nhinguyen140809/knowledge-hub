@@ -44,6 +44,20 @@ class RetrievalToolsTests {
   }
 
   @Test
+  void treatsBlankOptionalParamsAsAbsent() {
+    when(aclFilterProvider.currentAllowedSources()).thenReturn(Set.of("s-a"));
+    when(retrievalService.retrieve(any(), any())).thenReturn(RankedResult.empty());
+
+    tools.queryKnowledge("cache keying", null, "", "", "");
+
+    ArgumentCaptor<Query> query = ArgumentCaptor.forClass(Query.class);
+    verify(retrievalService).retrieve(query.capture(), any());
+    assertThat(query.getValue().params().sourceId()).isNull();
+    assertThat(query.getValue().params().ref()).isNull();
+    assertThat(query.getValue().params().type()).isNull();
+  }
+
+  @Test
   void mapsADomainFailureToAToolFailureCarryingTheSameCode() {
     when(aclFilterProvider.currentAllowedSources()).thenReturn(Set.of());
     when(retrievalService.retrieve(any(), any())).thenThrow(new SourceNotFoundException("s-x"));
