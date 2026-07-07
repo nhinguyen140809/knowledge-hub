@@ -45,7 +45,7 @@ Quan hệ sở hữu giữa một nguồn và các node tri thức của nó (fi
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth]{images/erd.pdf}
+  \includegraphics[width=\textwidth]{image/erd.pdf}
   \caption{Sơ đồ thực thể -- quan hệ: mô hình tri thức trong graph store, vector trong vector store, và khóa \texttt{chunk\_id} nối hai cơ sở dữ liệu. Cạnh nét liền là quan hệ Neo4j có tên; nét đứt là khóa ngoại dạng thuộc tính (\texttt{source\_id}, \texttt{chunk\_id}) hoặc liên kết heuristic kèm điểm tin cậy.}
   \label{fig:erd}
 \end{figure}
@@ -107,7 +107,7 @@ Bản đồ các bounded context, các module con bên trong \texttt{knowledge},
 \begin{figure}[H]
   \centering
   % TODO: chèn sơ đồ kiến trúc logic sau khi render (../diagrams/component-diagram)
-  \includegraphics[width=\textwidth]{images/component.pdf}
+  \includegraphics[width=\textwidth]{image/component.pdf}
   \caption{Kiến trúc logic: bốn bounded context, các mô-đun con của phía ghi, và chiều phụ thuộc giữa các context.}
   \label{fig:component}
 \end{figure}
@@ -149,7 +149,7 @@ Về triển khai, hệ thống là một modular monolith: một ứng dụng d
 \begin{figure}[H]
   \centering
   % TODO: chèn sơ đồ triển khai sau khi render (../diagrams/deployment-architecture)
-  \includegraphics[width=\textwidth]{images/deployment.pdf}
+  \includegraphics[width=\textwidth]{image/deployment.pdf}
   \caption{Kiến trúc triển khai: ba container (ứng dụng $+$ graph store $+$ vector store) trong một cụm, đường vào qua MCP và REST.}
   \label{fig:deployment}
 \end{figure}
