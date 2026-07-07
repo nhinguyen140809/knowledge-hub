@@ -107,7 +107,7 @@ Các quy tắc như nhận diện tên ghép CamelCase, phân tích tên định
 
 Mọi liên kết liên artifact chỉ được sinh ra từ các tín hiệu tường minh kèm điểm tin cậy, không dựa vào khoảng cách vector. Việc sử dụng embedding để khẳng định quan hệ sẽ dẫn đến các liên kết sai lệch, vì so khớp ngữ nghĩa là một phép \textit{mờ} -- hữu ích để tìm thứ liên quan, nhưng không thể dùng để phán đoán chắc chắn rằng "đoạn mã này hiện thực yêu cầu kia".
 
-Một hệ quả của cách làm này là một yêu cầu (requirement) hiện chỉ là một tín hiệu tường minh (ví dụ mã hiệu \texttt{FR-3.1}) nằm trong một chunk tài liệu, chứ chưa phải là một entity. Edge \texttt{IMPLEMENTED\_BY} (hoặc \texttt{VERIFIED\_BY} khi tham chiếu trỏ tới test) xuất phát từ chính chunk tài liệu đó khi nó nêu kèm một mã hiệu tường minh. Nhờ đó liên kết requirement $\rightarrow$ code hiện tại là chính xác nhưng thiếu: nó chỉ bắt được những ánh xạ được viết tường minh, và bỏ qua phần còn lại thay vì phỏng đoán. 
+Một hệ quả của cách làm này là một yêu cầu (requirement) hiện chỉ là một tín hiệu tường minh (ví dụ mã hiệu \texttt{FR-3.1}) nằm trong một chunk tài liệu, chứ chưa phải là một entity. Edge \texttt{IMPLEMENTED\_BY} (hoặc \texttt{VERIFIED\_BY} khi tham chiếu trỏ tới test) xuất phát từ chính chunk tài liệu đó khi nó nêu kèm một mã hiệu tường minh. Nhờ đó liên kết requirement $\rightarrow$ code hiện tại là chính xác nhưng chỉ bắt được những ánh xạ được viết tường minh, và bỏ qua phần còn lại thay vì phỏng đoán. 
 
 Việc bổ sung thêm các liên kết dựa trên suy luận ngữ nghĩa (semantic inference), ví dụ như thông qua một mô hình LLM đọc tài liệu và code sẽ là một hướng phát triển trong tương lai, nhằm mở rộng độ phủ mà vẫn giữ được tính đúng đắn của các liên kết.
 

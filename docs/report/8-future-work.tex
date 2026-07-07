@@ -16,7 +16,7 @@ Hướng phát triển là bổ sung một bộ trích \texttt{CALLS} liên type
 
 \subsection{Liên kết liên artifact bằng suy luận}
 
-Liên kết giữa tài liệu, requirement và code hiện chỉ dựa trên các tín hiệu tường minh -- tham chiếu đường dẫn, tên định danh đầy đủ, tên ghép -- kèm điểm tin cậy và ngưỡng, và cố ý không dùng so khớp ngữ nghĩa để khẳng định quan hệ. Đây là một đánh đổi có chủ đích: một liên kết sai gây hại hơn một liên kết thiếu, nên hệ thống thà bỏ qua một ánh xạ không chắc còn hơn khẳng định một quan hệ khi chưa đủ căn cứ. Hệ quả là liên kết chính xác nhưng thiếu: chỉ những ánh xạ được viết tường minh trong tài liệu mới trở thành cạnh.
+Liên kết giữa tài liệu, requirement và code hiện chỉ dựa trên các tín hiệu tường minh -- tham chiếu đường dẫn, tên định danh đầy đủ, tên ghép -- kèm điểm tin cậy và ngưỡng, và cố ý không dùng so khớp ngữ nghĩa để khẳng định quan hệ. Đây là một đánh đổi có chủ đích: một liên kết sai gây hại hơn một liên kết thiếu, nên hệ thống thà bỏ qua một ánh xạ không chắc còn hơn khẳng định một quan hệ khi chưa đủ căn cứ. Hệ quả là liên kết chính xác nhưng chỉ những ánh xạ được viết tường minh trong tài liệu mới trở thành cạnh.
 
 Hướng phát triển là \textbf{bổ sung một bước suy luận bằng LLM} để mở rộng độ phủ mà vẫn giữ tính đúng đắn: một mô hình đọc tài liệu và code rồi đề xuất các liên kết kèm căn cứ, để hệ thống ghi lại với điểm tin cậy phân biệt rõ với các liên kết tất định. Cách này bổ sung đúng vào điểm yếu nhất của cơ chế hiện tại -- những quan hệ đòi hiểu ngữ cảnh chứ không có tín hiệu từ vựng tường minh, mà vẫn không đánh mất nguyên tắc phân biệt liên kết chắc chắn với liên kết phỏng đoán.
 
@@ -40,6 +40,22 @@ Hướng phát triển là \text{đưa số bước (hop) thành một tham số
 \subsection{Tối ưu truy xuất và tự động đồng bộ}
 
 Một số hướng tối ưu để phát triển thêm: khai thác khả năng hybrid dense-sparse gốc của vector store thay cho phần hợp nhất ở tầng Application khi có vector thưa; thêm một bước xếp hạng lại (reranking) trên nhóm ứng viên đầu để tăng độ chính xác; và \texbf{bổ sung cơ chế tự kích hoạt đồng bộ như một tùy chọn} (webhook khi có commit hoặc quét định kỳ) bên cạnh cơ chế đồng bộ theo kích hoạt hiện tại.
+
+\subsection{Đo riêng đóng góp của graph traversal}
+
+Chương Đánh giá chỉ so hybrid (semantic + keyword + graph) với semantic thuần, nên \textbf{không tách được riêng đóng góp của graph} khỏi keyword -- cả hai luôn bật hoặc tắt cùng nhau. Hệ thống chưa biết nếu bỏ graph đi thì chất lượng giảm bao nhiêu.
+
+Để đo được, cần ba điều kiện:
+
+\begin{itemize}
+  \item \textbf{Flag để tắt riêng graph.} \texttt{GraphTraversalStage} hiện luôn chạy, không tắt riêng được để so với cấu hình không graph.
+  \item \textbf{Bộ câu hỏi phụ thuộc graph.} Gold set 52 câu hiện tại không đảm bảo câu nào cũng cần một bước quan hệ (\texttt{CALLS}, \texttt{IMPLEMENTS}...) mới ra đáp án. Cần bộ câu hỏi riêng mà đáp án chỉ tìm ra \textit{nhờ} graph, ví dụ "còn cách hiện thực nào khác của interface X".
+  \item \textbf{Xác minh thủ công.} Phải chạy semantic-only trước để loại bỏ câu đã trả lời đúng, chỉ giữ lại câu thật sự cần graph -- mất nhiều thời gian hơn viết gold set thường.
+\end{itemize}
+
+\texttt{viaPath} trong response (đường quan hệ của một hit từ graph) là tín hiệu có sẵn, đo được tỉ lệ kết quả đến từ graph, nhưng không xác nhận kết quả đó có cần thiết hay không.
+
+Vì thiếu flag tắt và thời gian xác minh thủ công, phép đo này chưa được thực hiện. Do đó hướng phát triển là thêm cờ ablation cho \texttt{GraphTraversalStage} và xây bộ câu hỏi graph-dependent theo cách trên.
 
 \subsection{Đánh giá ở quy mô và điều kiện mở rộng}
 
