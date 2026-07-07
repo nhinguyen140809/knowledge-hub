@@ -1,6 +1,12 @@
 \section{Hạn chế \& Hướng phát triển}
 
-Hệ thống ở phạm vi hiện tại đã phục vụ trọn vòng thu thập, cấu trúc hóa và truy xuất tri thức cho một team, nhưng một số quyết định thiết kế được cố ý giữ ở mức tối giản để đúng phạm vi và ưu tiên tính đúng đắn hơn độ phủ. Phần này nêu các hạn chế đó cùng hướng phát triển tương ứng.
+Hệ thống ở phạm vi hiện tại đã phục vụ trọn vòng thu thập, cấu trúc hóa và truy xuất tri thức cho một team. Một số hạn chế đến từ các quyết định thiết kế cố ý giữ ở mức tối giản để đúng phạm vi và ưu tiên tính đúng đắn hơn độ phủ; một số khác thể hiện qua quá trình chạy thử thực tế với agent. Phần này nêu các hạn chế đó cùng hướng phát triển tương ứng.
+
+\subsection{Nâng giá trị thực tế của truy xuất}
+
+Kết quả demo với agent (chi tiết ở chương Đánh giá) cho thấy một hạn chế lớn là trên một repo cỡ vừa mà agent có sẵn quyền đọc filesystem, giá trị gia tăng của hệ thống chủ yếu là định vị nhóm file liên quan, chưa thay thế được bước đọc code trực tiếp. Điểm liên quan thấp (khoảng $0.02$--$0.03$), kết quả lẫn nhiễu, và các chunk rời rạc thiếu ngữ cảnh khiến agent vẫn phải đọc source để lấy chi tiết chính xác.
+
+Từ đó có hai hướng phát triển. Về phía đánh giá, cần \textbf{đo hệ thống ở đúng điều kiện nó tạo khác biệt lớn nhất} thay vì một repo đơn cỡ vừa mà agent đã có toàn quyền đọc: một corpus lớn trải trên nhiều nguồn, với các câu hỏi bắc cầu code--doc--commit mà đọc trực tiếp một file không trả lời được, để xác định lợi thế của phần graph và bộ lọc theo type. Về phía chất lượng kết quả, điểm liên quan thấp và lẫn nhiều nhiễu cho thấy cần một bước rerank để đẩy code thật lên trên nhiễu tài liệu, đồng thời cần làm bước duyệt đồ thị hiệu quả hơn -- bước này vốn đã đảm nhiệm việc mở rộng sang tri thức liên quan quanh kết quả seed, nhưng trong demo chưa có đóng góp đáng kể; cả hai hướng cần đo tác động lên Recall@10 và MRR trước khi kết luận.
 
 \subsection{Mở rộng ngôn ngữ phân tích}
 

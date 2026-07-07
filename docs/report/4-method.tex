@@ -169,6 +169,10 @@ Khi giữa các chunk tồn tại liên kết tường minh trong đồ thị tr
 
 Mỗi kết quả gồm định danh, relevance score và metadata đủ để agent trích dẫn và tự lấy lại: loại, nguồn, đường dẫn file, khoảng dòng, loại dữ liệu, ref/commit và thời điểm index. Kết quả đến từ duyệt đồ thị mang thêm chuỗi quan hệ đã duyệt, để agent biết vì sao mảnh tri thức này liên quan.
 
+Một quyết định thiết kế ở đây là kết quả trả về \textit{tọa độ trích dẫn} chứ không phải nội dung chunk: hệ thống đưa đường dẫn, khoảng dòng và ref/commit đủ để agent tự đọc lại phần gốc, thay vì nhúng thẳng văn bản chunk vào kết quả. Lựa chọn này xuất phát từ ba lý do. Thứ nhất, hệ thống đóng vai trò một chỉ mục định vị kèm căn cứ trích dẫn, tương tự một search engine trả về liên kết chứ không trả toàn văn. Thứ hai, để tiết kiệm ngữ cảnh: nhúng toàn văn nhiều chunk -- có chunk rất lớn -- vào một kết quả sẽ chiếm dụng đáng kể context window của agent. Thứ ba, để tránh nội dung lỗi thời: văn bản trong chỉ mục là ảnh chụp tại thời điểm index, nên trả tọa độ giúp agent đọc đúng bản hiện hành thay vì một bản có thể đã cũ.
+
+Đánh đổi của quyết định này là agent luôn cần thêm một bước đọc lại nguồn để có nội dung đầy đủ. Khi agent đã có sẵn quyền đọc trực tiếp nguồn, bước đọc lại này là chi phí nhỏ, và giá trị của hệ thống nằm ở việc định vị đúng phần cần đọc cùng các quan hệ mà đọc trực tiếp không tự thấy được.
+
 Ba trường hợp đặc biệt được xử lý như sau:
 
 \begin{itemize}
