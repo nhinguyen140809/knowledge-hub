@@ -195,6 +195,15 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
+			<!-- tika-parser-zip-commons/webarchive-module need commons-compress 1.28.0's
+			     GzipParameters.getFileName(); without this, Maven's nearest-wins mediation
+			     picks the older 1.24.0 pulled in by testcontainers (test scope), causing a
+			     NoSuchMethodError at runtime when Tika parses a gzip-detected artifact. -->
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-compress</artifactId>
+				<version>1.28.0</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 

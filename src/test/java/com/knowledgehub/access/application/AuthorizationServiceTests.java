@@ -35,6 +35,14 @@ class AuthorizationServiceTests {
   }
 
   @Test
+  void adminReadsEverySourceRegardlessOfGrantsOrPolicy() {
+    AuthenticatedPrincipal admin = new AuthenticatedPrincipal("bootstrap-admin", Role.ADMIN);
+    when(sources.findAll()).thenReturn(List.of(source("s-a"), source("s-b")));
+
+    assertThat(service.readableSources(admin)).containsExactlyInAnyOrder("s-a", "s-b");
+  }
+
+  @Test
   void allowPolicyReadsEverythingExceptRestrictedButKeepsOwnGrants() {
     when(systemConfig.defaultPolicy()).thenReturn(DefaultPolicy.ALLOW);
     when(sources.findAll()).thenReturn(List.of(source("s-a"), source("s-b"), source("s-c")));
