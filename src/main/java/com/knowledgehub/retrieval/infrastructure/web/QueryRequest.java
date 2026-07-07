@@ -35,6 +35,18 @@ public record QueryRequest(
         String type) {
 
   Query toQuery() {
-    return new Query(text, new QueryParams(topK, sourceId, ref, type));
+    return new Query(
+        text, new QueryParams(topK, blankToNull(sourceId), blankToNull(ref), blankToNull(type)));
+  }
+
+  /**
+   * A blank {@code sourceId}/{@code ref}/{@code type} means the same thing as an absent one ("don't
+   * restrict"), but {@link QueryParams} and every filter downstream only special-case {@code null}
+   * — a client that sends {@code ""} instead of omitting the field (e.g. Swagger UI's "Try it out",
+   * which pre-fills optional string fields empty) would otherwise filter on an empty string that
+   * matches nothing and silently get zero results.
+   */
+  private static String blankToNull(String value) {
+    return (value == null || value.isBlank()) ? null : value;
   }
 }
