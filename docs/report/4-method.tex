@@ -29,7 +29,12 @@ Cơ chế này cũng cho phép thực hiện cập nhật tăng dần bằng cá
 
 Khi một file được xử lý lại, hệ thống chỉ cần thực hiện một thao tác đồng bộ duy nhất: chunk không đổi giữ nguyên định danh và embedding sẵn có, chunk mới nhận định danh mới và được thêm, chunk cũ không còn xuất hiện bị gỡ bỏ.
 
-% TODO: insert figure flowchart-identification
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/id factory.pdf}
+  \caption{Quản lý phiên bản tri thức: định danh theo danh tính cho file và entity, định danh theo nội dung cho chunk.}
+  \label{fig:id-factory}
+\end{figure}
 
 \subsection{Xử lý dữ liệu đầu vào (ingestion \& chunking)}
 
@@ -140,7 +145,29 @@ Khi được kích hoạt, quá trình đồng bộ thực hiện các bước s
 
 Sau mỗi lần đồng bộ, hệ thống ghi lại độ mới của nguồn -- thời điểm index gần nhất, và với nguồn Git là ref/commit đã index.
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/indexing.pdf}
+  \caption{Đồng bộ tri thức: chỉ lập chỉ mục phần thay đổi, tái sử dụng embedding cũ và gỡ bỏ tri thức lỗi thời.}
+  \label{fig:indexing}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/sync.pdf}
+  \caption{Đồng bộ tri thức: chỉ lập chỉ mục phần thay đổi, tái sử dụng embedding cũ và gỡ bỏ tri thức lỗi thời.}
+  \label{fig:sync}
+\end{figure}
+
 \subsection{Truy xuất tri thức (retrieval)}
+
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/retrieval.pdf}
+  \caption{Truy xuất hybrid: chạy song song nhiều đường tìm kiếm rồi hợp nhất kết quả thành một danh sách xếp hạng duy nhất.}
+  \label{fig:retrieval}
+\end{figure}
 
 Không một kỹ thuật tìm kiếm đơn lẻ nào đủ để phục vụ tri thức phần mềm, vì mỗi kỹ thuật chỉ mạnh ở một khía cạnh. Semantic search nắm bắt tốt ngữ nghĩa của câu hỏi -- chẳng hạn tìm ra "hàm nào xử lý việc đọc PDF" dù câu hỏi không nhắc tên hàm cụ thể -- nhưng lại dễ bỏ sót khi câu hỏi cần khớp đúng một định danh. Ngược lại, keyword search bắt rất chính xác các định danh như \texttt{parsePdf}, nhưng không thể trả lời câu hỏi diễn đạt cùng ý theo cách khác. Cả hai đều có chung một điểm yếu: không thấy được tri thức liên quan nằm ở quan hệ giữa các entity, thứ chỉ đồ thị mới nắm được. Vì các kỹ thuật này bổ khuyết cho nhau chứ không kỹ thuật nào đủ dùng một mình, hệ thống truy xuất theo lối \textit{hybrid}: chạy song song nhiều đường tìm kiếm rồi hợp nhất kết quả thành một danh sách xếp hạng duy nhất.
 

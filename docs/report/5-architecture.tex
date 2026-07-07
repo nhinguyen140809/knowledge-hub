@@ -22,6 +22,13 @@ Tìm kiếm ngữ nghĩa vì thế diễn ra qua hai bước: vector store trả
 
 \subsubsection{Mô hình entity và bộ từ vựng quan hệ}
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/erd.pdf}
+  \caption{Mô hình entity và bộ từ vựng quan hệ.}
+  \label{fig:erd}
+\end{figure}
+
 Graph store lưu tri thức dưới dạng các entity (node) nối với nhau bằng các quan hệ có tên (cạnh). Đồ thị chứa hai họ entity:
 
 \begin{itemize}
@@ -43,10 +50,9 @@ Mỗi loại node có một ràng buộc duy nhất trên định danh riêng. K
 
 Quan hệ sở hữu giữa một nguồn và các node tri thức của nó (file, entity, chunk, commit) được mô hình bằng khóa ngoại \texttt{source\_id} -- một thuộc tính trên từng node chứ không phải một cạnh có tên -- vì \texttt{source\_id} đồng thời là khóa lọc phân quyền ở cả hai cơ sở dữ liệu (chi tiết ở phần chỉ mục lọc phân quyền). Ngược lại, mọi cạnh có tên trong sơ đồ đều là quan hệ Neo4j thật theo đúng chiều duyệt (ví dụ \texttt{(:Chunk)-[:PART\_OF]->(:File)}): nét liền cho quan hệ tất định, nét đứt cho liên kết heuristic mang điểm tin cậy. Toàn bộ entity, quan hệ và khóa nối giữa hai cơ sở dữ liệu được tổng hợp ở sơ đồ thực thể -- quan hệ (Hình~\ref{fig:erd}).
 
-\begin{figure}[htbp]
+\begin{figure}[H]
   \centering
-  % TODO: chèn sơ đồ ERD sau khi render (../diagrams/erd)
-  \fbox{\parbox[c][4cm][c]{0.85\linewidth}{\centering \textit{[Placeholder] Sơ đồ thực thể -- quan hệ (ERD)}}}
+  \includegraphics[width=\textwidth]{images/erd.pdf}
   \caption{Sơ đồ thực thể -- quan hệ: mô hình tri thức trong graph store, vector trong vector store, và khóa \texttt{chunk\_id} nối hai cơ sở dữ liệu. Cạnh nét liền là quan hệ Neo4j có tên; nét đứt là khóa ngoại dạng thuộc tính (\texttt{source\_id}, \texttt{chunk\_id}) hoặc liên kết heuristic kèm điểm tin cậy.}
   \label{fig:erd}
 \end{figure}
@@ -103,14 +109,14 @@ Quy tắc phụ thuộc được kiểm chứng như một tiêu chí trước m
   \item \texttt{shared}: feature dùng chung, chỉ chứa các khối phi nghiệp vụ: cấu hình, xử lý lỗi tập trung, sinh định danh, khối đường ống tổng quát, và hạ tầng quan sát.
 \end{itemize}
 
-Bản đồ các bounded context, các module con bên trong \texttt{knowledge}, và các phụ thuộc biên giới giữa chúng được trình bày ở sơ đồ kiến trúc logic (Hình~\ref{fig:logical}).
+Bản đồ các bounded context, các module con bên trong \texttt{knowledge}, và các phụ thuộc biên giới giữa chúng được trình bày ở sơ đồ kiến trúc logic (Hình~\ref{fig:component}).
 
-\begin{figure}[htbp]
+\begin{figure}[H]
   \centering
   % TODO: chèn sơ đồ kiến trúc logic sau khi render (../diagrams/component-diagram)
-  \fbox{\parbox[c][4cm][c]{0.85\linewidth}{\centering \textit{[Placeholder] Sơ đồ kiến trúc logic}}}
-  \caption{Kiến trúc logic: bốn bounded context, các mô-đun con của phía ghi, và chiều phụ thuộc giữa các tầng.}
-  \label{fig:logical}
+  \includegraphics[width=\textwidth]{images/component.pdf}
+  \caption{Kiến trúc logic: bốn bounded context, các mô-đun con của phía ghi, và chiều phụ thuộc giữa các context.}
+  \label{fig:component}
 \end{figure}
 
 \subsubsection{Cổng và bộ chuyển đổi (ports \& adapters)}
@@ -125,7 +131,7 @@ Các bounded context được tách dọc theo ranh giới lệnh/truy vấn, th
 
 \subsubsection{Đường ống và bộ lọc cho luồng dài}
 
-Luồng lập chỉ mục và luồng truy vấn đều là chuỗi nhiều bước dài, nên mỗi luồng được tổ chức thành một đường ống các bộ lọc (pipes \& filters): mỗi bước là một bộ lọc nhỏ, đơn trách nhiệm, nhận và truyền tiếp một ngữ cảnh có kiểu dọc theo đường ống, thay vì gộp tất cả vào một phương thức service khổng lồ. Đây là một lớp tổ chức đặt lên trên Clean Architecture chứ không thay thế Clean Architecture: các bộ lọc là thành phần tầng Application, điều phối qua port Domain và không chạm trực tiếp vào Infrastructure.
+Luồng lập chỉ mục và luồng truy vấn đều là chuỗi nhiều bước dài (\ref{fig:indexing},\ref{fig:retrieval}), nên mỗi luồng được tổ chức thành một đường ống các bộ lọc (pipes \& filters): mỗi bước là một bộ lọc nhỏ, đơn trách nhiệm, nhận và truyền tiếp một ngữ cảnh có kiểu dọc theo đường ống, thay vì gộp tất cả vào một phương thức service khổng lồ. Đây là một lớp tổ chức đặt lên trên Clean Architecture chứ không thay thế Clean Architecture: các bộ lọc là thành phần tầng Application, điều phối qua port Domain và không chạm trực tiếp vào Infrastructure.
 
 Luồng lập chỉ mục là một đường ống tuần tự: nạp $\rightarrow$ chia chunk $\rightarrow$ sinh embedding $\rightarrow$ lưu và liên kết. Luồng truy vấn là một biến thể song song theo kiểu scatter--gather: sau bước chuẩn bị, các đường tìm kiếm ngữ nghĩa và từ khóa tỏa ra chạy song song, bước duyệt đồ thị mở rộng từ kết quả của chúng, rồi một bộ lọc hợp nhất gom lại trước khi lắp ráp kết quả và áp bộ lọc cuối. Cách tổ chức này cho phép sắp xếp lại, chèn thêm hay bỏ qua một bước bằng cấu hình mà không sửa các bước khác; kiểm thử từng bước cô lập; cô lập một bước lỗi để bước đó không làm hỏng toàn bộ; và đo độ trễ theo từng bước. Một hệ quả quan trọng: luồng đồng bộ tái sử dụng chính các bộ lọc của luồng lập chỉ mục trên phần dữ liệu thay đổi, thay vì nhân đôi logic.
 
@@ -147,10 +153,10 @@ Những use-case \textit{kích hoạt} use-case khác được tách rời bằn
 
 Về triển khai, hệ thống là một modular monolith: một ứng dụng duy nhất chia thành các mô-đun (nạp dữ liệu, truy xuất, API, MCP) như trình bày ở kiến trúc logic, chứ không tách thành microservice từ đầu. Ứng dụng cùng hai cơ sở dữ liệu được đóng gói thành ba container độc lập -- application, graph store (Neo4j) và vector store (Qdrant) -- khởi chạy cùng nhau bằng một lệnh qua \texttt{docker compose}. Ứng dụng gọi hai cơ sở dữ liệu qua mạng nội bộ của cụm; agent và caller bên ngoài chỉ chạm tới ứng dụng, qua MCP hoặc REST. Cách phân bố này được minh họa ở sơ đồ triển khai (Hình~\ref{fig:deployment}).
 
-\begin{figure}[htbp]
+\begin{figure}[H]
   \centering
   % TODO: chèn sơ đồ triển khai sau khi render (../diagrams/deployment-architecture)
-  \fbox{\parbox[c][4cm][c]{0.85\linewidth}{\centering \textit{[Placeholder] Sơ đồ kiến trúc triển khai}}}
+  \includegraphics[width=\textwidth]{images/deployment.pdf}
   \caption{Kiến trúc triển khai: ba container (ứng dụng $+$ graph store $+$ vector store) trong một cụm, đường vào qua MCP và REST.}
   \label{fig:deployment}
 \end{figure}
