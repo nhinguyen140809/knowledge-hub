@@ -174,4 +174,7 @@ just up          # docker compose up -d --build
 
 ## Documentation
 
-Design docs (SRS, tech-stack decisions, research, diagrams) live under [`docs/`](docs).
+Design docs (report, diagrams, usage) live under [`docs/`](docs).
+
+## Demo
+- **Video demo:** [https://youtu.be/B6wjchjxh9E](https://youtu.be/B6wjchjxh9E)
