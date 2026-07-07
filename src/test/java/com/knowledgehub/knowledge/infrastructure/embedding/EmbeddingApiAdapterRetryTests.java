@@ -34,7 +34,7 @@ class EmbeddingApiAdapterRetryTests {
 
     @Bean
     EmbeddingApiAdapter embeddingApiAdapter(EmbeddingModel model) {
-      return new EmbeddingApiAdapter(model);
+      return new EmbeddingApiAdapter(model, 1000);
     }
   }
 

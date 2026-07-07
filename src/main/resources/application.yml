@@ -66,6 +66,7 @@ app:
     dimension: ${EMBEDDING_DIMENSION:1536}   # MUST match the model (1536 text-embedding-3-small, 1024 voyage-3); sizes the Qdrant collection
     retry-max-attempts: ${EMBEDDING_RETRY_MAX_ATTEMPTS:3}   # attempts per embedding call (incl. first)
     retry-backoff-ms: ${EMBEDDING_RETRY_BACKOFF_MS:500}   # initial backoff, doubles each retry
+    batch-size: ${EMBEDDING_BATCH_SIZE:1000}   # max texts per embedBatch call to the provider (Voyage AI caps at 1000)
   chunk:
     max-tokens: ${APP_CHUNK_MAX_TOKENS:512}
     overlap: ${APP_CHUNK_OVERLAP:64}
