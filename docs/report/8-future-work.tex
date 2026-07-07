@@ -39,23 +39,29 @@ Hướng phát triển là \text{đưa số bước (hop) thành một tham số
 
 \subsection{Tối ưu truy xuất và tự động đồng bộ}
 
-Một số hướng tối ưu để phát triển thêm: khai thác khả năng hybrid dense-sparse gốc của vector store thay cho phần hợp nhất ở tầng Application khi có vector thưa; thêm một bước xếp hạng lại (reranking) trên nhóm ứng viên đầu để tăng độ chính xác; và \texbf{bổ sung cơ chế tự kích hoạt đồng bộ như một tùy chọn} (webhook khi có commit hoặc quét định kỳ) bên cạnh cơ chế đồng bộ theo kích hoạt hiện tại.
+Một số hướng tối ưu để phát triển thêm: khai thác khả năng hybrid dense-sparse gốc của vector store thay cho phần hợp nhất ở tầng Application khi có vector thưa; thêm một bước xếp hạng lại (reranking) trên nhóm ứng viên đầu để tăng độ chính xác; và \textbf{bổ sung cơ chế tự kích hoạt đồng bộ như một tùy chọn} (webhook khi có commit hoặc quét định kỳ) bên cạnh cơ chế đồng bộ theo kích hoạt hiện tại.
 
 \subsection{Đo riêng đóng góp của graph traversal}
 
-Chương Đánh giá chỉ so hybrid (semantic + keyword + graph) với semantic thuần, nên \textbf{không tách được riêng đóng góp của graph} khỏi keyword -- cả hai luôn bật hoặc tắt cùng nhau. Hệ thống chưa biết nếu bỏ graph đi thì chất lượng giảm bao nhiêu.
+Chương Đánh giá chỉ so hybrid (semantic + keyword + graph) với semantic thuần, nên không tách được riêng đóng góp của graph khỏi keyword -- cả hai luôn bật hoặc tắt cùng nhau. Hệ thống chưa biết nếu bỏ graph đi thì chất lượng truy xuất giảm bao nhiêu.
 
-Để đo được, cần ba điều kiện:
+Để đo được, cần ba điều kiện chưa có:
 
 \begin{itemize}
-  \item \textbf{Flag để tắt riêng graph.} \texttt{GraphTraversalStage} hiện luôn chạy, không tắt riêng được để so với cấu hình không graph.
-  \item \textbf{Bộ câu hỏi phụ thuộc graph.} Gold set 52 câu hiện tại không đảm bảo câu nào cũng cần một bước quan hệ (\texttt{CALLS}, \texttt{IMPLEMENTS}...) mới ra đáp án. Cần bộ câu hỏi riêng mà đáp án chỉ tìm ra \textit{nhờ} graph, ví dụ "còn cách hiện thực nào khác của interface X".
-  \item \textbf{Xác minh thủ công.} Phải chạy semantic-only trước để loại bỏ câu đã trả lời đúng, chỉ giữ lại câu thật sự cần graph -- mất nhiều thời gian hơn viết gold set thường.
+  \item Một flag tắt riêng được graph để so với cấu hình không graph. \texttt{GraphTraversalStage} hiện luôn chạy, không tách ra được.
+  \item Một bộ câu hỏi mà đáp án chỉ tìm ra nhờ một bước quan hệ (\texttt{CALLS}, \texttt{IMPLEMENTS}...). Gold set 52 câu hiện tại không đảm bảo điều này cho từng câu.
+  \item Một bước xác minh thủ công, loại khỏi bộ câu hỏi đó những câu semantic-only đã tự trả lời đúng. Tốn thời gian hơn hẳn viết một gold set thông thường.
 \end{itemize}
 
-\texttt{viaPath} trong response (đường quan hệ của một hit từ graph) là tín hiệu có sẵn, đo được tỉ lệ kết quả đến từ graph, nhưng không xác nhận kết quả đó có cần thiết hay không.
+Trường \texttt{viaPath} có sẵn trong response (đường quan hệ của một hit từ graph) đo được tỉ lệ kết quả đến từ graph, nhưng không xác nhận kết quả đó có cần thiết hay không, nên chỉ là tín hiệu bổ trợ.
 
-Vì thiếu flag tắt và thời gian xác minh thủ công, phép đo này chưa được thực hiện. Do đó hướng phát triển là thêm cờ ablation cho \texttt{GraphTraversalStage} và xây bộ câu hỏi graph-dependent theo cách trên.
+Vì thiếu flag tắt riêng và tốn công xác minh thủ công, phép đo này chưa được thực hiện. Hướng phát triển là \textbf{thêm flag ablation cho \texttt{GraphTraversalStage} và xây bộ câu hỏi graph-dependent} theo quy trình lọc ở trên, làm cơ sở cho một tiêu chí Recall@10/MRR riêng so sánh có và không có graph.
+
+\subsection{Hướng dẫn cách đặt câu hỏi cho agent}
+
+Mô tả của tool MCP \texttt{query\_knowledge} hiện chỉ nêu tool dùng để làm gì, chưa hướng dẫn agent nên diễn đạt câu hỏi thế nào để đạt kết quả tốt nhất. Một quy tắc có vẻ hợp lý về lý thuyết là ưu tiên câu hỏi tự nhiên đầy đủ thay vì cụm từ khóa rời rạc, vì path semantic thường lợi thế hơn với câu đầy đủ, nhưng chưa có số đo nào xác nhận điều này trên chính hệ thống: câu hỏi dài có thể làm loãng embedding so với việc dùng đúng tên định danh, vốn là lợi thế của path keyword/BM25, nên chưa đủ căn cứ để khẳng định cách diễn đạt nào tốt hơn.
+
+Hướng phát triển là \textbf{chạy một thí nghiệm đối chứng trước khi đưa hướng dẫn vào mô tả tool}: đo Recall@10/MRR trên cùng bộ gold set với hai cách diễn đạt cho mỗi câu hỏi -- dạng từ khóa ngắn và dạng câu hỏi tự nhiên đầy đủ -- tái sử dụng nguyên hạ tầng đánh giá đã có. Khuyến nghị cụ thể chỉ nên đưa vào mô tả tool khi thí nghiệm cho thấy chênh lệch rõ ràng; nếu không, mô tả nên giữ trung lập thay vì khẳng định một quy tắc chưa được kiểm chứng.
 
 \subsection{Đánh giá ở quy mô và điều kiện mở rộng}
 
