@@ -71,7 +71,7 @@ Thiết kế chunking cũng được xây dựng theo hướng mở rộng. Mỗ
 
 \subsection{Xây dựng \& liên kết đồ thị tri thức}
 
-Đồ thị tri thức được sử dụng để biểu diễn các quan hệ ngữ nghĩa mà embedding khó thể hiện đầy đủ, chẳng hạn như hàm nào gọi hàm nào, tài liệu nào mô tả thành phần nào. Trong đồ thị, các thực thể được biểu diễn dưới dạng node, còn các quan hệ có hướng và có tên được biểu diễn dưới dạng edge.
+Đồ thị tri thức được sử dụng để biểu diễn các quan hệ ngữ nghĩa mà embedding khó thể hiện đầy đủ, chẳng hạn như hàm nào gọi hàm nào, tài liệu nào mô tả thành phần nào. Trong đồ thị, các entity được biểu diễn dưới dạng node, còn các quan hệ có hướng và có tên được biểu diễn dưới dạng edge.
 
 \subsubsection{Trích quan hệ cấu trúc}
 
@@ -93,7 +93,7 @@ Liên kết giữa tài liệu và source code không thể dựa vào cú pháp
 \begin{itemize}
   \item Một tên định danh đầy đủ (fully-qualified name) trong tài liệu mà phân giải về đúng một entity duy nhất là bằng chứng mạnh nhất, vì gần như không thể có hai entity khác nhau trùng tên định danh đầy đủ; tín hiệu này được chấm điểm cao nhất ($0.9$). \\
   \textit{Ví dụ:} tài liệu nhắc tới \texttt{com.example.chunking.DocChunker}, và hệ thống chỉ tìm thấy đúng một entity mang tên này.
-  \item Một tham chiếu đường dẫn tới file mã cũng là bằng chứng tường minh gần tương đương, nên được chấm điểm cao ($0.85$). \\
+  \item Một tham chiếu đường dẫn tới file code cũng là bằng chứng tường minh gần tương đương, nên được chấm điểm cao ($0.85$). \\
   \textit{Ví dụ:} tài liệu viết "the parser lives in \texttt{src/reader/PdfReader.java}", và file đó đã được index.
   \item Một tên ghép CamelCase (ví dụ \texttt{CodeChunker}) khi khớp đúng một entity duy nhất là bằng chứng ở mức vừa phải, vì tên ghép tuy khá đặc trưng nhưng vẫn có thể chỉ là một từ xuất hiện tình cờ trong văn xuôi; tín hiệu này được chấm điểm vừa ($0.7$). \\
   \textit{Ví dụ:} tài liệu nhắc tới \texttt{CodeChunker}, và chỉ đúng một entity mang tên này.
@@ -101,13 +101,13 @@ Liên kết giữa tài liệu và source code không thể dựa vào cú pháp
   \textit{Ví dụ:} tài liệu nhắc tới \texttt{Chunk} -- vừa là tên một entity vừa là từ thông dụng trong văn xuôi -- hoặc một tên khớp đồng thời nhiều entity, khiến khả năng tín hiệu đó thực sự ám chỉ đúng entity là khá thấp.
 \end{itemize}
 
-Các quy tắc như nhận diện tên ghép CamelCase, phân tích tên định danh đầy đủ hay quy ước đặt tên của mã kiểm thử đều phụ thuộc vào từng ngôn ngữ lập trình. Vì vậy, hệ thống tổ chức các quy tắc này dưới dạng các thành phần mở rộng theo ngôn ngữ, tương tự như bộ phân tích cú pháp được sử dụng trong quá trình chunking. Hiện tại, hệ thống mới cung cấp sẵn bộ quy tắc cho Java; khi hỗ trợ một ngôn ngữ khác, chẳng hạn Python với quy ước \texttt{snake\_case}, cần có một hiện thực riêng của bộ quy tắc này để nhận diện đúng các tín hiệu liên kết trong ngôn ngữ đó.
+Các quy tắc như nhận diện tên ghép CamelCase, phân tích tên định danh đầy đủ hay quy ước đặt tên của code kiểm thử đều phụ thuộc vào từng ngôn ngữ lập trình. Vì vậy, hệ thống tổ chức các quy tắc này dưới dạng các thành phần mở rộng theo ngôn ngữ, tương tự như bộ phân tích cú pháp được sử dụng trong quá trình chunking. Hiện tại, hệ thống mới cung cấp sẵn bộ quy tắc cho Java; khi hỗ trợ một ngôn ngữ khác, chẳng hạn Python với quy ước \texttt{snake\_case}, cần có một hiện thực riêng của bộ quy tắc này để nhận diện đúng các tín hiệu liên kết trong ngôn ngữ đó.
 
 Để hạn chế các liên kết có độ tin cậy thấp, hệ thống áp dụng một ngưỡng cấu hình chỉ cho phép những liên kết có điểm tin cậy vượt ngưỡng mới được ghi vào đồ thị. Giá trị ngưỡng này có thể được điều chỉnh để cân bằng giữa độ phủ và độ sạch của đồ thị, mà không cần thay đổi logic liên kết.
 
-Mọi liên kết liên artifact chỉ được sinh ra từ các tín hiệu tường minh kèm điểm tin cậy, không dựa vào khoảng cách vector. Việc sử dụng embedding để khẳng định quan hệ sẽ dẫn đến các liên kết sai lệch, vì so khớp ngữ nghĩa là một phép \textit{mờ} -- hữu ích để tìm thứ liên quan, nhưng không thể dùng để phán đoán chắc chắn rằng "đoạn mã này hiện thực yêu cầu kia".
+Mọi liên kết liên artifact chỉ được sinh ra từ các tín hiệu tường minh kèm điểm tin cậy, không dựa vào khoảng cách vector. Việc sử dụng embedding để khẳng định quan hệ sẽ dẫn đến các liên kết sai lệch, vì so khớp ngữ nghĩa là một phép \textit{mờ} -- hữu ích để tìm thứ liên quan, nhưng không thể dùng để phán đoán chắc chắn rằng "đoạn code này hiện thực requirement kia".
 
-Một hệ quả của cách làm này là một yêu cầu (requirement) hiện chỉ là một tín hiệu tường minh (ví dụ mã hiệu \texttt{FR-3.1}) nằm trong một chunk tài liệu, chứ chưa phải là một entity. Edge \texttt{IMPLEMENTED\_BY} (hoặc \texttt{VERIFIED\_BY} khi tham chiếu trỏ tới test) xuất phát từ chính chunk tài liệu đó khi nó nêu kèm một mã hiệu tường minh. Nhờ đó liên kết requirement $\rightarrow$ code hiện tại là chính xác nhưng chỉ bắt được những ánh xạ được viết tường minh, và bỏ qua phần còn lại thay vì phỏng đoán. 
+Một hệ quả của cách làm này là một requirement hiện chỉ là một tín hiệu tường minh (ví dụ mã hiệu \texttt{FR-3.1}) nằm trong một chunk tài liệu, chứ chưa phải là một entity. Edge \texttt{IMPLEMENTED\_BY} (hoặc \texttt{VERIFIED\_BY} khi tham chiếu trỏ tới test) xuất phát từ chính chunk tài liệu đó khi nó nêu kèm một mã hiệu tường minh. Nhờ đó liên kết requirement $\rightarrow$ code hiện tại là chính xác nhưng chỉ bắt được những ánh xạ được viết tường minh, và bỏ qua phần còn lại thay vì phỏng đoán. 
 
 Việc bổ sung thêm các liên kết dựa trên suy luận ngữ nghĩa (semantic inference), ví dụ như thông qua một mô hình LLM đọc tài liệu và code sẽ là một hướng phát triển trong tương lai, nhằm mở rộng độ phủ mà vẫn giữ được tính đúng đắn của các liên kết.
 
@@ -142,7 +142,7 @@ Sau mỗi lần đồng bộ, hệ thống ghi lại độ mới của nguồn -
 
 \subsection{Truy xuất tri thức (retrieval)}
 
-Không một kỹ thuật tìm kiếm đơn lẻ nào đủ để phục vụ tri thức phần mềm, vì mỗi kỹ thuật chỉ mạnh ở một khía cạnh. Semantic search nắm bắt tốt ngữ nghĩa của câu hỏi -- chẳng hạn tìm ra "hàm nào xử lý việc đọc PDF" dù câu hỏi không nhắc tên hàm cụ thể -- nhưng lại dễ bỏ sót khi câu hỏi cần khớp đúng một định danh. Ngược lại, keyword search bắt rất chính xác các định danh như \texttt{parsePdf}, nhưng không thể trả lời câu hỏi diễn đạt cùng ý theo cách khác. Cả hai đều có chung một điểm yếu: không thấy được tri thức liên quan nằm ở quan hệ giữa các thực thể, thứ chỉ đồ thị mới nắm được. Vì các kỹ thuật này bổ khuyết cho nhau chứ không kỹ thuật nào đủ dùng một mình, hệ thống truy xuất theo lối \textit{hybrid}: chạy song song nhiều đường tìm kiếm rồi hợp nhất kết quả thành một danh sách xếp hạng duy nhất.
+Không một kỹ thuật tìm kiếm đơn lẻ nào đủ để phục vụ tri thức phần mềm, vì mỗi kỹ thuật chỉ mạnh ở một khía cạnh. Semantic search nắm bắt tốt ngữ nghĩa của câu hỏi -- chẳng hạn tìm ra "hàm nào xử lý việc đọc PDF" dù câu hỏi không nhắc tên hàm cụ thể -- nhưng lại dễ bỏ sót khi câu hỏi cần khớp đúng một định danh. Ngược lại, keyword search bắt rất chính xác các định danh như \texttt{parsePdf}, nhưng không thể trả lời câu hỏi diễn đạt cùng ý theo cách khác. Cả hai đều có chung một điểm yếu: không thấy được tri thức liên quan nằm ở quan hệ giữa các entity, thứ chỉ đồ thị mới nắm được. Vì các kỹ thuật này bổ khuyết cho nhau chứ không kỹ thuật nào đủ dùng một mình, hệ thống truy xuất theo lối \textit{hybrid}: chạy song song nhiều đường tìm kiếm rồi hợp nhất kết quả thành một danh sách xếp hạng duy nhất.
 
 \subsubsection{Ranh giới giữa truy xuất và suy luận}
 

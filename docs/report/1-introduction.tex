@@ -12,7 +12,7 @@ Tri thức được cung cấp qua hai interface với vai trò khác nhau: MCP 
 
 \begin{itemize}
   \item Thu thập và xử lý các loại dữ liệu của dự án, bao gồm mã nguồn, tài liệu, git log và SRS.
-  \item Xây dựng pipeline ingestion: chia dữ liệu thành các chunk (theo AST đối với mã nguồn, theo cấu trúc đối với tài liệu), sinh embedding, rồi xây dựng Knowledge Graph biểu diễn quan hệ giữa các entity (ví dụ: một hàm gọi một hàm khác, một yêu cầu được hiện thực bởi một đoạn code).
+  \item Xây dựng pipeline ingestion: chia dữ liệu thành các chunk (theo AST đối với mã nguồn, theo cấu trúc đối với tài liệu), sinh embedding, rồi xây dựng Knowledge Graph biểu diễn quan hệ giữa các entity (ví dụ: một hàm gọi một hàm khác, một requirement được hiện thực bởi một đoạn code).
   \item Hỗ trợ hybrid search, kết hợp semantic search với keyword search và graph traversal; trả kết quả dưới dạng JSON kèm relevance score và metadata.
   \item Đồng bộ và cập nhật tri thức khi dữ liệu nguồn thay đổi.
   \item Cung cấp tri thức qua REST API và MCP; đóng gói bằng Docker và hỗ trợ cấu hình theo nhiều môi trường (dev, server, cloud).
