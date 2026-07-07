@@ -41,10 +41,11 @@ Diagrams: see [`docs/diagrams/`](docs/diagrams) (deployment + logical architectu
 | Framework | **Spring Boot 3.5** |
 | Build | **Maven** (wrapper `./mvnw` included) |
 | Web / API | Spring Web, springdoc-openapi (Swagger UI) |
-| Graph + vector | Spring Data **Neo4j** |
-| AI / RAG | **Spring AI 1.1** — embedding, Neo4j vector store, MCP server, PDF/Markdown/Tika readers |
+| Graph + vector | Spring Data **Neo4j** (graph + BM25), **Qdrant** (vectors) |
+| AI / RAG | **Spring AI 1.1** — embedding, Qdrant vector store, MCP server, PDF/Markdown/Tika readers |
 | Validation / ops | Bean Validation, Spring Boot Actuator |
-| Testing | JUnit 5, **Testcontainers** (real Neo4j) |
+| Testing | JUnit 5, **Testcontainers** (real Neo4j + Qdrant) |
+| Evaluation | Python harness (`perf/`) — retrieval quality + performance over REST |
 | Quality | Spotless (google-java-format), Checkstyle |
 | Container | Docker, Docker Compose |
 | CI | GitHub Actions |
@@ -88,10 +89,12 @@ open http://localhost:8000/docs # Swagger UI
 │   │       ├── application.yml           # base config
 │   │       └── application-{dev,prod,cloud}.yml
 │   └── test/                             # Testcontainers-based tests
-├── docs/                                 # SRS, design notes, diagrams
+├── docs/                                 # SRS, design notes, diagrams, LaTeX report
+├── perf/                                 # Python evaluation & performance harness
 ├── Dockerfile                            # multi-stage build → runtime image
-├── docker-compose.yml                    # app + Neo4j (+ Qdrant when scaling)
+├── docker-compose.yml                    # app + Neo4j + Qdrant
 ├── justfile                              # dev task runner
+├── .mcp.json                             # MCP server config for agents (e.g. Claude Code)
 ├── .githooks/pre-commit                  # auto-format on commit
 └── .github/workflows/ci.yml              # CI: format check + build + tests
 ```
@@ -104,13 +107,16 @@ Run `just` to list tasks.
 |---|---|
 | `just dev` | run the app locally with hot reload (auto-restart on code change) |
 | `just build` | package the app (skips tests) |
-| `just test` | run the test suite (Testcontainers) |
+| `just test` | run the test suite (Testcontainers; mocked embeddings) |
+| `just test-real` | run the eval tests against the **real** embedding API (needs a key) |
+| `just test-git-live` | live Git-indexing test against a real public repo (needs network) |
 | `just lint` | check formatting + style (Spotless + Checkstyle) |
 | `just format` | auto-format the code |
 | `just verify` | format check + build + tests |
 | `just deps` | print the dependency tree |
-| `just up` / `just down` | start / stop the docker-compose stack |
-| `just logs` | tail app logs |
+| `just up` / `just down` | start / stop the docker-compose stack (`down-v` also wipes data volumes) |
+| `just pause` / `just resume` | stop / start containers **without** removing them (saves RAM/CPU when idle) |
+| `just logs` / `just ps` | tail app logs / list stack containers |
 | `just hooks` | enable the pre-commit format hook |
 
 > `.env` is auto-loaded by `just` (via `dotenv-load`), so tasks pick up `EMBEDDING_API_KEY` etc.
@@ -130,15 +136,19 @@ runtime). Precedence: env var > `application-<profile>.yml` > `application.yml`.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `SPRING_PROFILES_ACTIVE` | `dev` | Active profile: `dev` / `prod` / `cloud` |
+| `SPRING_PROFILES_ACTIVE` | `prod` (`.env.example`) | Active profile: `dev` / `prod` / `cloud` |
 | `SERVER_PORT` | `8000` | HTTP port |
+| `API_KEY` | — | Bootstrap admin secret; also the bearer token for `/mcp` (blank = no admin seeded) |
 | `SPRING_NEO4J_URI` | `bolt://localhost:7687` | Neo4j connection |
 | `NEO4J_USERNAME` / `NEO4J_PASSWORD` | `neo4j` / `knowledgehub` | Neo4j credentials |
+| `SPRING_AI_VECTORSTORE_QDRANT_HOST` / `_PORT` | `localhost` / `6334` | Qdrant (gRPC) connection |
+| `QDRANT_COLLECTION` | `knowledge-embeddings` | Qdrant collection name |
 | `EMBEDDING_PROVIDER` | `api` | `api` (remote) or `local` (OpenAI-compatible server) |
 | `EMBEDDING_MODEL` | `text-embedding-3-small` | Embedding model (e.g. `voyage-3`) |
 | `EMBEDDING_BASE_URL` | `https://api.openai.com` | OpenAI-compatible endpoint host (OpenAI / Voyage / local) |
 | `EMBEDDING_API_KEY` | — | Embedding provider key (blank for a keyless local server) |
 | `EMBEDDING_DIMENSION` | `1536` | Vector dimension — must match the model; sizes the Qdrant collection |
+| `EMBEDDING_BATCH_SIZE` | `1000` | Max texts per embedding request (Voyage AI caps at 1000) |
 
 Switch embedding provider/model by editing these env vars only — no code change or image rebuild.
 Secrets (`EMBEDDING_API_KEY`, `NEO4J_PASSWORD`, bootstrap `API_KEY`) come from env / secret manager —
@@ -147,11 +157,15 @@ Secrets (`EMBEDDING_API_KEY`, `NEO4J_PASSWORD`, bootstrap `API_KEY`) come from e
 ## Testing
 
 ```bash
-just test       # JUnit 5 + Testcontainers (spins a real Neo4j container; needs Docker)
+just test           # JUnit 5 + Testcontainers (spins real Neo4j + Qdrant containers; needs Docker)
+just test-real      # eval tests against the real embedding API (needs EMBEDDING_API_KEY)
+just test-git-live  # index a real public Git repo end-to-end (needs network)
 ```
 
-The context test boots the full Spring context against a throwaway Neo4j container, so it exercises
-the real wiring (vector store, MCP server, repositories).
+The context test boots the full Spring context against throwaway Neo4j + Qdrant containers, so it
+exercises the real wiring (vector store, MCP server, repositories). Retrieval-quality and
+performance are evaluated separately by the Python harness in [`perf/`](perf) (see its README),
+which drives the running stack over REST like a real client.
 
 ## Deployment (single docker-compose, VM or local)
 
@@ -160,12 +174,14 @@ cp .env.example .env
 just up          # docker compose up -d --build
 ```
 
-- Runs **app + Neo4j**; data persists in **named volumes** (`neo4j-data`, `neo4j-logs`).
+- Runs **app + Neo4j + Qdrant**; data persists in **named volumes** (`neo4j-data`, `neo4j-logs`,
+  `qdrant-data`).
 - Neo4j heap/pagecache and the app heap are **RAM-capped** in `docker-compose.yml` for local/small
   hosts — raise them on a real server.
 - Self-host this compose on a VM (e.g. a small cloud VM) to avoid using laptop RAM; attach a block
   volume + backups if the VM can be recreated.
-- Qdrant is included (commented) for scaling out.
+- On a resource-limited host (e.g. a Codespace), `just pause` stops the containers without deleting
+  them so an idle stack stops burning RAM/CPU; `just resume` brings it back quickly.
 
 ## CI
 
@@ -174,4 +190,5 @@ just up          # docker compose up -d --build
 
 ## Documentation
 
-Design docs (SRS, tech-stack decisions, research, diagrams) live under [`docs/`](docs).
+Design docs (SRS, tech-stack decisions, research, diagrams) and the LaTeX report live under
+[`docs/`](docs). The evaluation & performance harness has its own guide in [`perf/`](perf).
