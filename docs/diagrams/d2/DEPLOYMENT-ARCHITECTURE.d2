@@ -2,7 +2,7 @@
 # Render:  d2 DEPLOYMENT-ARCHITECTURE.d2 deployment.svg   (or .pdf for LaTeX)
 vars: {
   d2-config: {
-    layout-engine: elk
+    layout-engine: dagre
     pad: 4
   }
 }
@@ -20,7 +20,7 @@ host: "Deployment host \nPrivate network (VM / cloud, docker-compose)" {
     label.near: top-center
     icon: https://cdn.simpleicons.org/springboot
     rest: "REST API\n/api/v1 \n /docs"
-    mcp: "MCP server\n/mcp \n 2 tools"
+    mcp: "MCP server\n/mcp \n 5 tools"
     ingest: "Ingestion\nGit / FS · parse (AST)"
     index: "Indexing\nchunk · embed · store"
     retrieval: "Retrieval\nhybrid + RRF"

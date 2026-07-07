@@ -2,6 +2,9 @@
 # Triggered on demand via REST or an MCP tool; idempotent + incremental
 # Reuses the same indexing filters (PIPELINE-INGESTION) on the changed delta; emits the
 # IndexCompleted domain event on finish (retrieval cache invalidate + freshness update).
+# For a git source, each sync also appends the commits that arrived since the last run
+# (commit history is immutable, so this path only ever adds) — it runs after the file
+# steps so MODIFIES edges find their File targets, and even when no file changed.
 # Render:  d2 PIPELINE-SYNC.d2 PIPELINE-SYNC.svg
 vars: {
   d2-config: {
@@ -18,6 +21,7 @@ add: "Run \ningestion pipeline"
 re: "Re-chunk changed parts;\ndedup unchanged chunks"
 ev: "Evict stale knowledge:\nvectors \n+\n graph nodes/edges"
 noop: "No-op \n(idempotent)"
+cm: "Index new commits\n(embed message;\nMODIFIES -> File)"
 idx: "Vector store \n+\n Knowledge Graph" {shape: cylinder}
 fresh: "Update freshness\nindexed_at, commit_sha"
 
@@ -29,4 +33,6 @@ diff -> noop: unchanged
 add -> idx
 re -> idx
 ev -> idx
-idx -> fresh
+idx -> cm: "git: commits\nsince last sync"
+noop -> cm: git
+cm -> fresh

@@ -1,0 +1,103 @@
+# Code Entity Relation Model — Knowledge Hub (CodeEntity-only view, as implemented)
+#
+# Every CodeEntity shares one Neo4j label (:CodeEntity) and one schema; the `level` property
+# just picks which concrete kind an instance is: CLASS | INTERFACE | ENUM | METHOD | CONSTRUCTOR
+# | FIELD (CodeEntityLevel.java; assigned in JavaCodeChunker.levelOf()). File, package, project
+# and module are NOT CodeEntity — a file is a separate :File node (see ERD.d2), and no
+# package/project node producer exists in the codebase despite being mentioned in older docs.
+#
+# Every edge below is written in a single AST read pass by JavaStructuralExtractor (CONTAINS is
+# written by Neo4jCodeEntityAdapter at entity-persist time instead) — all deterministic,
+# confidence 1. No heuristic CodeEntity<->CodeEntity edge exists today; heuristics only apply to
+# cross-artifact links originating from a DOC chunk (DESCRIBES / IMPLEMENTED_BY / VERIFIED_BY),
+# which are out of scope for this CodeEntity-only diagram. TESTS and CONSUMES are declared in the
+# relation vocabulary (RelationType.java) but have no extractor yet, so they are omitted here.
+#
+# Render:  d2 CODE-ENTITY-RELATIONS.d2 code-entity-relations.svg   (or .pdf for LaTeX)
+
+vars: {
+  d2-config: {
+    layout-engine: dagre
+    pad: 16
+  }
+}
+direction: right
+
+codeentity: "CodeEntity (:CodeEntity in Neo4j) — one label, split by level" {
+  style.fill: "#f8fafc"
+  style.stroke: "#94a3b8"
+
+  schema: "CodeEntity (shared schema)" {
+    shape: sql_table
+    entity_id: string {constraint: primary_key}
+    source_id: string {constraint: foreign_key}
+    file_id: string {constraint: foreign_key}
+    level: "CLASS|INTERFACE|ENUM|METHOD|CONSTRUCTOR|FIELD"
+    name: string
+    qualified_name: string
+    signature: string
+    line_start: int
+    line_end: int
+  }
+
+  Type: "Type — structural declaration" {
+    style.fill: "#eef2ff"
+    style.stroke: "#818cf8"
+    ClassDecl: "Class" { style.fill: "#d47100"; style.stroke: "#ffe0c6" }
+    Interface: { style.fill: "#d47100"; style.stroke: "#ffe0c6" }
+    Enum: { style.fill: "#d47100"; style.stroke: "#ffe0c6" }
+  }
+
+  Member: "Member — declared inside a Type" {
+    style.fill: "#ecfeff"
+    style.stroke: "#22d3ee"
+    Method: { style.fill: "#0b7285"; style.stroke: "#c5f6fa"; style.font-color: "#ffffff" }
+    Constructor: { style.fill: "#0b7285"; style.stroke: "#c5f6fa"; style.font-color: "#ffffff" }
+    Field: { style.fill: "#0b7285"; style.stroke: "#c5f6fa"; style.font-color: "#ffffff" }
+  }
+}
+
+# --- level column picks the concrete kind ------------------------------------
+codeentity.schema -> codeentity.Type: "level = CLASS | INTERFACE | ENUM" {style.stroke-dash: 2}
+codeentity.schema -> codeentity.Member: "level = METHOD | CONSTRUCTOR | FIELD" {style.stroke-dash: 2}
+
+# --- Containment (Neo4jCodeEntityAdapter; not every Type/Member pair occurs in
+# valid Java — e.g. an interface never declares a constructor — but every pair
+# that does occur uses this same edge type) --------------------------------------
+codeentity.Type -> codeentity.Member: CONTAINS
+# nested-type containment shown on Class as the representative Type (dagre has no container self-loop)
+codeentity.Type.ClassDecl -> codeentity.Type.ClassDecl: "CONTAINS (nested type)"
+
+# --- Type-to-type structural relations (JavaStructuralExtractor) ----------------
+# IMPORTS is any-Type -> any-Type; drawn on Class as the representative Type for dagre
+codeentity.Type.ClassDecl -> codeentity.Type.ClassDecl: IMPORTS
+codeentity.Type.ClassDecl -> codeentity.Type.ClassDecl: EXTENDS
+codeentity.Type.Enum -> codeentity.Type.ClassDecl: EXTENDS
+codeentity.Type.ClassDecl -> codeentity.Type.Interface: IMPLEMENTS
+codeentity.Type.Enum -> codeentity.Type.Interface: IMPLEMENTS
+
+# --- Method-to-method structural relations --------------------------------------
+codeentity.Member.Method -> codeentity.Member.Method: OVERRIDES
+codeentity.Member.Method -> codeentity.Member.Method: "CALLS (same enclosing type only)"
+
+# --- Member-to-Type / Member-to-Member relations --------------------------------
+codeentity.Member -> codeentity.Type.ClassDecl: INSTANTIATES
+codeentity.Member.Method -> codeentity.Member.Field: "READS / WRITES (same type only)"
+codeentity.Member.Constructor -> codeentity.Member.Field: "READS / WRITES (same type only)"
+codeentity.Member.Method -> codeentity.Type: REFERENCES
+codeentity.Member.Constructor -> codeentity.Type: REFERENCES
+codeentity.Member.Field -> codeentity.Type: HAS_TYPE
+
+# --- Annotation usage (target never actually resolves to Enum: annotation
+# declarations parse as CLASS-level entities, a JavaParser classification gap
+# noted in CodeEntityLevel) -------------------------------------------------------
+codeentity.Type -> codeentity.Type.ClassDecl: ANNOTATED_WITH
+codeentity.Type -> codeentity.Type.Interface: ANNOTATED_WITH
+codeentity.Member.Method -> codeentity.Type.ClassDecl: ANNOTATED_WITH
+codeentity.Member.Method -> codeentity.Type.Interface: ANNOTATED_WITH
+codeentity.Member.Constructor -> codeentity.Type.ClassDecl: ANNOTATED_WITH
+codeentity.Member.Constructor -> codeentity.Type.Interface: ANNOTATED_WITH
+
+# --- Declared checked exceptions -------------------------------------------------
+codeentity.Member.Method -> codeentity.Type.ClassDecl: THROWS
+codeentity.Member.Constructor -> codeentity.Type.ClassDecl: THROWS

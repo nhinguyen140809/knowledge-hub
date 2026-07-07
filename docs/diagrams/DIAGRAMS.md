@@ -16,22 +16,32 @@ every scale. Code structure: [../development/ARCHITECTURE.md](../development/ARC
 
 *Source: [d2/ERD.d2](d2/ERD.d2)*
 
-Neo4j holds the knowledge graph + keyword index **and** the ACL; vectors live in Qdrant, linked back
-by `chunk_id`. `Source` is the **bridge** — both the provenance root of all knowledge and the unit of
-authorization in the ACL.
+Neo4j holds the knowledge graph + keyword index **and** the ACL. Each embedded unit's dense vector
+lives in Qdrant as a **point** (id = a UUID derived from `chunk_id` / `commit_id`) with a small
+payload for filtering and locating; the two stores are joined by `chunk_id`. A `Source` owns its
+knowledge nodes through the `source_id` foreign key (a property, not a stored edge).
+
+**Documents and requirements are not materialised nodes yet.** A "document" is a `File` plus its
+DOC-typed chunks; a "requirement" is a requirement id matched inside a DOC chunk. So the
+cross-artifact links originate from a **DOC `Chunk`**, not from a `Document`/`Requirement` node
+(planned — see report ch8).
 
 **Relationship categories**
-- **Structural** — solid: CONTAINS, DECLARES, CALLS, IMPORTS, EXTENDS, IMPLEMENTS, OVERRIDES.
+- **Structural** — solid, deterministic: DECLARES, CONTAINS, CALLS, IMPORTS, EXTENDS, IMPLEMENTS,
+  OVERRIDES (between `File` / `CodeEntity`).
 - **Deeper structural (optional)** — INSTANTIATES, READS/WRITES, REFERENCES, HAS_TYPE,
   ANNOTATED_WITH, THROWS, TESTS (between `CodeEntity` nodes).
-- **Cross-artifact** — dashed: DESCRIBES, IMPLEMENTED_BY, VERIFIED_BY, MODIFIES, CONSUMES,
-  LINKS_TO. Heuristic links carry a **confidence** score; cross-source links allowed.
+- **Cross-artifact** — dashed, from a DOC `Chunk` → `CodeEntity`: DESCRIBES, IMPLEMENTED_BY,
+  VERIFIED_BY, each carrying a **confidence** score; cross-source allowed. CONSUMES is reserved (no
+  producer yet); LINKS_TO (document → document) is reserved for when documents are materialised.
+  MODIFIES (Commit → File) is deterministic (confidence 1), read straight from the commit's diff.
 
 **Hierarchy levels** are one `CodeEntity` table with a `level` enum + self `CONTAINS`, from fine
-(constant/field) to coarse (project).
+(constant/field) to coarse (project). Each source's last-indexed state is a `SourceFreshness` node.
 
 **`Source` is the bridge** — orange in both worlds: provenance root (knowledge) and authorization
-unit (ACL). The hard ACL filter pushes the allowed `source_id` set into every retrieval path.
+unit (ACL). The hard ACL filter pushes the allowed `source_id` set into every retrieval path,
+including the Qdrant payload pre-filter.
 
 ---
 
@@ -63,7 +73,10 @@ unit (ACL). The hard ACL filter pushes the allowed `source_id` set into every re
 
 ## 3. Incremental sync & eviction (insert / update / delete)
 
-Triggered on demand via REST or an MCP tool; idempotent and incremental.
+Triggered on demand via REST or an MCP tool; idempotent and incremental. For a git source each
+sync also appends the commits that arrived since the last run (messages embedded, `MODIFIES`
+edges to the indexed files they touched) — after the file steps so the edge targets exist, and
+even when no file changed, since commit history is append-only.
 
 ![Incremental sync & eviction](pipeline-sync.svg)
 
@@ -91,7 +104,7 @@ pointing inward, infrastructure realizing domain ports.
 
 ### 5.1 Module architecture (component view)
 
-*Source: [d2/MODULE-ARCHITECTURE.d2](d2/MODULE-ARCHITECTURE.d2)*
+*Source: [d2/COMPONENT-DIAGRAM.d2](d2/COMPONENT-DIAGRAM.d2)*
 
 The four bounded contexts (`access`, `knowledge`, `retrieval`, `system`) plus the `shared` kernel,
 the submodules inside `knowledge` (`ingestion` / `indexing` / `graph` / `sync` + shared ports and

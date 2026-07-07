@@ -1,0 +1,228 @@
+\section{Phương pháp}
+
+Chương này trình bày các phương pháp cốt lõi được sử dụng để xây dựng và khai thác mô hình tri thức của hệ thống: cách định danh tri thức để quản lý phiên bản, cách chia dữ liệu thô thành chunk, cách trích và liên kết đồ thị tri thức, cách đồng bộ khi nguồn thay đổi, cách truy xuất hybrid, và cách kiểm soát truy cập. 
+
+\subsection{Quản lý phiên bản tri thức (knowledge versioning)}
+
+Nguồn dữ liệu của một product thay đổi liên tục: mã nguồn được sửa, tài liệu được cập nhật, file được thêm hoặc xóa. Để tri thức trong hub luôn phản ánh đúng nguồn mà không phải dựng lại toàn bộ chỉ mục sau mỗi thay đổi, hệ thống cần xác định được \textit{phần nào đã đổi, phần nào giữ nguyên, phần nào không còn tồn tại}. Cơ chế nền tảng cho việc này là định danh ổn định dựa trên nội dung.
+
+Trước khi trình bày cơ chế đồng bộ, cần làm rõ một quyết định về phạm vi quản lý nguồn Git. Mỗi nguồn chỉ theo dõi một branch duy nhất tại một thời điểm, là branch được cấu hình hoặc branch mặc định của repository nếu không chỉ định. Hệ thống không tự động lập chỉ mục đồng thời nhiều branch của cùng một repository.
+
+Lựa chọn này xuất phát từ hiệu quả xử lý: các branch đang phát triển thường chỉ khác nhau một phần, phần lớn nội dung -- có khi hơn 90\% -- là trùng nhau. Nếu index riêng từng branch như những bản sao đầy đủ, sẽ dẫn đến việc sinh embedding lặp lại trên phần trùng đó, gây lãng phí tài nguyên. Để theo dõi thêm một branch khác, cần cấu hình thêm một nguồn riêng cho branch đó, thay vì mở rộng một nguồn ra nhiều branch. 
+
+Giới hạn mỗi nguồn với một branch cũng giúp đơn giản hóa cơ chế định danh. Định danh theo danh tính chỉ cần dựa trên nguồn và đường dẫn, không cần bổ sung thông tin về branch. Trong phạm vi của một nguồn, mỗi đường dẫn luôn chỉ tương ứng với một phiên bản của tệp tại một thời điểm, nhờ đó định danh vẫn duy trì tính duy nhất và ổn định.
+
+Mỗi đơn vị tri thức được gán một định danh \textit{tất định} (deterministic): cùng một đầu vào luôn sinh ra cùng một định danh, bất kể thời điểm hay số lần xử lý. Định danh được tạo bằng cách băm các thành phần đặc trưng của đơn vị tri thức, theo hai chiến lược tùy bản chất của dữ liệu:
+
+\begin{itemize}
+  \item \textit{Định danh theo danh tính} áp dụng cho file và entity mã nguồn. Định danh chỉ được tính từ danh tính của đơn vị (nguồn và đường dẫn file; riêng entity có thêm tên định danh đầy đủ), không phụ thuộc nội dung. Vì vậy một file giữ nguyên định danh qua mọi lần chỉnh sửa: nội dung đổi thì đơn vị chỉ cập nhật tại chỗ dưới định danh cũ, và mọi quan hệ trỏ vào nó vẫn nguyên vẹn, không bị đứt.
+  \item \textit{Định danh theo nội dung} áp dụng cho chunk. Bên cạnh danh tính, định danh của chunk còn được tính thêm từ content hash, nên nội dung đổi thì định danh cũng đổi theo: chunk mang nội dung mới được xem là một \textit{chunk khác}, chứ không phải bản sửa của chunk cũ. Điều này bắt nguồn từ chính bản chất của chunk: giá trị của nó nằm ở embedding, mà embedding lại là hàm của nội dung; hơn nữa ranh giới chunk cũng dịch chuyển mỗi khi file thay đổi, nên thực sự không tồn tại một vị trí chunk cố định nào để cập nhật đè lên.
+\end{itemize}
+
+Commit là trường hợp đơn giản nhất: định danh được tính từ nguồn và mã băm commit (commit SHA), mà bản thân mã băm đã là địa chỉ theo nội dung do Git bảo đảm; lịch sử commit bất biến và chỉ nối thêm.
+
+Định danh ổn định là nền tảng của toàn bộ cơ chế đồng bộ trong hệ thống. Nhờ mỗi đơn vị tri thức luôn có cùng một định danh nếu nội dung không thay đổi, hệ thống đảm bảo tính idempotent, tức việc xử lý lặp lại cùng một nguồn chỉ cập nhật dữ liệu hiện có thay vì tạo thêm bản ghi trùng lặp. 
+
+Cơ chế này cũng cho phép thực hiện cập nhật tăng dần bằng cách so sánh tập định danh mới với tập định danh đang lưu để xác định các chunk được thêm mới, giữ nguyên hoặc không còn tồn tại. 
+
+Đồng thời, các chunk có nội dung không đổi sẽ giữ nguyên định danh, giúp tái sử dụng embedding đã sinh trước đó và tránh tính toán lại không cần thiết. Định danh chunk còn đóng vai trò là khóa tham chiếu thống nhất giữa kho tri thức và kho vector, cho phép hệ thống thực hiện gỡ bỏ nhất quán
+
+Khi một file được xử lý lại, hệ thống chỉ cần thực hiện một thao tác đồng bộ duy nhất: chunk không đổi giữ nguyên định danh và embedding sẵn có, chunk mới nhận định danh mới và được thêm, chunk cũ không còn xuất hiện bị gỡ bỏ.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{image/id factory.pdf}
+  \caption{Quản lý phiên bản tri thức: định danh theo danh tính cho file và entity, định danh theo nội dung cho chunk.}
+  \label{fig:id-factory}
+\end{figure}
+
+\subsection{Xử lý dữ liệu đầu vào (ingestion \& chunking)}
+
+Trước khi sinh embedding, dữ liệu thô phải được chia thành các đơn vị nhỏ gọi là \textit{chunk}. Việc phân chia này đáp ứng giới hạn độ dài đầu vào của mô hình embedding, và giúp mỗi vector biểu diễn một đơn vị ngữ nghĩa đủ tập trung để phục vụ truy xuất hiệu quả. Nếu cắt thô theo độ dài, ranh giới chunk sẽ rơi vào giữa một hàm hay giữa một câu, phá vỡ ý nghĩa. 
+
+Vì vậy, nguyên tắc của hệ thống là phân chia theo ranh giới ngữ nghĩa của dữ liệu, thay vì cắt theo kích thước cố định. Do mã nguồn và tài liệu có đặc điểm cấu trúc khác nhau, hệ thống áp dụng hai chiến lược chunking riêng biệt và tự động lựa chọn chiến lược phù hợp dựa trên loại dữ liệu cần xử lý.
+
+\subsubsection{Chunking mã nguồn theo cấu trúc}
+
+Mã nguồn được phân tích thành cây cú pháp (AST) và cắt theo ranh giới khai báo, theo các quy tắc sau:
+
+\begin{itemize}
+  \item Mỗi method/constructor là một chunk trọn vẹn, dù có vượt giới hạn token cũng không bị cắt đôi, vì một nửa method vừa vô nghĩa vừa dễ gây hiểu sai.
+  \item Mỗi type (class/interface/enum) có một shell chunk chứa signature và các field, nhưng bỏ method body vì body đã nằm ở chunk riêng của từng method, nhờ đó nội dung không bị lặp lại.
+  \item Comment đi kèm được giữ cùng chunk của khai báo để tăng tín hiệu ngữ nghĩa.
+\end{itemize}
+
+Song song, chiến lược này còn trích một hệ thống phân cấp entity để dựng đồ thị; một field trở thành entity trong đồ thị nhưng không là chunk riêng, nội dung của nó nằm trong shell chunk của type chứa nó.
+
+\subsubsection{Chunking tài liệu theo cấu trúc văn bản}
+
+Với tài liệu, hệ thống khai thác cấu trúc phân cấp vốn có của văn bản để bảo toàn ngữ nghĩa trong quá trình chunking:
+
+\begin{itemize}
+  \item Tài liệu được tách thành các section theo từng heading Markdown trước, bảo đảm không có chunk nào vượt qua ranh giới giữa các heading.
+  \item Trong mỗi section, hệ thống lựa chọn điểm cắt theo thứ tự ưu tiên giảm dần (đoạn văn $\rightarrow$ dòng $\rightarrow$ câu $\rightarrow$ từ $\rightarrow$ ký tự). Ở mỗi bước, hệ thống ưu tiên sử dụng đơn vị lớn nhất vẫn thỏa mãn giới hạn token, chỉ chuyển sang mức nhỏ hơn khi không còn điểm cắt phù hợp.
+  \item Mỗi chunk mang theo một đoạn đuôi của chunk liền trước (chồng lấn/overlap), để các thông tin nằm gần ranh giới cắt vẫn xuất hiện đầy đủ trong ít nhất một chunk, qua đó cải thiện chất lượng truy xuất.
+\end{itemize}
+
+Đối với source code, hệ thống không sử dụng overlap. Các chunk được tạo từ các đơn vị cú pháp như type, method hoặc field, vốn đã là những đơn vị ngữ nghĩa hoàn chỉnh, nên việc overlap không mang lại nhiều giá trị mà chỉ làm tăng số lượng chunk và embedding cần lưu trữ.
+
+\subsubsection{Kích thước đo theo token thực}
+
+Kích thước của mỗi chunk được xác định theo số lượng token, sử dụng cùng cơ chế tách token với mô hình embedding thay vì ước lượng theo số lượng ký tự. Cách đo này giúp mỗi chunk tuân thủ đúng giới hạn đầu vào của mô hình.
+
+Giới hạn số token của mỗi chunk và kích thước vùng overlap đều có thể cấu hình. Hệ thống sử dụng các giá trị mặc định phù hợp cho hầu hết trường hợp (khoảng $512$ token cho mỗi chunk và $64$ token overlap).
+
+Thiết kế chunking cũng được xây dựng theo hướng mở rộng. Mỗi loại dữ liệu có thể được hỗ trợ bằng một chiến lược chunking chuyên biệt nhằm khai thác đặc điểm cấu trúc của nó. Đối với các loại dữ liệu chưa có chiến lược riêng, hệ thống mặc định áp dụng cơ chế chunking văn bản.
+
+\subsection{Xây dựng \& liên kết đồ thị tri thức}
+
+Đồ thị tri thức được sử dụng để biểu diễn các quan hệ ngữ nghĩa mà embedding khó thể hiện đầy đủ, chẳng hạn như hàm nào gọi hàm nào, tài liệu nào mô tả thành phần nào. Trong đồ thị, các entity được biểu diễn dưới dạng node, còn các quan hệ có hướng và có tên được biểu diễn dưới dạng edge.
+
+\subsubsection{Trích quan hệ cấu trúc}
+
+Với mã nguồn, quan hệ cấu trúc được đọc trực tiếp từ cây cú pháp: \texttt{IMPORTS} (import), \texttt{EXTENDS}/\texttt{IMPLEMENTS} (kế thừa/hiện thực), \texttt{OVERRIDES} (ghi đè), và \texttt{CALLS} (lời gọi giữa các phương thức cùng type).
+
+Riêng \texttt{CALLS} bị giới hạn ở lời gọi cùng type vì một lời gọi qua object khác (\texttt{obj.method()}) cần biết kiểu tĩnh của \texttt{obj} mới phân giải đúng overload, tức là sẽ cần type inference đầy đủ (symbol solver) thay vì chỉ đọc cú pháp (parsing) từng file riêng lẻ. Việc dùng symbol solver sẽ làm tăng độ phức tạp và thời gian xử lý, nên hệ thống hiện tại chỉ trích lời gọi cùng type. Đây là một hạn chế có thể được cải thiện trong các phiên bản sau.
+
+Một nguyên tắc xuyên suốt trong quá trình xây dựng đồ thị là không suy đoán quan hệ. Nếu một tham chiếu không thể phân giải một cách chắc chắn tới một entity đã được index, hệ thống sẽ bỏ qua. Cách tiếp cận này có thể làm đồ thị thiếu một số cạnh, nhưng tránh được các quan hệ sai lệch. Đối với tri thức cung cấp cho AI Agent, một quan hệ không chính xác thường gây ảnh hưởng lớn hơn so với việc thiếu một quan hệ.
+
+Việc phân giải đi theo tên định danh đầy đủ và được gom theo batch cho từng file: mọi tham chiếu trong file (import, supertype, method bị override...) được thu thập trước, rồi phân giải bằng một lượt tra cứu duy nhất thay vì tra từng cái một. Nhờ phân giải theo tên thay vì theo phạm vi nguồn, một import trỏ tới entity ở nguồn khác trong cùng product vẫn nối được xuyên ranh giới nguồn.
+
+\textit{Ví dụ:}\texttt{import com.example.Foo;} trong source A vẫn tạo được edge \texttt{IMPORTS} sang entity \texttt{Foo} nếu nó được khai báo ở source B, miễn là A và B cùng một product.
+
+
+\subsubsection{Liên kết liên artifact và điểm tin cậy}
+
+Liên kết giữa tài liệu và source code không thể dựa vào cú pháp, nên hệ thống đọc các tín hiệu trong nội dung tài liệu và cho điểm theo độ mạnh của tín hiệu:
+
+\begin{itemize}
+  \item Một tên định danh đầy đủ (fully-qualified name) trong tài liệu mà phân giải về đúng một entity duy nhất là bằng chứng mạnh nhất, vì gần như không thể có hai entity khác nhau trùng tên định danh đầy đủ; tín hiệu này được chấm điểm cao nhất ($0.9$). \\
+  \textit{Ví dụ:} tài liệu nhắc tới \texttt{com.example.chunking.DocChunker}, và hệ thống chỉ tìm thấy đúng một entity mang tên này.
+  \item Một tham chiếu đường dẫn tới file code cũng là bằng chứng tường minh gần tương đương, nên được chấm điểm cao ($0.85$). \\
+  \textit{Ví dụ:} tài liệu viết "the parser lives in \texttt{src/reader/PdfReader.java}", và file đó đã được index.
+  \item Một tên ghép CamelCase (ví dụ \texttt{CodeChunker}) khi khớp đúng một entity duy nhất là bằng chứng ở mức vừa phải, vì tên ghép tuy khá đặc trưng nhưng vẫn có thể chỉ là một từ xuất hiện tình cờ trong văn xuôi; tín hiệu này được chấm điểm vừa ($0.7$). \\
+  \textit{Ví dụ:} tài liệu nhắc tới \texttt{CodeChunker}, và chỉ đúng một entity mang tên này.
+  \item Một tên đơn hoặc tên nhập nhằng là bằng chứng yếu nhất, nên chỉ được chấm điểm thấp ($0.4$). \\
+  \textit{Ví dụ:} tài liệu nhắc tới \texttt{Chunk} -- vừa là tên một entity vừa là từ thông dụng trong văn xuôi -- hoặc một tên khớp đồng thời nhiều entity, khiến khả năng tín hiệu đó thực sự ám chỉ đúng entity là khá thấp.
+\end{itemize}
+
+Các quy tắc như nhận diện tên ghép CamelCase, phân tích tên định danh đầy đủ hay quy ước đặt tên của code kiểm thử đều phụ thuộc vào từng ngôn ngữ lập trình. Vì vậy, hệ thống tổ chức các quy tắc này dưới dạng các thành phần mở rộng theo ngôn ngữ, tương tự như bộ phân tích cú pháp được sử dụng trong quá trình chunking. Hiện tại, hệ thống mới cung cấp sẵn bộ quy tắc cho Java; khi hỗ trợ một ngôn ngữ khác, chẳng hạn Python với quy ước \texttt{snake\_case}, cần có một hiện thực riêng của bộ quy tắc này để nhận diện đúng các tín hiệu liên kết trong ngôn ngữ đó.
+
+Để hạn chế các liên kết có độ tin cậy thấp, hệ thống áp dụng một ngưỡng cấu hình chỉ cho phép những liên kết có điểm tin cậy vượt ngưỡng mới được ghi vào đồ thị. Giá trị ngưỡng này có thể được điều chỉnh để cân bằng giữa độ phủ và độ sạch của đồ thị, mà không cần thay đổi logic liên kết.
+
+Mọi liên kết liên artifact chỉ được sinh ra từ các tín hiệu tường minh kèm điểm tin cậy, không dựa vào khoảng cách vector. Việc sử dụng embedding để khẳng định quan hệ sẽ dẫn đến các liên kết sai lệch, vì so khớp ngữ nghĩa là một phép \textit{mờ} -- hữu ích để tìm thứ liên quan, nhưng không thể dùng để phán đoán chắc chắn rằng "đoạn code này hiện thực requirement kia".
+
+Một hệ quả của cách làm này là một requirement hiện chỉ là một tín hiệu tường minh (ví dụ mã hiệu \texttt{FR-3.1}) nằm trong một chunk tài liệu, chứ chưa phải là một entity. Edge \texttt{IMPLEMENTED\_BY} (hoặc \texttt{VERIFIED\_BY} khi tham chiếu trỏ tới test) xuất phát từ chính chunk tài liệu đó khi nó nêu kèm một mã hiệu tường minh. Nhờ đó liên kết requirement $\rightarrow$ code hiện tại là chính xác nhưng chỉ bắt được những ánh xạ được viết tường minh, và bỏ qua phần còn lại thay vì phỏng đoán. 
+
+Việc bổ sung thêm các liên kết dựa trên suy luận ngữ nghĩa (semantic inference), ví dụ như thông qua một mô hình LLM đọc tài liệu và code sẽ là một hướng phát triển trong tương lai, nhằm mở rộng độ phủ mà vẫn giữ được tính đúng đắn của các liên kết.
+
+
+\subsubsection{Lịch sử commit}
+
+Với nguồn Git, mỗi lần đồng bộ nạp thêm các commit mới nhất từ nhánh đã cấu hình, tính từ commit cuối đã index; mỗi commit trở thành một node riêng trong đồ thị, mang message, tác giả và thời điểm.
+
+Diff của commit cho biết nó chạm tới file nào: mỗi file đã được index nhận một edge \texttt{MODIFIES} từ commit đó. Edge này tất định -- đọc thẳng từ diff, độ tin cậy $1$ -- khác với các edge liên artifact phải qua chấm điểm và ngưỡng như ở trên.
+
+Trong cùng một lần đồng bộ, file luôn được reindex trước, commit mới được index sau, nhờ vậy edge \texttt{MODIFIES} của một commit vừa nạp luôn tìm thấy đúng node file đích đã tồn tại, kể cả khi file đó vừa được thêm hoặc sửa trong chính lần đồng bộ này.
+
+Message của mỗi commit cũng được embed như một đơn vị tri thức, nên cả tìm kiếm ngữ nghĩa lẫn từ khóa đều có thể truy xuất. Cũng như mọi edge khác trong đồ thị, \texttt{MODIFIES} được ghi theo kiểu upsert trên khóa \textit{(nguồn, đích, loại quan hệ)} nên về nguyên tắc là thao tác idempotent -- dù trong thực tế một commit chỉ được xử lý đúng một lần, vì commit đã index sẽ bị lọc bỏ khỏi danh sách xử lý ngay từ đầu trong mỗi lần đồng bộ.
+
+\subsection{Đồng bộ tri thức (sync)}
+
+Thông qua REST API hoặc MCP tool có thể xem được trạng thái của từng nguồn, và có thể kích hoạt việc đồng bộ.  Nhờ vậy agent tự quyết được vòng lặp \textit{kiểm tra độ mới -- nếu cũ thì đồng bộ -- rồi mới truy vấn}, trước khi thao tác trên tri thức lỗi thời. Thao tác đồng bộ \textit{idempotent}: kích hoạt lại khi nội dung không đổi là một no-op.
+
+Hệ thống không tự động đồng bộ theo lịch trình, vì một số nguồn có thể rất lớn, và việc đồng bộ tự động sẽ làm tăng tải cho hệ thống và cho chính nguồn. Thay vào đó, agent và admin có thể chủ động quyết định khi nào cần đồng bộ, dựa trên việc so sánh trạng thái hiện tại của nguồn với trạng thái đã được ghi lại trong lần đồng bộ trước. Điều này cũng giúp tránh việc đồng bộ khi dữ liệu chưa hoàn chỉnh (code chưa hoàn tất, tài liệu chưa được xuất bản) hoặc khi nguồn đang trong quá trình thay đổi liên tục.
+
+Khi được kích hoạt, quá trình đồng bộ thực hiện các bước sau:
+
+\begin{itemize}
+  \item Nhận diện file mới, sửa đổi hoặc xóa, rồi chỉ xử lý đúng phần thay đổi đó, thay vì lập lại chỉ mục toàn bộ nguồn.
+  \item Chunk có nội dung không đổi được khử trùng lặp theo content hash nên không sinh lại embedding.
+  \item Tri thức lỗi thời -- khi nguồn thu hẹp hoặc bị xóa -- được gỡ khỏi cả hai cơ sở dữ liệu theo khóa chung.
+\end{itemize}
+
+Điểm mấu chốt về mặt phương pháp là luồng đồng bộ tái sử dụng chính các bước của luồng lập chỉ mục trên phần dữ liệu thay đổi thay vì nhân đôi logic, cùng bộ chia chunk, sinh embedding và liên kết được áp lên đúng tập file đã đổi. Với nguồn Git, đồng bộ còn nối thêm phần lịch sử commit chưa có.
+
+Sau mỗi lần đồng bộ, hệ thống ghi lại độ mới của nguồn -- thời điểm index gần nhất, và với nguồn Git là ref/commit đã index.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{image/indexing.pdf}
+  \caption{Lập chỉ mục tri thức: chia dữ liệu thô thành chunk, sinh embedding, trích quan hệ cấu trúc và liên kết liên artifact.}
+  \label{fig:indexing}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{image/sync.pdf}
+  \caption{Đồng bộ tri thức: chỉ lập chỉ mục phần thay đổi, tái sử dụng embedding cũ và gỡ bỏ tri thức lỗi thời.}
+  \label{fig:sync}
+\end{figure}
+
+\subsection{Truy xuất tri thức (retrieval)}
+
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{image/retrieval.pdf}
+  \caption{Truy xuất hybrid: chạy song song nhiều đường tìm kiếm rồi hợp nhất kết quả thành một danh sách xếp hạng duy nhất.}
+  \label{fig:retrieval}
+\end{figure}
+
+Không một kỹ thuật tìm kiếm đơn lẻ nào đủ để phục vụ tri thức phần mềm, vì mỗi kỹ thuật chỉ mạnh ở một khía cạnh. Semantic search nắm bắt tốt ngữ nghĩa của câu hỏi -- chẳng hạn tìm ra "hàm nào xử lý việc đọc PDF" dù câu hỏi không nhắc tên hàm cụ thể -- nhưng lại dễ bỏ sót khi câu hỏi cần khớp đúng một định danh. Ngược lại, keyword search bắt rất chính xác các định danh như \texttt{parsePdf}, nhưng không thể trả lời câu hỏi diễn đạt cùng ý theo cách khác. Cả hai đều có chung một điểm yếu: không thấy được tri thức liên quan nằm ở quan hệ giữa các entity, thứ chỉ đồ thị mới nắm được. Vì các kỹ thuật này bổ khuyết cho nhau chứ không kỹ thuật nào đủ dùng một mình, hệ thống truy xuất theo lối \textit{hybrid}: chạy song song nhiều đường tìm kiếm rồi hợp nhất kết quả thành một danh sách xếp hạng duy nhất.
+
+\subsubsection{Ranh giới giữa truy xuất và suy luận}
+
+Đầu vào của hệ thống là một câu truy vấn dạng văn bản tự do, và hệ thống không cố hiểu ý định đằng sau câu hỏi đó -- việc suy luận ý định thuộc về agent đứng ngoài, không phải hệ thống truy xuất. Đây là ranh giới phân vai cốt lõi trong thiết kế: hệ thống đóng vai trò truy xuất, agent đóng vai trò suy luận. Hệ thống chỉ nhận câu hỏi và trả về ngữ cảnh liên quan kèm căn cứ; việc đọc hiểu và phán đoán trên ngữ cảnh đó là của agent. Nhờ phân vai rõ ràng như vậy, hệ thống vừa đơn giản vừa dự đoán được: cùng một câu hỏi luôn cho ra cùng một kết quả, không phụ thuộc vào bất kỳ tầng đoán ý nào chen ở giữa.
+
+\subsubsection{Các đường tìm kiếm và hợp nhất}
+
+Trước khi vào các thành phần tìm kiếm, tập nguồn mà caller được phép đọc chỉ tính một lần duy nhất, rồi truyền xuống làm bộ lọc ACL chung cho mọi bước sau. Một truy vấn sau đó đi qua năm bước:
+
+\begin{itemize}
+  \item \textbf{Chuẩn bị keyword} -- tách câu hỏi thành các từ khóa cho nhánh keyword: viết thường, cắt theo ký tự không phải chữ/số, bỏ stop word và token một ký tự. Nhánh semantic không cần bước này mà tự sinh embedding từ nguyên văn câu hỏi. \\
+  \textit{Ví dụ:} \texttt{"How does the PdfReader extract text from a PDF?"} thành \texttt{[pdfreader, extract, text, pdf]} -- các từ như \texttt{how/does/the/from/a} bị bỏ vì là stop word.
+  \item \textbf{Semantic search song song với keyword search} -- nhánh semantic sinh embedding cho câu hỏi rồi so khớp trên vector store; nhánh keyword chạy BM25 trên chỉ mục full-text (văn bản chunk, tên/chữ ký entity, message commit) bằng các từ khóa vừa tách.
+  \item \textbf{Graph traversal} -- lấy một số lượng giới hạn kết quả tốt nhất, gộp từ hai thành phần trên, làm hạt giống, rồi đi một bước (one-hop) theo các edge của đồ thị để với tới tri thức liên quan nhưng không tự khớp với câu truy vấn.
+  \item \textbf{Hợp nhất} bằng Reciprocal Rank Fusion -- điểm hợp nhất của một kết quả cộng dồn từ \textit{thứ hạng} của nó trong từng danh sách (không phải điểm thô), có trọng số theo từng thành phần và trọng số này cấu hình được. Dùng thứ hạng thay vì điểm thô vì điểm của ba hệ (khoảng cách vector, BM25, độ gần đồ thị) nằm trên các thang không so được với nhau.
+  \item \textbf{Lắp ráp và lọc} -- nạp metadata đầy đủ chỉ cho các kết quả sống sót sau hợp nhất; việc nạp này cũng là nơi ACL được áp lại lần nữa, vì một kết quả thuộc nguồn ngoài quyền đọc sẽ không có metadata và bị loại ngay tại đây. Sau đó, bộ lọc chức năng của caller (ref, loại dữ liệu) mới được áp, rồi cắt kết quả còn đúng top-k.
+\end{itemize}
+
+Cụ thể, điểm hợp nhất của một kết quả $d$ được tính là:
+\[
+\text{score}(d) = \sum_{i \,\in\, \{\text{semantic},\ \text{keyword},\ \text{graph}\}} w_i \cdot \frac{1}{k + \text{rank}_i(d)}
+\]
+trong đó $\text{rank}_i(d)$ là thứ hạng (1-based) của $d$ trong danh sách kết quả của đường $i$ -- một đường không chứa $d$ thì không đóng góp gì vào tổng; $k$ là hằng số làm mượt, mặc định $k = 60$; và $w_i$ là trọng số cấu hình được của từng đường, mặc định $w_{\text{semantic}} = w_{\text{keyword}} = 1{,}0$ còn $w_{\text{graph}} = 0{,}5$ -- đường duyệt đồ thị được cho trọng số thấp hơn vì vai trò của nó là mở rộng thêm ngữ cảnh liên quan, không phải bằng chứng khớp trực tiếp với câu truy vấn như hai đường còn lại. Đây là bộ trọng số mặc định chọn theo trực giác kiến trúc chứ chưa được hiệu chỉnh bằng thực nghiệm; việc tìm bộ trọng số tối ưu (ví dụ bằng grid search trên bộ truy vấn có nhãn ở chương Đánh giá) vẫn là một hướng cần nghiên cứu thêm.
+
+Cơ chế truy xuất hybrid hiện thực hóa cách hệ thống cung cấp tri thức cho AI Agent. Một truy vấn có thể đồng thời trả về các chunk mã nguồn và tài liệu, vì cả hai đều được biểu diễn trong cùng không gian vector và cùng chịu sự kiểm soát của cơ chế phân quyền. Nhờ đó, agent có thể tiếp cận đồng thời cả hiện thực và đặc tả của cùng một chức năng để thực hiện bước suy luận tiếp theo.
+
+Khi giữa các chunk tồn tại liên kết tường minh trong đồ thị tri thức, bước duyệt đồ thị sẽ mở rộng kết quả truy xuất bằng các node liên quan cùng chuỗi quan hệ kết nối chúng. Ngược lại, nếu không có liên kết tường minh, cơ chế truy xuất ngữ nghĩa vẫn có thể đưa đồng thời các chunk liên quan vào kết quả. Vì vậy, hệ thống không cần suy luận hoặc bổ sung các quan hệ chưa được xác nhận. Chỉ cần các quan hệ hiện có đạt độ chính xác cao, AI Agent vẫn có thể kết hợp thông tin từ nhiều nguồn để tự xác định mối liên hệ giữa mã nguồn và đặc tả trong quá trình suy luận.
+
+\subsubsection{Kết quả và trương hợp đặc biệt}
+
+Mỗi kết quả gồm định danh, relevance score và metadata đủ để agent trích dẫn và tự lấy lại: loại, nguồn, đường dẫn file, khoảng dòng, loại dữ liệu, ref/commit và thời điểm index. Kết quả đến từ duyệt đồ thị mang thêm chuỗi quan hệ đã duyệt, để agent biết vì sao mảnh tri thức này liên quan.
+
+Một quyết định thiết kế ở đây là kết quả trả về \textit{tọa độ trích dẫn} chứ không phải nội dung chunk: hệ thống đưa đường dẫn, khoảng dòng và ref/commit đủ để agent tự đọc lại phần gốc, thay vì nhúng thẳng văn bản chunk vào kết quả. Lựa chọn này xuất phát từ ba lý do. Thứ nhất, hệ thống đóng vai trò một chỉ mục định vị kèm căn cứ trích dẫn, tương tự một search engine trả về liên kết chứ không trả toàn văn. Thứ hai, để tiết kiệm ngữ cảnh: nhúng toàn văn nhiều chunk -- có chunk rất lớn -- vào một kết quả sẽ chiếm dụng đáng kể context window của agent. Thứ ba, để tránh nội dung lỗi thời: văn bản trong chỉ mục là ảnh chụp tại thời điểm index, nên trả tọa độ giúp agent đọc đúng bản hiện hành thay vì một bản có thể đã cũ.
+
+Đánh đổi của quyết định này là agent luôn cần thêm một bước đọc lại nguồn để có nội dung đầy đủ. Khi agent đã có sẵn quyền đọc trực tiếp nguồn, bước đọc lại này là chi phí nhỏ, và giá trị của hệ thống nằm ở việc định vị đúng phần cần đọc cùng các quan hệ mà đọc trực tiếp không tự thấy được.
+
+Ba trường hợp đặc biệt được xử lý như sau:
+
+\begin{itemize}
+  \item Nếu truy vấn chỉ định một ref chưa được lập chỉ mục, hệ thống tự động quay về \textit{canonical ref} của nguồn và ghi rõ việc chuyển đổi này trong kết quả trả về.
+  \item Nếu một trong các thành phần truy xuất (ngữ nghĩa, từ khóa hoặc duyệt đồ thị) gặp lỗi, thành phần đó được xem như không có kết quả thay vì làm thất bại toàn bộ quá trình truy xuất. Nhờ đó, hệ thống vẫn có thể trả về kết quả từ các thành phần còn lại.
+  \item Các truy vấn lặp lại được lưu trong bộ nhớ đệm với khóa gồm nội dung truy vấn, các tham số truy xuất và tập nguồn mà principal được phép truy cập. Việc đưa tập quyền vào khóa cache bảo đảm hai principal có quyền khác nhau không thể chia sẻ cùng một kết quả đã lưu. Toàn bộ cache cũng được làm mới sau mỗi lần đồng bộ dữ liệu nhằm bảo đảm các truy vấn tiếp theo luôn phản ánh trạng thái mới nhất của kho tri thức.
+\end{itemize}
+
+\subsection{Cơ chế phân quyền (access control)}
+
+Quyền truy cập được kiểm soát ở mức source qua một ACL do admin cấu hình. Mô hình theo hai bước trên mỗi request: \textbf{xác thực} (authentication) phân giải credential của request về đúng một principal; \textbf{phân quyền} (authorization) tính tập nguồn mà principal được đọc rồi lọc theo đó. Một principal không nhất thiết là một người -- có thể là một người, một service, hoặc một định danh theo nhóm chức năng; tùy theo cách cấp phát credential.
+
+Quyền truy cập của một principal được xác định bằng cách tổng hợp các quyền được cấp trực tiếp và các quyền kế thừa từ những nhóm mà principal là thành viên. Sau khi áp dụng chính sách phân quyền của hệ thống, kết quả được biểu diễn dưới dạng tập nguồn dữ liệu được phép truy cập. Việc rút gọn toàn bộ thông tin phân quyền về một tập nguồn thống nhất giúp các thành phần phía sau không cần xử lý trực tiếp các khái niệm như nhóm lồng nhau, quyền kế thừa hay chính sách \textit{allow}/\textit{deny}, mà chỉ cần dựa trên tập nguồn đã được tính toán.
+
+Hai tính chất bảo đảm an toàn:
+
+\begin{itemize}
+  \item Tập nguồn đó được áp như một filter đẩy thẳng vào trong truy vấn ở mọi đường truy xuất -- so khớp ngữ nghĩa, tìm từ khóa, duyệt đồ thị và cả bước hợp nhất -- nên kết quả, node kề trong đồ thị, hay metadata bắt nguồn từ nguồn ngoài quyền đọc không bao giờ rời khỏi cơ sở dữ liệu, kể cả khi tới gián tiếp qua đồ thị. 
+  \item Hệ thống fail-closed: khi không phân giải được principal hoặc không xác định được quyền, request bị từ chối thay vì mở.
+\end{itemize}

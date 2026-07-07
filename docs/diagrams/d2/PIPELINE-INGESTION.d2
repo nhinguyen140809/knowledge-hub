@@ -6,7 +6,7 @@
 # (render config below is embedded so the D2 playground applies it too)
 vars: {
   d2-config: {
-    layout-engine: elk
+    layout-engine: dagre
     pad: 16
   }
 }
@@ -26,10 +26,8 @@ proc: "2 · Processing & chunking per type" {
     dmd: "Markdown \nreader"
     dpdf: "PDF reader"
     d1: "Structure-aware \nchunk"
-    d2: "Extract \nrequirement \nentities"
     dmd -> d1
     dpdf -> d1
-    d1 -> d2
   }
   gh: "Git history" {
     g1: "Parse commits"
@@ -47,10 +45,8 @@ emb: "3 · Embedding" {
 }
 
 store: "4 · Storage & indexing" {
-  vport: "VectorStore \nport" {shape: diamond}
   qdr: "Qdrant\nvectors" {shape: cylinder}
   graph: "Neo4j \nKnowledge \nGraph" {shape: cylinder}
-  vport -> qdr: upsert vector
 }
 
 # ---- Stages 1 · sources · 5 -------------------------------------------------
@@ -86,10 +82,10 @@ ing.classify -> proc.gh.g1: git log
 proc.code.c2 -> emb.ecache
 proc.doc.d1 -> emb.ecache
 
-emb.e2 -> store.vport
-emb.ecache -> store.vport: "hit: reuse vector"
+emb.e2 -> store.qdr
+emb.ecache -> store.qdr: "hit: reuse vector"
 proc.code.c3 -> store.graph
-proc.doc.d2 -> store.graph
+proc.gh.g2 -> emb.e1: "commit message"
 proc.gh.g2 -> store.graph
 
 store.graph -> linking.l1 -> store.graph

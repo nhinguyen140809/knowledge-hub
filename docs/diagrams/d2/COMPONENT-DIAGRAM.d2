@@ -1,10 +1,14 @@
 # Module / Component Architecture — Knowledge Hub (whole-system code structure)
-# Component (package) view: the 4 bounded contexts + the shared kernel, the submodules
-# inside `knowledge`, and the datastores / external service they depend on. Boxes are Java
-# packages (packaged-by-feature, then by layer); arrows are compile-time dependencies
-# labelled with the port / type / event that crosses the boundary. Dashed = domain event.
-# Detailed class views of a submodule: CLASS-INDEXING.d2, CLASS-RETRIEVAL.d2, CLASS-ACCESS.d2.
-# Render:  d2 MODULE-ARCHITECTURE.d2 module-architecture.svg   (or .pdf for LaTeX)
+# Component (package) view: only the 4 bounded contexts (access, knowledge, retrieval, system)
+# and the submodules inside `knowledge` (ingestion, indexing, graph, sync) — no shared kernel,
+# datastores, or external services. Boxes are Java packages; an arrow means A actually calls into
+# B at runtime (a service/port method invocation or a domain event A reacts to) — verified against
+# real usage in src/main/java, not just an `import`. Merely reusing another package's plain domain
+# type (e.g. passing a Chunk/RawArtifact around) does NOT get an edge, since that is not
+# communication between components. Dashed = domain event. `system` has zero cross-context
+# dependencies (self-contained). Detailed class views of a submodule: CLASS-INDEXING.d2,
+# CLASS-RETRIEVAL.d2, CLASS-ACCESS.d2.
+# Render:  d2 COMPONENT-DIAGRAM.d2 component-diagram.svg   (or .pdf for LaTeX)
 vars: {
   d2-config: {
     layout-engine: elk
@@ -23,107 +27,48 @@ classes: {
     style.fill: "#f8fafc"
     style.stroke: "#94a3b8"
   }
-  port: {
-    style.fill: "#2563eb"
-    style.stroke: "#eef6ff"
-    style.font-color: "#ffffff"
-  }
-  store: {
-    shape: cylinder
-    style.fill: "#fef3c7"
-    style.stroke: "#d97706"
-  }
-  ext: {
-    shape: oval
-    style.fill: "#ecfdf5"
-    style.stroke: "#059669"
-  }
-  actor: {
-    shape: person
-    style.fill: "#f5f3ff"
-    style.stroke: "#7c3aed"
-  }
 }
 
-# --- Clients ------------------------------------------------------------------
-agent: "AI Agent" {class: actor}
-admin: "Admin / operator" {class: actor}
-
-# --- The application: 4 bounded contexts + shared kernel ----------------------
-hub: "Knowledge Hub · com.knowledgehub" {
+# --- The application: 4 bounded contexts ---------------------------------------
+hub: "" {
   style.fill: "#ffffff"
 
-  access: "access — authentication + ACL" {
-    class: ctx
-    authPort: "BearerAuthFilter\n(authn on every request)" {class: port}
-    aclPort: "AclFilterProvider\n(allowed sources)" {class: port}
-  }
+  access: "access \nauthentication + ACL" {class: ctx}
 
-  knowledge: "knowledge — ingest · index · link · sync (write side)" {
+  knowledge: "knowledge (write side)" {
     class: ctx
     ingestion: "ingestion" {class: sub}
     indexing: "indexing" {class: sub}
     graph: "graph (linking)" {class: sub}
     sync: "sync" {class: sub}
-    kdomain: "domain — shared ports\nVectorStorePort · EmbeddingPort" {class: port}
-    kinfra: "infrastructure — shared adapters\n(Qdrant · embedding · Neo4j)" {class: sub}
-
-    # submodules build on the shared knowledge ports, realized by the shared adapters
-    ingestion -> kdomain
-    indexing -> kdomain
-    graph -> kdomain
-    sync -> kdomain
-    ingestion -> kinfra
-    indexing -> kinfra
-    graph -> kinfra
-    sync -> kinfra
-    kinfra -> kdomain: realizes {target-arrowhead.shape: triangle; target-arrowhead.style.filled: false; style.stroke-dash: 4}
   }
 
-  retrieval: "retrieval — hybrid query (read side)" {class: ctx}
-  system: "system — runtime info (self-contained)" {class: ctx}
-  shared: "shared — config · error · id · pipeline · observability" {
-    class: ctx
-    style.fill: "#f5f3ff"
-  }
+  retrieval: "retrieval (read side)" {class: ctx}
+  system: "system (runtime info)\n— self-contained" {class: ctx}
 }
 
-# --- External systems ---------------------------------------------------------
-neo4j: "Neo4j\ngraph + keyword index + ACL" {class: store}
-qdrant: "Qdrant\nvectors" {class: store}
-embed: "Embedding provider\n(external API)" {class: ext}
+# --- access <-> knowledge.ingestion: ACL is authorized on the Source ingestion owns ----
+# AuthorizationService (access) calls ingestion's SourceRepository directly to enumerate sources
+hub.access -> hub.knowledge.ingestion: "SourceRepository\n(findAll for ACL)"
+hub.knowledge.ingestion -> hub.access: "AclFilterProvider\n(allowed sources)"
 
-# --- Cross-context dependencies (the arrows a single-slice class diagram hides) --
-# retrieval requires knowledge's ports, reacts to its sync event, and asks access for the ACL set
-hub.retrieval -> hub.knowledge.kdomain: "VectorStorePort · EmbeddingPort\nFilter · ScoredId"
+# --- inside knowledge: the write-side submodules depend on each other -----------------
+# NOTE: ingestion also publishes a SourceRegistered event (SourceService.register) but nothing
+# subscribes to it today — indexing is triggered directly (REST/MCP), not by that event — so no
+# edge is drawn for it.
+# IndexingService calls IngestionService.ingest(sourceId) to pull the artifacts it chunks
+hub.knowledge.indexing -> hub.knowledge.ingestion: "IngestionService.ingest()"
+hub.knowledge.indexing -> hub.knowledge.graph: "LinkingService\n(final pipeline stage)"
+# NOTE: graph does NOT call back into indexing/ingestion — LinkingService only receives already-
+# built Chunk/RawArtifact values as method parameters from its caller. That is domain-model reuse,
+# not a service dependency, so (unlike an earlier version of this diagram) no edge is drawn for it;
+# graph is a pure leaf relative to the other write-side submodules.
+# SyncService calls ingestion's SourceRepository to fetch the Source it diffs against
+hub.knowledge.sync -> hub.knowledge.ingestion: "SourceRepository\n(find source to diff)"
+hub.knowledge.sync -> hub.knowledge.indexing: "IndexingService\nCommitIndexingService"
+# ingestion removes a Source and reacts nowhere itself; sync is the one that listens and evicts
+hub.knowledge.sync -> hub.knowledge.ingestion: "SourceDeleted\n(event)" {style.stroke-dash: 4}
+
+# --- retrieval depends on knowledge's shared ports and reacts to its sync event -------
 hub.retrieval -> hub.knowledge.sync: "IndexCompleted\n(cache invalidation)" {style.stroke-dash: 4}
-hub.retrieval -> hub.access.aclPort: "allowed sources\n(hard ACL pre-filter)"
-# the ACL authorizes on sources, whose model the ingestion submodule owns
-hub.access -> hub.knowledge.ingestion: "Source · SourceRepository"
-# shared kernel used by the three data-facing contexts (system is self-contained)
-hub.access -> hub.shared
-hub.knowledge -> hub.shared
-hub.retrieval -> hub.shared
-
-# --- Datastores / external service -------------------------------------------
-# knowledge write side dual-writes both stores and calls the embedding API
-hub.knowledge.kinfra -> neo4j: "graph + keyword (write)"
-hub.knowledge.kinfra -> qdrant: "vectors (upsert / evict)"
-hub.knowledge.kinfra -> embed: "embed(text)"
-# access persists the ACL in Neo4j
-hub.access -> neo4j: "principals · grants · credentials"
-# retrieval reads Neo4j directly (keyword + graph); its semantic path reaches Qdrant
-# through knowledge's VectorStorePort, so no direct retrieval -> Qdrant edge
-hub.retrieval -> neo4j: "keyword + graph search"
-
-# --- Inbound: which context each client drives (all authenticated first) ------
-authNote: "Every REST + MCP request passes access.BearerAuthFilter before dispatch" {
-  shape: text
-  style.italic: true
-}
-agent -> hub.retrieval: "MCP · query_knowledge"
-agent -> hub.knowledge.sync: "MCP · sync_source"
-admin -> hub.access: "REST · principals / grants / credentials"
-admin -> hub.knowledge.ingestion: "REST · register / sync sources"
-admin -> hub.retrieval: "REST · query"
-agent -> hub.system: "MCP · system_info" {style.stroke-dash: 4}
+hub.retrieval -> hub.access: "allowed sources\n(hard ACL pre-filter)"

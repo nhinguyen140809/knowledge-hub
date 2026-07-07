@@ -1,0 +1,95 @@
+\section{Đánh giá}
+
+\subsection{Môi trường đánh giá}
+
+Hệ thống được đánh giá khi chạy trong một môi trường phát triển đám mây (GitHub Codespaces) và kết nối với một AI Agent thực tế (Claude) qua MCP, phản ánh đúng cách hệ thống được dùng: agent khám phá nguồn, truy vấn bằng ngôn ngữ tự nhiên và nhận về ngữ cảnh có cấu trúc. Toàn hệ thống gồm ba container -- ứng dụng, Neo4j và Qdrant -- khởi chạy bằng một lệnh, nên kịch bản đánh giá tái lập được từ đầu. Quy mô dự án dùng để đánh giá ở mức nhỏ tới trung bình, phù hợp với phạm vi mục tiêu là một team trên một product.
+
+Mọi phép đo tác động vào hệ thống qua đúng interface mà người dùng thật sử dụng, REST API và MCP. Việc sinh embedding gọi tới Voyage AI model voyage-3, nên độ trễ truy vấn có thể bị ảnh hưởng bởi độ trễ của dịch vụ này.
+
+\subsection{Dữ liệu đánh giá}
+
+Các phép đo dùng chung một tập dữ liệu cố định, khai báo tách rời khỏi code:
+
+\begin{itemize}
+  \item Một corpus tri thức có nhãn -- một repo công khai thực cỡ nhỏ (khoảng $9$ nghìn dòng, $54$ file code) -- đăng ký như một nguồn và được lập chỉ mục đầy đủ (kèm $100$ commit) trong $\approx 39$ giây trước khi đo, đóng vai trò kho tri thức chung cho mọi truy vấn.
+  \item Một bộ truy vấn có nhãn (gold set) gồm 28 truy vấn, mỗi truy vấn gắn với tài liệu liên quan đã biết trước, dùng để chấm Recall@10 và MRR.
+  \item Một tập truy vấn tải (workload) dạng văn bản tự do, dùng cho các phép đo độ trễ.
+  \item Một nguồn nhỏ có thể thay đổi được, dùng để đo thời gian cập nhật tăng dần bằng cách sửa một số file rồi đồng bộ lại.
+  \item Hai principal đại diện cho hai mức quyền khác nhau: một principal đọc được mọi nguồn và một principal chỉ đọc một nguồn, phục vụ các phép đo liên quan tới phân quyền.
+\end{itemize}
+
+\subsection{Tự động hóa đánh giá}
+
+Các tiêu chí hiệu năng, chi phí cập nhật và bảo mật, cùng chất lượng truy xuất được đo bằng một bộ công cụ đánh giá tự động (test harness) điều khiển hệ thống qua REST API như một client thật. Test harness hiện thực bằng Python, thiết kế theo data-driven approach: REST API được gọi qua thư viện httpx, còn ngưỡng đạt, workload, danh sách nguồn và principal đều khai báo trong các tệp YAML và JSON, tách khỏi phần logic đo và thống kê, được vận hành qua một CLI.
+
+Quy trình chạy chia làm hai bước:
+\begin{itemize}
+  \item Bước chuẩn bị (seed) đăng ký nguồn, index toàn bộ corpus -- bước tốn kém nhất vì phải sinh embedding -- rồi tạo các principal cùng quyền đọc tương ứng, và chỉ cần chạy một lần. 
+  \item Bước đánh giá (benchmark) đọc lại trạng thái đã chuẩn bị và thực thi từng kịch bản, nên lặp lại được nhiều lần mà không phải index lại.
+\end{itemize}
+
+\subsection{Kiểm thử chức năng}
+
+Đúng đắn về chức năng được bảo đảm ở ba mức:
+
+\begin{itemize}
+  \item Kiểm thử đơn vị (Unit Tests) phủ các luật nghiệp vụ và bất biến của tầng Domain cùng logic điều phối của tầng Application, chạy độc lập không cần cơ sở dữ liệu hay mạng nhờ nghiệp vụ chỉ phụ thuộc các cổng.
+  \item Kiểm thử tích hợp (Integration Tests) chạy trên Neo4j và Qdrant thật (dựng trong container), kiểm chứng các bộ chuyển đổi lưu trữ, luồng lập chỉ mục và truy xuất đầu-cuối, và đặc biệt là tính nhất quán giữa hai cơ sở dữ liệu qua các lần đồng bộ.
+  \item Kiểm thử chấp nhận (Acceptance Tests) do vai trò quản trị thực hiện qua tài liệu API (giao diện Swagger): đăng ký nguồn, kích hoạt đồng bộ, quản lý phân quyền và truy vấn, kiểm chứng trọn vòng đời vận hành qua API. Kèm theo là test kết nối với AI Agent qua MCP, xác nhận agent khám phá và gọi được các tool như thiết kế.
+\end{itemize}
+
+Một nhóm test riêng tập trung vào việc không để rò rỉ phân quyền: với một principal không có quyền đọc một nguồn, không kết quả nào -- kể cả kết quả đến từ duyệt đồ thị và sau hợp nhất -- được có nguồn gốc từ nguồn đó. Nhóm này phủ từng đường truy xuất (ngữ nghĩa, từ khóa, đồ thị) để bảo đảm bộ lọc cứng có hiệu lực ở mọi đường.
+
+Hai mức test đầu (đơn vị và tích hợp) chạy tự động trên mỗi pull request qua CI -- tổng cộng khoảng $256$ test trên $74$ class -- nên mọi thay đổi đều được kiểm regression toàn bộ trước khi được hợp nhất, giữ cho hệ thống luôn ở trạng thái đúng đắn đã kiểm chứng.
+
+\subsection{Đánh giá hiệu năng}
+
+Hiệu năng được đo trên cơ sở dữ liệu đã index. Độ trễ truy vấn chưa cache còn bao gồm lời gọi sinh embedding cho câu hỏi tới embedding provider bên ngoài nên là một cận trên; các phép đo còn lại không phụ thuộc embedding provider:
+
+\begin{itemize}
+  \item Độ trễ truy vấn -- đo phân vị p50 và p95 cho truy vấn top-k, với ngưỡng đặt ra là p95 trong khoảng $2$ giây và p50 dưới $0.8$ giây; truy vấn trùng nội dung đã cache trả về dưới $100$ ms. Kết quả đo: truy vấn chưa cache đạt p50 $\approx 246$ ms và p95 $\approx 254$ ms, truy vấn đã cache đạt p95 $\approx 5$ ms -- tất cả trong ngưỡng. Dưới tải đồng thời ở quy mô đánh giá hiện tại ($20$ truy vấn song song), p95 chỉ giãn $\approx 1.45$ lần so với tải tuần tự, trong ngưỡng yêu cầu là $\leq 2$ lần ở quy mô này.
+  \item Sử dụng bộ nhớ -- đo mức tiêu thụ RAM của ứng dụng và của hai cơ sở dữ liệu ở cấu hình đánh giá. Kết quả đo: ứng dụng $\approx 628$ MiB, Neo4j $\approx 1.06$ GiB, Qdrant $\approx 152$ MiB (tổng khoảng $1.8$ GiB).
+\end{itemize}
+
+\subsection{Đánh giá cập nhật và chi phí bảo mật}
+
+Nhóm tiêu chí này đo hiệu quả của cơ chế cập nhật tăng dần và của phân quyền, mỗi tiêu chí kèm ngưỡng đặt ra:
+
+\begin{itemize}
+  \item Thời gian cập nhật incremental -- bấm giờ một lần đồng bộ cho một commit thay đổi $\leq 50$ file, từ lúc kích hoạt tới khi chỉ mục phản ánh thay đổi; ngưỡng là $\leq 2$ phút, không tính độ trễ của embedding provider. \\ 
+  \textit{Kết quả đo}: đồng bộ cho $5$ file thay đổi hoàn tất trong $\approx 1.9$ giây, xa dưới ngưỡng. Trong lúc một nguồn đang re-index, các truy vấn đọc song song ở quy mô đánh giá hiện tại ($10$ luồng trong $30$ giây) vẫn đạt tỉ lệ thành công $100\%$, cho thấy luồng đọc không bị khóa bởi luồng ghi.
+  \item Chi phí độ trễ của phân quyền -- vì mọi truy vấn qua API đều đi qua bộ lọc phân quyền, phép đo so độ trễ p95 của cùng một truy vấn giữa một principal đọc được mọi nguồn và một principal bị giới hạn ở một nguồn, trên cùng cơ sở dữ liệu và cùng mức tải; đây là chi phí của một tập quyền hẹp so với một tập quyền rộng, với ngưỡng là mức tăng $\leq 10\%$. \\
+  \textit{Kết quả đo}: p95 của hai mức quyền gần như bằng nhau (đọc mọi nguồn $\approx 261$ ms, giới hạn một nguồn $\approx 265$ ms), mức tăng chỉ $\approx 1.2\%$ -- trong ngưỡng, cho thấy bộ lọc phân quyền gần như không thêm chi phí độ trễ.
+  \item Độ trễ áp dụng thay đổi cấu hình -- thay đổi một cấu hình runtime (một grant trong ACL) rồi truy vấn lại, kiểm chứng thay đổi có hiệu lực trong $\leq 5$ giây mà không cần restart. \\
+  \textit{Kết quả đo}: sau khi thêm một grant lúc chạy, truy vấn bắt đầu trả về kết quả từ nguồn mới sau $\approx 4.5$ giây (trong ngưỡng). Tiêu chí này còn được bảo đảm bằng một test tự động khai thác thời hạn của bộ đệm phân quyền (đã mô tả ở phần Caching).
+  \item Không hard-code secret: quét mã nguồn bằng công cụ dò secret, xác nhận không khóa API hay mật khẩu nào nằm trong code.
+  \textit{Kết quả}: không phát hiện khóa hay mật khẩu hard-code nào ($0$ phát hiện).
+\end{itemize}
+
+\subsection{Đánh giá chất lượng truy xuất}
+
+Chất lượng truy xuất được đo trên bộ truy vấn có nhãn gồm $28$ truy vấn, dùng embedding API, bằng hai độ đo Recall@10 và MRR với ngưỡng lần lượt là $\geq 0.85$ và $\geq 0.70$. 
+
+\textit{Kết quả đo}: Recall@10 $\approx 0.96$ và MRR $\approx 0.75$, đều đạt ngưỡng. Để kiểm chứng giá trị của lối hybrid, cấu hình đầy đủ (ngữ nghĩa kết hợp từ khóa và đồ thị) được so với cấu hình chỉ dùng tìm kiếm ngữ nghĩa trên cùng bộ truy vấn. 
+
+Trên bộ truy vấn này, Recall@10 của hai cấu hình bằng nhau ($\approx 0.96$) vì semantic đơn lẻ đã đưa được tài liệu đúng vào top-10 cho gần như mọi truy vấn, khiến Recall bão hòa; lợi thế của hybrid thể hiện ở \textit{thứ hạng}, tức MRR: hybrid đạt $\approx 0.75$ so với $\approx 0.70$ của semantic thuần (cao hơn một biên $\approx 0.04$), nhờ nhánh từ khóa khớp chính xác các định danh mã nguồn và đẩy kết quả đúng lên cao hơn.
+
+\subsection{Demo với AI Agent và so sánh với agentic search}
+
+Hệ thống được demo với một AI Agent thực tế (Claude qua MCP) trên một repo Java thật, trong điều kiện agent đồng thời có sẵn quyền đọc trực tiếp filesystem của repo -- đúng bối cảnh một dự án cỡ vừa nằm trong thư mục làm việc. Corpus của demo này tách biệt với bộ dữ liệu đánh giá tự động ở các phần trên, nên kích thước dữ liệu dưới đây chỉ áp dụng cho riêng phần demo.
+
+\subsubsection{Kích thước dữ liệu demo}
+
+Corpus demo là một repo Java thật (jsoup~\cite{jsoup_repo}, cố định tại một commit cụ thể), quy mô $307$ file trong đó $195$ file Java, khoảng $55$ nghìn dòng code Java và $2.9$ MB mã nguồn. Sau khi index đầy đủ, corpus sinh ra $292$ node file, $5145$ chunk (gồm $4319$ chunk code và $826$ chunk tài liệu), $5139$ node entity mã nguồn (CodeEntity) và $100$ node commit; kho vector Qdrant chứa $5245$ vector chiều $1024$ (mô hình voyage-3). Chi phí embedding cho một lần index đầy đủ vào khoảng $717$ nghìn token ($467$ nghìn cho code và $250$ nghìn cho tài liệu), trung bình $139$ token mỗi chunk. Phía truy vấn chỉ embed phần văn bản câu hỏi nên chi phí token là không đáng kể.
+
+Về phần đồ thị, corpus sinh ra khoảng $21$ nghìn quan hệ. Ngoài các quan hệ chứa và cấu trúc chiếm phần lớn (\texttt{PART\_OF}, \texttt{CONTAINS}, \texttt{CHUNK\_OF}, \texttt{DECLARES}), phần quan hệ ngữ nghĩa mã nguồn -- vốn là giá trị riêng của mô hình đồ thị -- gồm \texttt{REFERENCES} ($1717$), \texttt{READS} ($1687$), \texttt{CALLS} ($978$), \texttt{WRITES} ($600$), \texttt{IMPORTS} ($547$), \texttt{INSTANTIATES} ($449$), \texttt{MODIFIES} ($253$), \texttt{OVERRIDES} ($134$), \texttt{HAS\_TYPE} ($70$), \texttt{EXTENDS} ($68$), \texttt{ANNOTATED\_WITH} ($11$) và \texttt{IMPLEMENTS} ($2$). Số \texttt{IMPLEMENTS} và \texttt{CALLS} liên type thấp phản ánh đúng hai hạn chế đã nêu: \texttt{IMPLEMENTS} chỉ bắt được khi cả interface lẫn lớp hiện thực cùng nằm trong corpus, còn \texttt{CALLS} hiện chỉ trích cho lời gọi trong cùng type.
+
+\subsubsection{Kết quả demo}
+
+Ở mặt tích cực, một truy vấn hub gợi ý đúng nhóm file liên quan cho câu hỏi (ví dụ \texttt{DataUtil.java}, \texttt{HtmlTreeBuilder.java}, \texttt{StringUtil.java}) ngay từ lần gọi đầu, giúp agent không phải tự đoán tên file và tiết kiệm một vài vòng dò tìm ban đầu -- đúng với kỳ vọng về lợi thế so với cách agent tự khám phá (agentic search) thuần túy.
+
+Tuy nhiên, ở chính bối cảnh này lợi thế đó chưa đủ để thay thế việc đọc trực tiếp. Điểm liên quan (relevance score) của các kết quả đều thấp (khoảng $0.02$--$0.03$) và trộn lẫn nhiễu (changelog, file test, README) với code thật; kết quả trả về là các chunk rời rạc, thiếu ngữ cảnh của cả class và của đoạn code liền trước và sau, nên chưa đủ để trả lời các câu hỏi chi tiết; và bước quyết định cuối cùng -- đọc chính xác logic cụ thể như máy trạng thái của insertion-mode hay thứ tự dò charset -- vẫn phải thực hiện bằng đọc trực tiếp source. Nói cách khác, tiêu chí "agent dựng lại được câu trả lời chỉ từ kết quả trả về" chưa đạt cho các câu hỏi chi tiết trong bối cảnh này: giá trị gia tăng chủ yếu là định vị nhóm file, không phải thay thế bước đọc code.
+
+Kết quả này nhất quán với phạm vi của hệ thống: lợi thế lớn nhất kỳ vọng ở các điều kiện mà đọc trực tiếp không xử lý được -- repo rất lớn không rõ điểm bắt đầu, tri thức trải trên nhiều nguồn cần bắc cầu code--doc--commit (thế mạnh của phần đồ thị và bộ lọc theo type). Việc đánh giá định lượng ở đúng các điều kiện đó, cùng các cải tiến mà demo gợi ý, được trình bày ở chương Hạn chế \& Hướng phát triển.
+
+Demo được thực hiện dưới một số ràng buộc thực tế, nên phạm vi của nó có giới hạn. Toàn hệ thống chạy trong một môi trường phát triển đám mây (GitHub Codespaces) với tài nguyên tính toán hạn chế, nên việc dựng và duy trì một corpus lớn trong thời gian dài là không khả thi. Việc sinh embedding lại gọi tới một dịch vụ trả phí, nên số lần lập chỉ mục và số truy vấn thử nghiệm được giữ ở mức tiết kiệm thay vì chạy trên quy mô lớn hay lặp lại nhiều lần. Cùng với giới hạn về thời gian, các ràng buộc này khiến demo dừng ở một repo cỡ vừa với số truy vấn hạn chế; do đó việc đánh giá trên corpus lớn hơn và nhiều kịch bản hơn được để lại cho các thí nghiệm mở rộng ở chương sau.

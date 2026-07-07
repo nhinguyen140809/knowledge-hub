@@ -1,0 +1,53 @@
+# Flowchart — cơ chế định danh ổn định (stable id derivation), theo docs/report/4-method.tex
+# §Quản lý phiên bản tri thức. Hai chiến lược (theo danh tính / theo nội dung) đều dùng chung một
+# primitive băm (IdFactory.stableId -> Hashing.sha256); khác nhau ở CÁC PHẦN được đưa vào hàm băm.
+# Code: shared/id/{Hashing,IdFactory}.java, indexing/domain/{CodeEntity,Chunk}.java,
+#       ingestion/domain/CommitRecord.java, indexing/application/CommitIndexingService.java
+# Render:  d2 FLOWCHART-IDENTIFICATION.d2 flowchart-identification.svg   (or .pdf for LaTeX)
+vars: {
+  d2-config: {
+    layout-engine: elk
+    pad: 16
+  }
+}
+direction: down
+
+classes
+
+unit: "Đơn vị tri thức\n(file / code entity \n/ chunk / commit)" {shape: oval}
+kind: "Bản chất dữ liệu?" {shape: diamond}
+
+identity_strategy: "Định danh theo danh tính" {
+  class: identity
+  file: "File\n(sourceId, path)"
+  entity: "CodeEntity\n(sourceId, path, \nqualifiedName)"
+}
+
+content_strategy: "Định danh theo nội dung" {
+  class: content
+  text: "text"
+  hash_text: "contentHash"
+  chunk_parts: "Chunk\n(sourceId, path, contentHash)"
+  text -> hash_text: "Hash"
+  hash_text -> chunk_parts
+}
+
+commit_case: "Commit\n(sourceId, sha)" {
+  class: content
+}
+
+core_hash: "SHA-256"
+
+id_out: "Định danh (ID)" {shape: oval}
+
+unit -> kind
+kind -> identity_strategy: "file / code entity"
+kind -> content_strategy: "chunk"
+kind -> commit_case: "commit"
+
+identity_strategy.file -> core_hash
+identity_strategy.entity -> core_hash
+content_strategy.chunk_parts -> core_hash
+commit_case -> core_hash
+
+core_hash -> id_out

@@ -94,7 +94,7 @@ open http://localhost:8000/docs # Swagger UI
 ├── Dockerfile                            # multi-stage build → runtime image
 ├── docker-compose.yml                    # app + Neo4j + Qdrant
 ├── justfile                              # dev task runner
-├── .mcp.json                             # MCP server config for agents (e.g. Claude Code)
+├── .mcp.json                             # MCP server config for agents
 ├── .githooks/pre-commit                  # auto-format on commit
 └── .github/workflows/ci.yml              # CI: format check + build + tests
 ```
@@ -190,5 +190,11 @@ just up          # docker compose up -d --build
 
 ## Documentation
 
-Design docs (SRS, tech-stack decisions, research, diagrams) and the LaTeX report live under
-[`docs/`](docs). The evaluation & performance harness has its own guide in [`perf/`](perf).
+Design docs (diagrams, usage) and the LaTeX report live under
+[`docs/`](docs). 
+
+The evaluation & performance harness has its own guide in [`perf/`](perf).
+
+## Demo
+
+**Video demo:** [https://youtu.be/B6wjchjxh9E](https://youtu.be/B6wjchjxh9E)

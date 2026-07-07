@@ -1,0 +1,84 @@
+\section{Hạn chế \& Hướng phát triển}
+
+Hệ thống ở phạm vi hiện tại đã phục vụ trọn vòng thu thập, cấu trúc hóa và truy xuất tri thức cho một team. Một số hạn chế đến từ các quyết định thiết kế cố ý giữ ở mức tối giản để đúng phạm vi và ưu tiên tính đúng đắn hơn độ phủ; một số khác thể hiện qua quá trình chạy thử thực tế với agent. Phần này nêu các hạn chế đó cùng hướng phát triển tương ứng.
+
+\subsection{Nâng giá trị thực tế của truy xuất}
+
+Kết quả demo với agent (chi tiết ở chương Đánh giá) cho thấy một hạn chế lớn là trên một repo cỡ vừa mà agent có sẵn quyền đọc filesystem, giá trị gia tăng của hệ thống chủ yếu là định vị nhóm file liên quan, chưa thay thế được bước đọc code trực tiếp. Điểm liên quan thấp (khoảng $0.02$--$0.03$), kết quả lẫn nhiễu, và các chunk rời rạc thiếu ngữ cảnh khiến agent vẫn phải đọc source để lấy chi tiết chính xác.
+
+Từ đó có hai hướng phát triển. Về phía đánh giá, cần \textbf{đo hệ thống ở đúng điều kiện nó tạo khác biệt lớn nhất} thay vì một repo đơn cỡ vừa mà agent đã có toàn quyền đọc: một corpus lớn trải trên nhiều nguồn, với các câu hỏi bắc cầu code--doc--commit mà đọc trực tiếp một file không trả lời được, để xác định lợi thế của phần graph và bộ lọc theo type. Về phía chất lượng kết quả, điểm liên quan thấp và lẫn nhiều nhiễu cho thấy cần một bước rerank để đẩy code thật lên trên nhiễu tài liệu, đồng thời cần làm bước duyệt đồ thị hiệu quả hơn -- bước này vốn đã đảm nhiệm việc mở rộng sang tri thức liên quan quanh kết quả seed, nhưng trong demo chưa có đóng góp đáng kể; cả hai hướng cần đo tác động lên Recall@10 và MRR trước khi kết luận.
+
+\subsection{Mở rộng ngôn ngữ phân tích}
+
+Việc trích cấu trúc mã nguồn hiện dựa trên một bộ phân tích cú pháp cho một ngôn ngữ lập trình (Java). Source code ngôn ngữ đó vẫn được thu thập và chunk theo văn bản, nhưng không sinh ra entity và quan hệ cấu trúc, nên phần đồ thị của tri thức bị giới hạn theo ngôn ngữ. Hướng phát triển là \textbf{tách việc phân tích cú pháp thành một dịch vụ riêng đứng sau cùng một ranh giới trừu tượng}, cho phép mỗi ngôn ngữ có một bộ phân tích chuyên biệt (kể cả hiện thực bằng một hệ sinh thái khác mạnh về phân tích đa ngôn ngữ) mà không đụng tới phần còn lại của hệ thống. Nhờ kiến trúc port \& adapter, thêm một ngôn ngữ về nguyên tắc là thêm một bộ chuyển đổi, không phải sửa code sẵn có.
+
+Cùng nguyên nhân nhưng ở một điểm mở rộng khác: các tín hiệu liên kết liên artifact (tên ghép CamelCase, cú pháp tên định danh đầy đủ, quy ước đặt tên test) cũng đứng sau một ranh giới theo ngôn ngữ riêng, tách biệt với bộ phân tích cú pháp ở trên, và hiện tại cũng chỉ có Java được hiện thực. Một ngôn ngữ khác -- ví dụ Python với quy ước \texttt{snake\_case} thay vì CamelCase -- cần một hiện thực riêng của ranh giới này thì liên kết liên artifact mới nhận diện được tham chiếu mã nguồn viết bằng ngôn ngữ đó. Hướng phát triển giống hệt trên: \textbf{thêm linker mới cho nhiều ngôn ngữ}, không sửa các linker sẵn có.
+
+\subsection{Phân giải function call giữa nhiều type bằng symbol solver}
+
+Quan hệ \texttt{CALLS} hiện chỉ được trích cho lời gọi trong cùng type (gọi trực tiếp hoặc qua \texttt{this}), vì bộ trích cấu trúc hiện tại chỉ đọc cây cú pháp (AST) của từng file riêng lẻ. Một lời gọi qua object khác (\texttt{obj.method()}) đòi hỏi biết kiểu tĩnh của \texttt{obj} để phân giải đúng phương thức được gọi, nhất là khi có overload -- việc này cần type inference đầy đủ trên toàn bộ classpath, vượt quá khả năng của một bộ phân tích cú pháp đơn file, nên bị bỏ qua thay vì đoán, theo đúng nguyên tắc an toàn chung của bước trích quan hệ.
+
+Hướng phát triển là bổ sung một bộ trích \texttt{CALLS} liên type dựa trên symbol solver (ví dụ JavaSymbolSolver của JavaParser), phân giải kiểu tĩnh của biểu thức gọi qua toàn bộ classpath của source trước khi ghép cạnh. Cơ chế an toàn hiện có -- bỏ tham chiếu không phân giải được thay vì đoán -- áp dụng nguyên vẹn cho bộ trích mới, nên đây là một bổ sung độ phủ, không phải thay đổi kiến trúc.
+
+\subsection{Liên kết liên artifact bằng suy luận}
+
+Liên kết giữa tài liệu, requirement và code hiện chỉ dựa trên các tín hiệu tường minh -- tham chiếu đường dẫn, tên định danh đầy đủ, tên ghép -- kèm điểm tin cậy và ngưỡng, và cố ý không dùng so khớp ngữ nghĩa để khẳng định quan hệ. Đây là một đánh đổi có chủ đích: một liên kết sai gây hại hơn một liên kết thiếu, nên hệ thống thà bỏ qua một ánh xạ không chắc còn hơn khẳng định một quan hệ khi chưa đủ căn cứ. Hệ quả là liên kết chính xác nhưng chỉ những ánh xạ được viết tường minh trong tài liệu mới trở thành cạnh.
+
+Hướng phát triển là \textbf{bổ sung một bước suy luận bằng LLM} để mở rộng độ phủ mà vẫn giữ tính đúng đắn: một mô hình đọc tài liệu và code rồi đề xuất các liên kết kèm căn cứ, để hệ thống ghi lại với điểm tin cậy phân biệt rõ với các liên kết tất định. Cách này bổ sung đúng vào điểm yếu nhất của cơ chế hiện tại -- những quan hệ đòi hiểu ngữ cảnh chứ không có tín hiệu từ vựng tường minh, mà vẫn không đánh mất nguyên tắc phân biệt liên kết chắc chắn với liên kết phỏng đoán.
+
+\subsection{Tài liệu và requirement thành entity hạng nhất}
+
+Hiện tại một tài liệu được biểu diễn bằng node file cùng các chunk thuộc file đó, và một requirement chỉ là một mã hiệu nằm trong một chunk tài liệu chứ chưa phải một node riêng. Nhờ vậy nội dung của tài liệu và requirement vẫn tìm được theo ngữ nghĩa và từ khóa, nhưng hệ thống chưa thể định vị chính xác \textit{từng} requirement hay duyệt đồ thị từ một requirement tới đoạn code hiện thực requirement đó như một bước quan hệ.
+
+Hướng phát triển là \textbf{hiện thực tài liệu và requirement thành entity hạng nhất}, đối xứng với cách mã nguồn được mô hình hóa: một tài liệu đóng vai trò như một file, một requirement đóng vai trò như một entity con được tài liệu chứa và được chunk riêng. Điều này đòi hỏi một chiến lược chunking chuyên cho tài liệu đặc tả -- cắt theo ranh giới từng requirement (nhận diện qua mã hiệu) thay vì theo đoạn -- và khi đó các cạnh "requirement hiện thực bởi code" xuất phát trực tiếp từ node requirement, cho phép truy vấn chính xác ở mức từng requirement.
+
+\subsection{Hoàn thiện bộ từ vựng quan hệ}
+
+Bộ từ vựng quan hệ được định nghĩa trước một cách đầy đủ để lược đồ đồ thị ổn định, nhưng một số loại quan hệ chưa có bộ sinh tương ứng -- chẳng hạn \textit{lời gọi API giữa các service, tài liệu tham chiếu tài liệu, và liên kết test}. Hướng phát triển là bổ sung dần các bộ sinh cho những quan hệ này khi có tín hiệu phù hợp, mà không phải thay đổi lược đồ hay các truy vấn duyệt đồ thị đã có.
+
+\subsection{Độ sâu duyệt đồ thị cấu hình được}
+
+Bước duyệt đồ thị trong truy xuất hiện chỉ mở rộng đúng một bước (one-hop) từ kết quả hạt giống, trừ một nhánh riêng cho commit được viết cứng thành hai bước vì liên kết commit luôn đi qua đúng một file trung gian. Số bước không phải tham số cấu hình lẫn tham số truy vấn: giá trị này nằm cố định ngay trong câu truy vấn đồ thị. Cách này giữ độ trễ và độ phức tạp dễ kiểm soát ở phạm vi hiện tại, nhưng đồng nghĩa agent không thể yêu cầu mở rộng ngữ cảnh xa hơn một bước quan hệ, dù không phải câu hỏi nào cũng nằm gọn trong đúng một bước. \\
+\textit{Ví dụ:} để trả lời "còn cách hiện thực nào khác của interface X", hệ thống cần đi từ một method, tới interface mà method đó implement, rồi tới các method khác cùng implement interface đó: hai bước liên tiếp, vượt quá khả năng hiện tại.
+
+Hướng phát triển là \text{đưa số bước (hop) thành một tham số cấu hình được}, mặc định vẫn là một để giữ hành vi hiện tại, nhưng cho phép mở rộng khi câu hỏi cần ngữ cảnh xa hơn. Đánh đổi cần cân nhắc khi mở tham số này: kích thước tập kết quả và độ trễ tăng nhanh theo mỗi bước thêm, nên cần một giới hạn trên hợp lý và tái sử dụng đúng cơ chế giới hạn số hạt giống đã có, để tránh mở rộng tràn lan.
+
+\subsection{Tối ưu truy xuất và tự động đồng bộ}
+
+Một số hướng tối ưu để phát triển thêm: khai thác khả năng hybrid dense-sparse gốc của vector store thay cho phần hợp nhất ở tầng Application khi có vector thưa; thêm một bước xếp hạng lại (reranking) trên nhóm ứng viên đầu để tăng độ chính xác; và \textbf{bổ sung cơ chế tự kích hoạt đồng bộ như một tùy chọn} (webhook khi có commit hoặc quét định kỳ) bên cạnh cơ chế đồng bộ theo kích hoạt hiện tại.
+
+\subsection{Đo riêng đóng góp của graph traversal}
+
+Chương Đánh giá chỉ so hybrid (semantic + keyword + graph) với semantic thuần, nên không tách được riêng đóng góp của graph khỏi keyword -- cả hai luôn bật hoặc tắt cùng nhau. Hệ thống chưa biết nếu bỏ graph đi thì chất lượng truy xuất giảm bao nhiêu.
+
+Để đo được, cần ba điều kiện chưa có:
+
+\begin{itemize}
+  \item Một flag tắt riêng được graph để so với cấu hình không graph. \texttt{GraphTraversalStage} hiện luôn chạy, không tách ra được.
+  \item Một bộ câu hỏi mà đáp án chỉ tìm ra nhờ một bước quan hệ (\texttt{CALLS}, \texttt{IMPLEMENTS}...). Gold set 52 câu hiện tại không đảm bảo điều này cho từng câu.
+  \item Một bước xác minh thủ công, loại khỏi bộ câu hỏi đó những câu semantic-only đã tự trả lời đúng. Tốn thời gian hơn hẳn viết một gold set thông thường.
+\end{itemize}
+
+Trường \texttt{viaPath} có sẵn trong response (đường quan hệ của một hit từ graph) đo được tỉ lệ kết quả đến từ graph, nhưng không xác nhận kết quả đó có cần thiết hay không, nên chỉ là tín hiệu bổ trợ.
+
+Vì thiếu flag tắt riêng và tốn công xác minh thủ công, phép đo này chưa được thực hiện. Hướng phát triển là \textbf{thêm flag ablation cho \texttt{GraphTraversalStage} và xây bộ câu hỏi graph-dependent} theo quy trình lọc ở trên, làm cơ sở cho một tiêu chí Recall@10/MRR riêng so sánh có và không có graph.
+
+\subsection{Hướng dẫn cách đặt câu hỏi cho agent}
+
+Mô tả của tool MCP \texttt{query\_knowledge} hiện chỉ nêu tool dùng để làm gì, chưa hướng dẫn agent nên diễn đạt câu hỏi thế nào để đạt kết quả tốt nhất. Một quy tắc có vẻ hợp lý về lý thuyết là ưu tiên câu hỏi tự nhiên đầy đủ thay vì cụm từ khóa rời rạc, vì path semantic thường lợi thế hơn với câu đầy đủ, nhưng chưa có số đo nào xác nhận điều này trên chính hệ thống: câu hỏi dài có thể làm loãng embedding so với việc dùng đúng tên định danh, vốn là lợi thế của path keyword/BM25, nên chưa đủ căn cứ để khẳng định cách diễn đạt nào tốt hơn.
+
+Hướng phát triển là \textbf{chạy một thí nghiệm đối chứng trước khi đưa hướng dẫn vào mô tả tool}: đo Recall@10/MRR trên cùng bộ gold set với hai cách diễn đạt cho mỗi câu hỏi -- dạng từ khóa ngắn và dạng câu hỏi tự nhiên đầy đủ -- tái sử dụng nguyên hạ tầng đánh giá đã có. Khuyến nghị cụ thể chỉ nên đưa vào mô tả tool khi thí nghiệm cho thấy chênh lệch rõ ràng; nếu không, mô tả nên giữ trung lập thay vì khẳng định một quy tắc chưa được kiểm chứng.
+
+\subsection{Đánh giá ở quy mô và điều kiện mở rộng}
+
+Một số tiêu chí đánh giá đòi hỏi corpus lớn, tính năng bổ sung, hoặc hạ tầng đo vượt quá phạm vi một team trên một product, nên được để lại như các thí nghiệm mở rộng:
+
+\begin{itemize}
+  \item Quy mô lớn. Kiểm chứng rằng hệ thống vẫn giữ được các ngưỡng độ trễ và chất lượng truy xuất trên cơ sở dữ liệu cỡ hàng triệu chunk, thay vì quy mô nhỏ--trung bình dùng để đánh giá hiện tại; đòi hỏi dựng một corpus đủ lớn cùng kịch bản tải tương ứng.
+  \item Nén vector (quantization). Bổ sung tùy chọn nén/quantization vector rồi đo mức giảm dung lượng đổi lấy mức suy giảm chất lượng truy xuất, để cân bằng chi phí lưu trữ với độ chính xác.
+  \item Cô lập mạng ở chế độ local model. Xác minh bằng giám sát lưu lượng rằng khi dùng mô hình embedding local, không request nào mang dữ liệu nguồn rời khỏi mạng nội bộ; đòi hỏi một môi trường bắt và phân tích gói tin.
+  \item Truy vấn đồng thời ở quy mô lớn. Chỉ số này đã được đo ở quy mô nhỏ (xem chương Đánh giá) và đạt ngưỡng, nhưng chỉ ở mức $20$ truy vấn song song trên một corpus nhỏ; cần lặp lại trên corpus lớn và mức song song cao hơn để khẳng định mức xuống cấp dưới tải thực.
+  \item Tính sẵn sàng khi cập nhật ở quy mô lớn. Chỉ số này cũng đã được đo ở quy mô nhỏ và đạt (truy vấn không bị khóa khi đang re-index), nhưng chỉ với tải đọc nhẹ và một nguồn nhỏ; cần kiểm chứng dưới tải đọc--ghi lớn và kéo dài hơn.
+\end{itemize}
+
+Trong các tiêu chí phụ thuộc quy mô ở trên, truy vấn đồng thời và tính sẵn sàng đã được đo ở quy mô nhỏ bằng chính khung tự động hóa đánh giá -- khung này vốn đã đóng vai một load generator song song -- nên phần còn thiếu chỉ là lặp lại chúng trên một corpus đủ lớn và ở mức tải cao hơn, cùng với thí nghiệm quy mô hàng triệu chunk vốn hoàn toàn mới.
