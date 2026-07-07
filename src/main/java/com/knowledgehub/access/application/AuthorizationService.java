@@ -35,6 +35,11 @@ public class AuthorizationService implements Authorizer {
 
   @Override
   public Set<String> readableSources(AuthenticatedPrincipal principal) {
+    if (principal.isAdmin()) {
+      return sources.findAll().stream()
+          .map(Source::sourceId)
+          .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
     Set<String> granted = grants.readableSourcesFor(principal.principalId());
     if (systemConfig.defaultPolicy() == DefaultPolicy.DENY) {
       return granted;
