@@ -1,9 +1,13 @@
 # Module / Component Architecture — Knowledge Hub (whole-system code structure)
-# Component (package) view: the 4 bounded contexts + the shared kernel, the submodules
-# inside `knowledge`, and the datastores / external service they depend on. Boxes are Java
-# packages (packaged-by-feature, then by layer); arrows are compile-time dependencies
-# labelled with the port / type / event that crosses the boundary. Dashed = domain event.
-# Detailed class views of a submodule: CLASS-INDEXING.d2, CLASS-RETRIEVAL.d2, CLASS-ACCESS.d2.
+# Component (package) view: only the 4 bounded contexts (access, knowledge, retrieval, system)
+# and the submodules inside `knowledge` (ingestion, indexing, graph, sync) — no shared kernel,
+# datastores, or external services. Boxes are Java packages; an arrow means A actually calls into
+# B at runtime (a service/port method invocation or a domain event A reacts to) — verified against
+# real usage in src/main/java, not just an `import`. Merely reusing another package's plain domain
+# type (e.g. passing a Chunk/RawArtifact around) does NOT get an edge, since that is not
+# communication between components. Dashed = domain event. `system` has zero cross-context
+# dependencies (self-contained). Detailed class views of a submodule: CLASS-INDEXING.d2,
+# CLASS-RETRIEVAL.d2, CLASS-ACCESS.d2.
 # Render:  d2 COMPONENT-DIAGRAM.d2 component-diagram.svg   (or .pdf for LaTeX)
 vars: {
   d2-config: {
@@ -13,13 +17,23 @@ vars: {
 }
 direction: down
 
-classes
+classes: {
+  ctx: {
+    style.fill: "#eff6ff"
+    style.stroke: "#3b82f6"
+  }
+  sub: {
+    shape: package
+    style.fill: "#f8fafc"
+    style.stroke: "#94a3b8"
+  }
+}
 
-# --- The application: 4 bounded contexts + shared kernel ----------------------
-hub: "Knowledge Hub" {
+# --- The application: 4 bounded contexts ---------------------------------------
+hub: "" {
   style.fill: "#ffffff"
 
-  access: "access \nauthentication + ACL"
+  access: "access \nauthentication + ACL" {class: ctx}
 
   knowledge: "knowledge (write side)" {
     class: ctx
@@ -30,11 +44,31 @@ hub: "Knowledge Hub" {
   }
 
   retrieval: "retrieval (read side)" {class: ctx}
-  system: "system (runtime info)" {class: ctx}
+  system: "system (runtime info)\n— self-contained" {class: ctx}
 }
 
+# --- access <-> knowledge.ingestion: ACL is authorized on the Source ingestion owns ----
+# AuthorizationService (access) calls ingestion's SourceRepository directly to enumerate sources
+hub.access -> hub.knowledge.ingestion: "SourceRepository\n(findAll for ACL)"
+hub.knowledge.ingestion -> hub.access: "AclFilterProvider\n(allowed sources)"
+
+# --- inside knowledge: the write-side submodules depend on each other -----------------
+# NOTE: ingestion also publishes a SourceRegistered event (SourceService.register) but nothing
+# subscribes to it today — indexing is triggered directly (REST/MCP), not by that event — so no
+# edge is drawn for it.
+# IndexingService calls IngestionService.ingest(sourceId) to pull the artifacts it chunks
+hub.knowledge.indexing -> hub.knowledge.ingestion: "IngestionService.ingest()"
+hub.knowledge.indexing -> hub.knowledge.graph: "LinkingService\n(final pipeline stage)"
+# NOTE: graph does NOT call back into indexing/ingestion — LinkingService only receives already-
+# built Chunk/RawArtifact values as method parameters from its caller. That is domain-model reuse,
+# not a service dependency, so (unlike an earlier version of this diagram) no edge is drawn for it;
+# graph is a pure leaf relative to the other write-side submodules.
+# SyncService calls ingestion's SourceRepository to fetch the Source it diffs against
+hub.knowledge.sync -> hub.knowledge.ingestion: "SourceRepository\n(find source to diff)"
+hub.knowledge.sync -> hub.knowledge.indexing: "IndexingService\nCommitIndexingService"
+# ingestion removes a Source and reacts nowhere itself; sync is the one that listens and evicts
+hub.knowledge.sync -> hub.knowledge.ingestion: "SourceDeleted\n(event)" {style.stroke-dash: 4}
+
+# --- retrieval depends on knowledge's shared ports and reacts to its sync event -------
 hub.retrieval -> hub.knowledge.sync: "IndexCompleted\n(cache invalidation)" {style.stroke-dash: 4}
 hub.retrieval -> hub.access: "allowed sources\n(hard ACL pre-filter)"
-# the ACL authorizes on sources, whose model the ingestion submodule owns
-#
-hub.access -> hub.knowledge.ingestion: "Source"
