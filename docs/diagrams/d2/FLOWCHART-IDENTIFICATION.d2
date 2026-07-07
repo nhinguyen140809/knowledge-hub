@@ -12,70 +12,42 @@ vars: {
 }
 direction: down
 
-classes: {
-  identity: {
-    style.fill: "#2563eb"
-    style.stroke: "#eef6ff"
-  }
-  content: {
-    style.fill: "#059669"
-    style.stroke: "#ecfdf5"
-  }
-  core: {
-    style.fill: "#7c3aed"
-    style.stroke: "#f5f3ff"
-  }
-  outcome: {
-    style.fill: "#d97706"
-    style.stroke: "#fef3c7"
-  }
-}
+classes
 
-unit: "Đơn vị tri thức\n(file / code entity / chunk / commit)" {shape: oval}
+unit: "Đơn vị tri thức\n(file / code entity \n/ chunk / commit)" {shape: oval}
 kind: "Bản chất dữ liệu?" {shape: diamond}
 
 identity_strategy: "Định danh theo danh tính" {
   class: identity
-  file: "File\n(sourceId, path)\nIdFactory.fileId"
-  entity: "CodeEntity\n(sourceId, path, qualifiedName)\nCodeEntity.deriveId"
+  file: "File\n(sourceId, path)"
+  entity: "CodeEntity\n(sourceId, path, \nqualifiedName)"
 }
 
 content_strategy: "Định danh theo nội dung" {
   class: content
-  hash_text: "contentHash = Hashing.sha256(text)"
-  chunk_parts: "Chunk\n(sourceId, path, contentHash)\nChunk.deriveId"
+  text: "text"
+  hash_text: "contentHash"
+  chunk_parts: "Chunk\n(sourceId, path, contentHash)"
+  text -> hash_text: "Hash"
   hash_text -> chunk_parts
 }
 
-commit_case: "Commit (trường hợp đơn giản nhất)\n(sourceId, sha)\nIdFactory.commitId\nsha đã là địa chỉ theo nội dung, do Git bảo đảm" {
+commit_case: "Commit\n(sourceId, sha)" {
   class: content
 }
 
-core_hash: "Cơ chế băm chung\n(IdFactory.stableId)" {
-  class: core
-  join: "Ghép các phần bằng ký tự phân cách NUL"
-  sha256: "SHA-256 (Hashing.sha256)"
-  join -> sha256
-}
+core_hash: "SHA-256"
 
-id_out: "Định danh (hex, tất định)" {shape: oval}
-
-outcome_identity: "Nội dung đổi -> định danh KHÔNG đổi\n-> cập nhật tại chỗ (upsert), quan hệ trỏ vào không đứt" {class: outcome}
-outcome_content: "Nội dung đổi -> định danh đổi theo\n-> chunk mới; chunk cũ bị gỡ khỏi cả 2 kho" {class: outcome}
-outcome_commit: "Idempotent theo (sourceId, sha)\n-> không phụ thuộc thời điểm/số lần xử lý" {class: outcome}
+id_out: "Định danh (ID)" {shape: oval}
 
 unit -> kind
 kind -> identity_strategy: "file / code entity"
 kind -> content_strategy: "chunk"
 kind -> commit_case: "commit"
 
-identity_strategy.file -> core_hash.join
-identity_strategy.entity -> core_hash.join
-content_strategy.chunk_parts -> core_hash.join
-commit_case -> core_hash.join
+identity_strategy.file -> core_hash
+identity_strategy.entity -> core_hash
+content_strategy.chunk_parts -> core_hash
+commit_case -> core_hash
 
-core_hash.sha256 -> id_out
-
-id_out -> outcome_identity: "theo danh tính"
-id_out -> outcome_content: "theo nội dung"
-id_out -> outcome_commit: "commit"
+core_hash -> id_out
