@@ -101,7 +101,7 @@ Liên kết giữa tài liệu và source code không thể dựa vào cú pháp
   \textit{Ví dụ:} tài liệu nhắc tới \texttt{Chunk} -- vừa là tên một entity vừa là từ thông dụng trong văn xuôi -- hoặc một tên khớp đồng thời nhiều entity, khiến khả năng tín hiệu đó thực sự ám chỉ đúng entity là khá thấp.
 \end{itemize}
 
-Các quy tắc như nhận diện tên ghép CamelCase, phân tích tên định danh đầy đủ hay quy ước đặt tên của mã kiểm thử đều phụ thuộc vào từng ngôn ngữ lập trình. Vì vậy, hệ thống tổ chức các quy tắc này dưới dạng các thành phần mở rộng theo ngôn ngữ, tương tự như bộ phân tích cú pháp được sử dụng trong quá trình chunking. Hiện tại, hệ thống mới cung cấp sẵn bộ quy tắc cho Java; khi hỗ trợ một ngôn ngữ khác, chẳng hạn Python với quy ước \texttt{snake_case}, cần có một hiện thực riêng của bộ quy tắc này để nhận diện đúng các tín hiệu liên kết trong ngôn ngữ đó.
+Các quy tắc như nhận diện tên ghép CamelCase, phân tích tên định danh đầy đủ hay quy ước đặt tên của mã kiểm thử đều phụ thuộc vào từng ngôn ngữ lập trình. Vì vậy, hệ thống tổ chức các quy tắc này dưới dạng các thành phần mở rộng theo ngôn ngữ, tương tự như bộ phân tích cú pháp được sử dụng trong quá trình chunking. Hiện tại, hệ thống mới cung cấp sẵn bộ quy tắc cho Java; khi hỗ trợ một ngôn ngữ khác, chẳng hạn Python với quy ước \texttt{snake\_case}, cần có một hiện thực riêng của bộ quy tắc này để nhận diện đúng các tín hiệu liên kết trong ngôn ngữ đó.
 
 Để hạn chế các liên kết có độ tin cậy thấp, hệ thống áp dụng một ngưỡng cấu hình chỉ cho phép những liên kết có điểm tin cậy vượt ngưỡng mới được ghi vào đồ thị. Giá trị ngưỡng này có thể được điều chỉnh để cân bằng giữa độ phủ và độ sạch của đồ thị, mà không cần thay đổi logic liên kết.
 

@@ -5,7 +5,7 @@
 
 Mô hình tri thức có hai mặt khác bản chất -- ngữ nghĩa (vector) và quan hệ (đồ thị) -- nên không một loại cơ sở dữ liệu nào phục vụ tốt cả hai. Hệ thống dùng Neo4j cho graph và Qdrant cho vector, cố định ở mọi quy mô.
 
-Neo4j giữ đồ thị tri thức, chỉ mục từ khóa (full-text BM25) và toàn bộ ACL. Neo4j được chọn vì cân bằng giữa khả năng đồ thị mạnh gốc, hệ sinh thái chín (đặc biệt là ánh xạ đối tượng cho JVM), và giấy phép cộng đồng miễn phí. Qdrant giữ toàn bộ embedding, phục vụ tìm kiếm ngữ nghĩa. Qdrant được chọn vì nhẹ và tiết kiệm bộ nhớ (viết bằng Rust, hỗ trợ lưu trên đĩa và lượng tử hóa), lọc trước theo payload hiệu quả, và giấy phép mở. 
+Neo4j giữ đồ thị tri thức, chỉ mục từ khóa (full-text BM25) và toàn bộ ACL. Neo4j được chọn vì cân bằng giữa khả năng đồ thị mạnh gốc, hệ sinh thái ổn định (đặc biệt là ánh xạ đối tượng cho JVM), và giấy phép cộng đồng miễn phí. Qdrant giữ toàn bộ embedding, phục vụ tìm kiếm ngữ nghĩa. Qdrant được chọn vì nhẹ và tiết kiệm bộ nhớ (viết bằng Rust, hỗ trợ lưu trên đĩa và lượng tử hóa), lọc trước theo payload hiệu quả, và giấy phép mở. 
 
 Đánh đổi của mô hình hai cơ sở dữ liệu là phải giữ chúng nhất quán với nhau: mỗi chunk được ghi vào cả hai (embedding sang Qdrant, node cùng nội dung và metadata sang Neo4j), nối bằng một định danh chung; khi một chunk lỗi thời, chunk đó bị gỡ khỏi cả hai theo cùng định danh trong một thao tác đồng bộ. Đây là chi phí thường trực được chấp nhận để đổi lấy việc mỗi cơ sở dữ liệu làm đúng việc mình giỏi nhất -- và ở quy mô lớn, đẩy vector sang Qdrant còn giúp Neo4j gọn hơn so với việc lưu cả vector và graph ở Neo4j, giảm tổng chi phí bộ nhớ.
 

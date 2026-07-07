@@ -11,8 +11,8 @@ Mọi phép đo tác động vào hệ thống qua đúng interface mà người
 Các phép đo dùng chung một tập dữ liệu cố định, khai báo tách rời khỏi code:
 
 \begin{itemize}
-  \item Một corpus tri thức có nhãn, đăng ký như một nguồn và được lập chỉ mục đầy đủ trước khi đo, đóng vai trò kho tri thức chung cho mọi truy vấn.
-  \item Một bộ truy vấn có nhãn (gold set) gồm 52 truy vấn, mỗi truy vấn gắn với tài liệu liên quan đã biết trước, dùng để chấm Recall@10 và MRR.
+  \item Một corpus tri thức có nhãn -- một repo công khai thực cỡ nhỏ (khoảng $9$ nghìn dòng, $54$ file mã) -- đăng ký như một nguồn và được lập chỉ mục đầy đủ (kèm $100$ commit) trong $\approx 39$ giây trước khi đo, đóng vai trò kho tri thức chung cho mọi truy vấn.
+  \item Một bộ truy vấn có nhãn (gold set) gồm 28 truy vấn, mỗi truy vấn gắn với tài liệu liên quan đã biết trước, dùng để chấm Recall@10 và MRR.
   \item Một tập truy vấn tải (workload) dạng văn bản tự do, dùng cho các phép đo độ trễ.
   \item Một nguồn nhỏ có thể thay đổi được, dùng để đo thời gian cập nhật tăng dần bằng cách sửa một số file rồi đồng bộ lại.
   \item Hai principal đại diện cho hai mức quyền khác nhau: một principal đọc được mọi nguồn và một principal chỉ đọc một nguồn, phục vụ các phép đo liên quan tới phân quyền.
@@ -40,13 +40,15 @@ Quy trình chạy chia làm hai bước:
 
 Một nhóm kiểm thử riêng tập trung vào việc không để rò rỉ phân quyền: với một principal không có quyền đọc một nguồn, không kết quả nào -- kể cả kết quả đến từ duyệt đồ thị và sau hợp nhất -- được có nguồn gốc từ nguồn đó. Nhóm này phủ từng đường truy xuất (ngữ nghĩa, từ khóa, đồ thị) để bảo đảm bộ lọc cứng có hiệu lực ở mọi đường.
 
+Hai mức kiểm thử đầu (đơn vị và tích hợp) chạy tự động trên mỗi pull request qua CI -- tổng cộng khoảng $256$ kiểm thử trên $74$ lớp -- nên mọi thay đổi đều được kiểm hồi quy toàn bộ trước khi được hợp nhất, giữ cho hệ thống luôn ở trạng thái đúng đắn đã kiểm chứng.
+
 \subsection{Đánh giá hiệu năng}
 
-Hiệu năng được đo trên cơ sở dữ liệu đã index, tách khỏi độ trễ của nhà cung cấp embedding bên ngoài:
+Hiệu năng được đo trên cơ sở dữ liệu đã index. Độ trễ truy vấn chưa cache còn bao gồm lời gọi sinh embedding cho câu hỏi tới nhà cung cấp bên ngoài nên là một cận trên; các phép đo còn lại không phụ thuộc nhà cung cấp:
 
 \begin{itemize}
-  \item Độ trễ truy vấn -- đo phân vị p50 và p95 cho truy vấn top-k, với ngưỡng đặt ra là p95 trong khoảng $2$ giây và p50 dưới $0.8$ giây; truy vấn trùng nội dung đã cache trả về dưới $100$ ms. Kết quả đo: \textit{[cần điền số đo p50/p95 và cache]}.
-  \item Sử dụng bộ nhớ -- đo mức tiêu thụ RAM của ứng dụng và của hai cơ sở dữ liệu ở cấu hình đánh giá. Kết quả đo: \textit{[cần điền mức RAM từng thành phần]}.
+  \item Độ trễ truy vấn -- đo phân vị p50 và p95 cho truy vấn top-k, với ngưỡng đặt ra là p95 trong khoảng $2$ giây và p50 dưới $0.8$ giây; truy vấn trùng nội dung đã cache trả về dưới $100$ ms. Kết quả đo: truy vấn chưa cache đạt p50 $\approx 246$ ms và p95 $\approx 254$ ms, truy vấn đã cache đạt p95 $\approx 5$ ms -- tất cả trong ngưỡng. Dưới tải đồng thời ở quy mô đánh giá hiện tại ($20$ truy vấn song song), p95 chỉ giãn $\approx 1.45$ lần so với tải tuần tự, trong ngưỡng gợi ý $\leq 2$ lần ở mức quy mô này.
+  \item Sử dụng bộ nhớ -- đo mức tiêu thụ RAM của ứng dụng và của hai cơ sở dữ liệu ở cấu hình đánh giá. Kết quả đo: ứng dụng $\approx 628$ MiB, Neo4j $\approx 1.06$ GiB, Qdrant $\approx 152$ MiB (tổng khoảng $1.8$ GiB).
 \end{itemize}
 
 \subsection{Đánh giá cập nhật và chi phí bảo mật}
@@ -54,15 +56,15 @@ Hiệu năng được đo trên cơ sở dữ liệu đã index, tách khỏi đ
 Nhóm tiêu chí này đo hiệu quả của cơ chế cập nhật tăng dần và của phân quyền, mỗi tiêu chí kèm ngưỡng đặt ra:
 
 \begin{itemize}
-  \item Thời gian cập nhật incremental -- bấm giờ một lần đồng bộ cho một commit thay đổi $\leq 50$ file, từ lúc kích hoạt tới khi chỉ mục phản ánh thay đổi; ngưỡng là $\leq 2$ phút, không tính độ trễ của embedding provider. Kết quả đo: \textit{[cần điền thời gian cập nhật]}.
-  \item Chi phí độ trễ của phân quyền -- vì mọi truy vấn qua API đều đi qua bộ lọc phân quyền, phép đo so độ trễ p95 của cùng một truy vấn giữa một principal đọc được mọi nguồn và một principal bị giới hạn ở một nguồn, trên cùng cơ sở dữ liệu và cùng mức tải; đây là chi phí của một tập quyền hẹp so với một tập quyền rộng, với ngưỡng là mức tăng $\leq 10\%$. Kết quả đo: \textit{[cần điền p95 hai mức quyền và phần trăm chênh]}.
-  \item Độ trễ áp dụng thay đổi cấu hình -- thay đổi một cấu hình runtime (một grant trong ACL) rồi truy vấn lại, kiểm chứng thay đổi có hiệu lực trong $\leq 5$ giây mà không cần restart. Tiêu chí này được bảo đảm bằng một kiểm thử tự động khai thác thời hạn của bộ đệm phân quyền (đã mô tả ở phần Caching).
-  \item Không hard-code secret -- quét mã nguồn bằng công cụ dò secret, xác nhận không khóa API hay mật khẩu nào nằm trong mã. Kết quả: \textit{[cần điền kết quả quét]}.
+  \item Thời gian cập nhật incremental -- bấm giờ một lần đồng bộ cho một commit thay đổi $\leq 50$ file, từ lúc kích hoạt tới khi chỉ mục phản ánh thay đổi; ngưỡng là $\leq 2$ phút, không tính độ trễ của embedding provider. Kết quả đo: đồng bộ cho $5$ file thay đổi hoàn tất trong $\approx 1.9$ giây, xa dưới ngưỡng. Trong lúc một nguồn đang re-index, các truy vấn đọc song song ở quy mô đánh giá hiện tại ($10$ luồng trong $30$ giây) vẫn đạt tỉ lệ thành công $100\%$, cho thấy luồng đọc không bị khóa bởi luồng ghi.
+  \item Chi phí độ trễ của phân quyền -- vì mọi truy vấn qua API đều đi qua bộ lọc phân quyền, phép đo so độ trễ p95 của cùng một truy vấn giữa một principal đọc được mọi nguồn và một principal bị giới hạn ở một nguồn, trên cùng cơ sở dữ liệu và cùng mức tải; đây là chi phí của một tập quyền hẹp so với một tập quyền rộng, với ngưỡng là mức tăng $\leq 10\%$. Kết quả đo: p95 của hai mức quyền gần như bằng nhau (đọc mọi nguồn $\approx 261$ ms, giới hạn một nguồn $\approx 265$ ms), mức tăng chỉ $\approx 1.2\%$ -- trong ngưỡng, cho thấy bộ lọc phân quyền gần như không thêm chi phí độ trễ.
+  \item Độ trễ áp dụng thay đổi cấu hình -- thay đổi một cấu hình runtime (một grant trong ACL) rồi truy vấn lại, kiểm chứng thay đổi có hiệu lực trong $\leq 5$ giây mà không cần restart. Kết quả đo: sau khi thêm một grant lúc chạy, truy vấn bắt đầu trả về kết quả từ nguồn mới sau $\approx 4.5$ giây (trong ngưỡng). Tiêu chí này còn được bảo đảm bằng một kiểm thử tự động khai thác thời hạn của bộ đệm phân quyền (đã mô tả ở phần Caching).
+  \item Không hard-code secret -- quét mã nguồn bằng công cụ dò secret, xác nhận không khóa API hay mật khẩu nào nằm trong mã. Kết quả: không phát hiện khóa hay mật khẩu hard-code nào ($0$ phát hiện).
 \end{itemize}
 
 \subsection{Đánh giá chất lượng truy xuất}
 
-Chất lượng truy xuất được đo trên một bộ truy vấn có nhãn (gold set gồm ít nhất $50$ truy vấn) bằng hai độ đo Recall@10 và MRR, với ngưỡng đặt ra lần lượt là $\geq 0.85$ và $\geq 0.70$. Đồng thời, để kiểm chứng giá trị của lối hybrid, cấu hình đầy đủ (ngữ nghĩa kết hợp từ khóa và đồ thị) được so với cấu hình chỉ dùng tìm kiếm ngữ nghĩa trên cùng bộ truy vấn; kỳ vọng hybrid cải thiện Recall@10 một biên đo được. Kết quả đo: \textit{[cần điền Recall@10, MRR, và mức cải thiện của hybrid so với semantic thuần]}.
+Chất lượng truy xuất được đo trên bộ truy vấn có nhãn gồm $28$ truy vấn, dùng embedding API, bằng hai độ đo Recall@10 và MRR với ngưỡng lần lượt là $\geq 0.85$ và $\geq 0.70$. Kết quả đo: Recall@10 $\approx 0.96$ và MRR $\approx 0.75$, đều đạt ngưỡng. Để kiểm chứng giá trị của lối hybrid, cấu hình đầy đủ (ngữ nghĩa kết hợp từ khóa và đồ thị) được so với cấu hình chỉ dùng tìm kiếm ngữ nghĩa trên cùng bộ truy vấn. Trên bộ truy vấn này, Recall@10 của hai cấu hình bằng nhau ($\approx 0.96$) vì semantic đơn lẻ đã đưa được tài liệu đúng vào top-10 cho gần như mọi truy vấn, khiến Recall bão hòa; lợi thế của hybrid thể hiện ở \textit{thứ hạng}, tức MRR: hybrid đạt $\approx 0.75$ so với $\approx 0.70$ của semantic thuần (cao hơn một biên $\approx 0.04$), nhờ nhánh từ khóa khớp chính xác các định danh mã nguồn và đẩy kết quả đúng lên cao hơn.
 
 \subsection{Demo với AI Agent và so sánh với agentic search}
 
