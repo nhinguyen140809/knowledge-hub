@@ -21,6 +21,26 @@ export interface ConnectionState {
 }
 
 const STORAGE_KEY = 'kh.connections'
+const SESSION_KEYS = 'kh.connection-keys'
+
+/** Non-secret fields — the only ones written to (long-lived) localStorage. */
+type StoredConnection = Omit<Connection, 'apiKey'>
+
+/** apiKeys live in sessionStorage keyed by connection id: they survive a page
+ *  reload but are cleared when the tab/browser closes, and never hit localStorage. */
+function loadSessionKeys(): Record<string, string> {
+  try {
+    return JSON.parse(sessionStorage.getItem(SESSION_KEYS) ?? '{}') as Record<string, string>
+  } catch {
+    return {}
+  }
+}
+
+function saveSessionKeys(connections: Connection[]): void {
+  const keys: Record<string, string> = {}
+  for (const c of connections) keys[c.id] = c.apiKey
+  sessionStorage.setItem(SESSION_KEYS, JSON.stringify(keys))
+}
 
 export const useConnectionStore = create<ConnectionState>()(
   persist(
@@ -51,27 +71,32 @@ export const useConnectionStore = create<ConnectionState>()(
     }),
     {
       name: STORAGE_KEY,
-      partialize: persistConnections,
+      // localStorage keeps only non-secret fields; apiKeys are stripped here.
+      partialize: (state) => ({
+        connections: state.connections.map(({ id, label, baseUrl }): StoredConnection => ({
+          id,
+          label,
+          baseUrl,
+        })),
+        activeId: state.activeId,
+      }),
+      // On rehydrate, splice each apiKey back from sessionStorage (empty if the
+      // tab was closed — the user reconnects to supply it again).
+      merge: (persisted, current) => {
+        const stored = persisted as { connections?: StoredConnection[]; activeId?: string | null }
+        const keys = loadSessionKeys()
+        const connections: Connection[] = (stored.connections ?? []).map((c) => ({
+          ...c,
+          apiKey: keys[c.id] ?? '',
+        }))
+        return { ...current, connections, activeId: stored.activeId ?? null }
+      },
     },
   ),
 )
 
-/**
- * Decides what part of the connection registry is written to localStorage and
- * restored on the next visit.
- *
- * TODO(human): implement the persistence policy. Every field you return here is
- * stored in the browser's localStorage in plaintext — including each backend's
- * `apiKey`, which is an admin bearer token. Weigh convenience (reopen the tab and
- * your instances are still there, ready to use) against exposure (any XSS on this
- * page can read localStorage and exfiltrate every stored admin key). Options to
- * consider: persist everything; persist connections but strip `apiKey` (user
- * re-enters the key each session); or keep only non-secret fields and hold keys
- * in sessionStorage/memory. Return the object shape you want persisted.
- */
-function persistConnections(state: ConnectionState): Partial<ConnectionState> {
-  return { connections: state.connections, activeId: state.activeId }
-}
+// Mirror apiKeys to sessionStorage on every change, so a reload can restore them.
+useConnectionStore.subscribe((state) => saveSessionKeys(state.connections))
 
 /** Resolve the active backend outside React (used by the API client). */
 export function getActiveConnection(state: ConnectionState): Connection | null {

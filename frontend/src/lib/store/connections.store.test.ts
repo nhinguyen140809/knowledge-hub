@@ -4,6 +4,7 @@ import { getActiveConnection, useConnectionStore } from './connections.store'
 function reset() {
   useConnectionStore.setState({ connections: [], activeId: null })
   localStorage.clear()
+  sessionStorage.clear()
 }
 
 describe('connections store', () => {
@@ -53,5 +54,19 @@ describe('connections store', () => {
     useConnectionStore.getState().removeConnection(activeId)
 
     expect(useConnectionStore.getState().activeId).toBeNull()
+  })
+
+  it('keeps apiKey out of localStorage and only in sessionStorage', () => {
+    useConnectionStore
+      .getState()
+      .addConnection({ label: 'A', baseUrl: 'http://a', apiKey: 'secret' })
+
+    const persisted = JSON.parse(localStorage.getItem('kh.connections') ?? '{}')
+    const storedConnection = persisted.state.connections[0]
+    expect(storedConnection.baseUrl).toBe('http://a')
+    expect(storedConnection.apiKey).toBeUndefined()
+
+    const sessionKeys = JSON.parse(sessionStorage.getItem('kh.connection-keys') ?? '{}')
+    expect(Object.values(sessionKeys)).toContain('secret')
   })
 })
