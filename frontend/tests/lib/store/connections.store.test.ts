@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   getActiveConnection,
   useConnectionKeys,
@@ -73,5 +73,46 @@ describe('connections store', () => {
 
     const sessionRaw = JSON.parse(sessionStorage.getItem('kh.connection-keys') ?? '{}')
     expect(Object.values(sessionRaw.state.keys)).toContain('secret')
+  })
+})
+
+/** Simulates a page load: storages are pre-seeded, then the store module is
+ *  imported fresh. Both storages are synchronous, so zustand must rehydrate
+ *  during create() — the assertions run without waiting for anything. */
+describe('rehydration on fresh load', () => {
+  const storedConnections = JSON.stringify({
+    state: {
+      connections: [{ id: 'c1', label: 'A', baseUrl: 'http://a' }],
+      activeId: 'c1',
+    },
+    version: 0,
+  })
+
+  beforeEach(() => {
+    localStorage.clear()
+    sessionStorage.clear()
+    vi.resetModules()
+  })
+
+  it('merges apiKeys back from sessionStorage (page reload in same tab)', async () => {
+    localStorage.setItem('kh.connections', storedConnections)
+    sessionStorage.setItem(
+      'kh.connection-keys',
+      JSON.stringify({ state: { keys: { c1: 'secret' } }, version: 0 }),
+    )
+
+    const fresh = await import('@/lib/store/connections.store')
+    const state = fresh.useConnectionStore.getState()
+    expect(state.activeId).toBe('c1')
+    expect(state.connections[0].apiKey).toBe('secret')
+  })
+
+  it('yields an empty apiKey when sessionStorage is gone (tab was closed)', async () => {
+    localStorage.setItem('kh.connections', storedConnections)
+
+    const fresh = await import('@/lib/store/connections.store')
+    const state = fresh.useConnectionStore.getState()
+    expect(state.connections[0].apiKey).toBe('')
+    expect(fresh.getActiveConnection(state)?.apiKey).toBe('')
   })
 })
