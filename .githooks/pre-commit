@@ -1,16 +1,49 @@
-#!/bin/sh
-# Auto-format staged Java with Spotless before committing.
-# Enable once with:  git config core.hooksPath .githooks
+#!/usr/bin/env bash
+# Auto-format on commit. Formatting may touch any file, but the hook only ever
+# (re-)stages files that were ALREADY fully staged before it ran — it never pulls
+# an unstaged file, or the unstaged part of a partially-staged file, into the
+# commit. Enable once with:  git config core.hooksPath .githooks
+set -eu
 
-if [ -x ./mvnw ]; then
-  echo "[pre-commit] spotless:apply"
-  ./mvnw -q spotless:apply || {
-    echo "[pre-commit] spotless failed"
-    exit 1
-  }
-  # Re-stage only what was already staged — never pull other working-tree edits
-  # into the commit (respects partial staging).
-  git diff --cached --name-only --diff-filter=ACMR -z | xargs -0 -r git add --
-else
-  echo "[pre-commit] ./mvnw not found; skipping spotless"
+# Snapshot the fully-staged set BEFORE formatting: files with staged changes and
+# no unstaged edits. (Formatting itself adds unstaged edits, so this must run first.)
+staged=$(git diff --cached --name-only --diff-filter=ACMR | sort)
+unstaged=$(git diff --name-only | sort)
+fully_staged=$(comm -23 <(printf '%s\n' "$staged") <(printf '%s\n' "$unstaged") | grep . || true)
+
+# --- Java: Spotless -----------------------------------------------------------
+if echo "$staged" | grep -q '\.java$'; then
+  if [ -x ./mvnw ]; then
+    echo "[pre-commit] spotless:apply"
+    ./mvnw -q spotless:apply || {
+      echo "[pre-commit] spotless failed"
+      exit 1
+    }
+  else
+    echo "[pre-commit] ./mvnw not found; skipping spotless"
+  fi
+fi
+
+# --- Frontend: Prettier -------------------------------------------------------
+fe_files=$(echo "$staged" | grep -E '^frontend/.*\.(ts|tsx|js|jsx|mjs|cjs|json|css|html|md)$' || true)
+if [ -n "$fe_files" ]; then
+  if [ -x frontend/node_modules/.bin/prettier ]; then
+    echo "[pre-commit] prettier (frontend)"
+    # Run inside frontend/ so prettier resolves its config + plugins from there
+    # (a plugin like prettier-plugin-tailwindcss is not visible from the repo root).
+    echo "$fe_files" | sed 's#^frontend/##' \
+      | (cd frontend && xargs ./node_modules/.bin/prettier --write --log-level warn) || {
+      echo "[pre-commit] prettier failed"
+      exit 1
+    }
+  else
+    echo "[pre-commit] frontend prettier not installed (run 'pnpm -C frontend install'); skipping"
+  fi
+fi
+
+# --- Re-stage ONLY the files that were fully staged before formatting ----------
+# A partially-staged file is deliberately left alone: its staged hunks commit as
+# they were, its formatting stays unstaged in the working tree.
+if [ -n "$fully_staged" ]; then
+  printf '%s\n' "$fully_staged" | xargs -r git add --
 fi
