@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createJSONStorage, persist } from 'zustand/middleware'
 
 /** One backend instance the admin UI can talk to. */
 export interface Connection {
@@ -20,53 +20,69 @@ export interface ConnectionState {
   setActive: (id: string) => void
 }
 
-const STORAGE_KEY = 'kh.connections'
-const SESSION_KEYS = 'kh.connection-keys'
-
 /** Non-secret fields — the only ones written to (long-lived) localStorage. */
 type StoredConnection = Omit<Connection, 'apiKey'>
 
-/** apiKeys live in sessionStorage keyed by connection id: they survive a page
- *  reload but are cleared when the tab/browser closes, and never hit localStorage. */
-function loadSessionKeys(): Record<string, string> {
-  try {
-    return JSON.parse(sessionStorage.getItem(SESSION_KEYS) ?? '{}') as Record<string, string>
-  } catch {
-    return {}
-  }
+const STORAGE_KEY = 'kh.connections'
+const SESSION_KEYS = 'kh.connection-keys'
+
+interface KeyState {
+  keys: Record<string, string>
+  set: (id: string, apiKey: string) => void
+  drop: (id: string) => void
 }
 
-function saveSessionKeys(connections: Connection[]): void {
-  const keys: Record<string, string> = {}
-  for (const c of connections) keys[c.id] = c.apiKey
-  sessionStorage.setItem(SESSION_KEYS, JSON.stringify(keys))
-}
+/**
+ * apiKeys, kept apart from the connection registry and persisted to
+ * sessionStorage (survives a reload, cleared when the tab/browser closes). Its
+ * own store lets zustand's persist + createJSONStorage handle the serialization,
+ * so no raw sessionStorage/JSON access is needed. Created before the connection
+ * store so its keys are already rehydrated when that store's merge runs.
+ */
+export const useConnectionKeys = create<KeyState>()(
+  persist(
+    (set) => ({
+      keys: {},
+      set: (id, apiKey) => set((s) => ({ keys: { ...s.keys, [id]: apiKey } })),
+      drop: (id) =>
+        set((s) => {
+          const keys = { ...s.keys }
+          delete keys[id]
+          return { keys }
+        }),
+    }),
+    {
+      name: SESSION_KEYS,
+      storage: createJSONStorage(() => sessionStorage),
+      partialize: (state) => ({ keys: state.keys }),
+    },
+  ),
+)
 
 export const useConnectionStore = create<ConnectionState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       connections: [],
       activeId: null,
-      addConnection: (input) =>
-        set((state) => {
-          const existing = state.connections.find((c) => c.baseUrl === input.baseUrl)
-          if (existing) {
-            return {
-              connections: state.connections.map((c) =>
-                c.id === existing.id ? { ...existing, ...input, id: existing.id } : c,
-              ),
-              activeId: existing.id,
-            }
-          }
-          const id = crypto.randomUUID()
-          return { connections: [...state.connections, { ...input, id }], activeId: id }
-        }),
-      removeConnection: (id) =>
+      addConnection: (input) => {
+        const existing = get().connections.find((c) => c.baseUrl === input.baseUrl)
+        const id = existing ? existing.id : crypto.randomUUID()
+        useConnectionKeys.getState().set(id, input.apiKey)
+        set((state) => ({
+          connections: existing
+            ? state.connections.map((c) => (c.id === id ? { ...c, ...input, id } : c))
+            : [...state.connections, { ...input, id }],
+          activeId: id,
+        }))
+      },
+      removeConnection: (id) => {
+        useConnectionKeys.getState().drop(id)
         set((state) => {
           const connections = state.connections.filter((c) => c.id !== id)
           const activeId = state.activeId === id ? (connections[0]?.id ?? null) : state.activeId
           return { connections, activeId }
-        }),
+        })
+      },
       setActive: (id) => set({ activeId: id }),
     }),
     {
@@ -80,11 +96,11 @@ export const useConnectionStore = create<ConnectionState>()(
         })),
         activeId: state.activeId,
       }),
-      // On rehydrate, splice each apiKey back from sessionStorage (empty if the
-      // tab was closed — the user reconnects to supply it again).
+      // On rehydrate, splice each apiKey back from the sessionStorage-backed key
+      // store (empty if the tab was closed — the user reconnects to supply it).
       merge: (persisted, current) => {
         const stored = persisted as { connections?: StoredConnection[]; activeId?: string | null }
-        const keys = loadSessionKeys()
+        const { keys } = useConnectionKeys.getState()
         const connections: Connection[] = (stored.connections ?? []).map((c) => ({
           ...c,
           apiKey: keys[c.id] ?? '',
@@ -94,9 +110,6 @@ export const useConnectionStore = create<ConnectionState>()(
     },
   ),
 )
-
-// Mirror apiKeys to sessionStorage on every change, so a reload can restore them.
-useConnectionStore.subscribe((state) => saveSessionKeys(state.connections))
 
 /** Resolve the active backend outside React (used by the API client). */
 export function getActiveConnection(state: ConnectionState): Connection | null {

@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { getActiveConnection, useConnectionStore } from './connections.store'
+import { getActiveConnection, useConnectionKeys, useConnectionStore } from './connections.store'
 
 function reset() {
   useConnectionStore.setState({ connections: [], activeId: null })
+  useConnectionKeys.setState({ keys: {} })
   localStorage.clear()
   sessionStorage.clear()
 }
@@ -66,7 +67,7 @@ describe('connections store', () => {
     expect(storedConnection.baseUrl).toBe('http://a')
     expect(storedConnection.apiKey).toBeUndefined()
 
-    const sessionKeys = JSON.parse(sessionStorage.getItem('kh.connection-keys') ?? '{}')
-    expect(Object.values(sessionKeys)).toContain('secret')
+    const sessionRaw = JSON.parse(sessionStorage.getItem('kh.connection-keys') ?? '{}')
+    expect(Object.values(sessionRaw.state.keys)).toContain('secret')
   })
 })
