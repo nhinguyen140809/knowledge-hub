@@ -8,7 +8,9 @@ if [ -x ./mvnw ]; then
     echo "[pre-commit] spotless failed"
     exit 1
   }
-  git add -u
+  # Re-stage only what was already staged — never pull other working-tree edits
+  # into the commit (respects partial staging).
+  git diff --cached --name-only --diff-filter=ACMR -z | xargs -0 -r git add --
 else
   echo "[pre-commit] ./mvnw not found; skipping spotless"
 fi
