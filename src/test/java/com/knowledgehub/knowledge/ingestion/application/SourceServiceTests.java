@@ -7,10 +7,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.knowledgehub.knowledge.ingestion.domain.DuplicateSourceException;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
 import com.knowledgehub.knowledge.ingestion.domain.SourceRegistered;
 import com.knowledgehub.knowledge.ingestion.domain.SourceType;
+import com.knowledgehub.knowledge.ingestion.domain.exception.DuplicateSourceException;
 import com.knowledgehub.knowledge.ingestion.domain.port.SourceRepository;
 import java.util.List;
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package com.knowledgehub.knowledge.ingestion.domain;
+package com.knowledgehub.knowledge.ingestion.domain.exception;
 
 import com.knowledgehub.shared.error.DomainException;
 import com.knowledgehub.shared.error.ErrorCode;

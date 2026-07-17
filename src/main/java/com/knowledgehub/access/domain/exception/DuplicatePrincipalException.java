@@ -1,4 +1,4 @@
-package com.knowledgehub.access.domain;
+package com.knowledgehub.access.domain.exception;
 
 import com.knowledgehub.shared.error.DomainException;
 import com.knowledgehub.shared.error.ErrorCode;

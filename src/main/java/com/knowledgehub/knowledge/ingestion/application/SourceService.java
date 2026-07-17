@@ -1,9 +1,9 @@
 package com.knowledgehub.knowledge.ingestion.application;
 
-import com.knowledgehub.knowledge.ingestion.domain.DuplicateSourceException;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
 import com.knowledgehub.knowledge.ingestion.domain.SourceDeleted;
 import com.knowledgehub.knowledge.ingestion.domain.SourceRegistered;
+import com.knowledgehub.knowledge.ingestion.domain.exception.DuplicateSourceException;
 import com.knowledgehub.knowledge.ingestion.domain.port.SourceRepository;
 import java.util.List;
 import org.slf4j.Logger;
