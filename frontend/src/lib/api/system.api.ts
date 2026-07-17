@@ -10,7 +10,7 @@ export interface SystemInfo {
   activeProfiles: string[]
 }
 
-const SYSTEM_INFO_PATH = '/api/v1/system/info'
+const SYSTEM_INFO_PATH = '/system/info'
 
 /**
  * Validates a candidate connection by hitting an authenticated endpoint with the
