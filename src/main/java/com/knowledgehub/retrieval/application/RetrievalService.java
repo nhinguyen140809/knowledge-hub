@@ -4,8 +4,8 @@ import com.knowledgehub.knowledge.domain.Filter;
 import com.knowledgehub.retrieval.domain.Query;
 import com.knowledgehub.retrieval.domain.QueryParams;
 import com.knowledgehub.retrieval.domain.RankedResult;
+import com.knowledgehub.retrieval.domain.port.ResultCachePort;
 import com.knowledgehub.retrieval.domain.port.RetrievalReadPort;
-import com.knowledgehub.retrieval.infrastructure.cache.RetrievalCache;
 import com.knowledgehub.shared.config.AppProperties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -39,7 +39,7 @@ public class RetrievalService {
   private final AssembleResultStage assembleStage;
   private final AclFilterStage aclFilterStage;
   private final RetrievalReadPort reader;
-  private final RetrievalCache cache;
+  private final ResultCachePort cache;
   private final Executor executor;
   private final int defaultTopK;
 
@@ -52,7 +52,7 @@ public class RetrievalService {
       AssembleResultStage assembleStage,
       AclFilterStage aclFilterStage,
       RetrievalReadPort reader,
-      RetrievalCache cache,
+      ResultCachePort cache,
       AppProperties properties,
       @Qualifier("retrievalExecutor") Executor executor) {
     this.prepareStage = prepareStage;
