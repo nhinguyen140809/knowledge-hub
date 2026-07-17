@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom'
 import { ConnectionSwitcher } from '../../features/auth/ConnectionSwitcher'
 import { isMock } from '../../lib/config'
+import { ThemeToggle } from '../theme/ThemeToggle'
 
 /** Chrome shared by every authenticated screen: a header with the active-backend
  *  switcher, and an outlet for the routed page. */
@@ -16,7 +17,10 @@ export function AppLayout() {
             </span>
           )}
         </span>
-        <ConnectionSwitcher />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <ConnectionSwitcher />
+        </div>
       </header>
       <main className="p-6">
         <Outlet />

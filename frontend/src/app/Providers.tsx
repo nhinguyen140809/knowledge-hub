@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { type ReactNode, useState } from 'react'
+import { ThemeProvider } from '@/shared/theme/ThemeProvider'
 
 /**
- * App-wide providers. HeroUI v3 needs no provider wrapper of its own, so this is
- * just the TanStack Query client — created once via useState so it survives
- * re-renders but is not shared across tests/SSR.
+ * App-wide providers: theme (next-themes) wrapping the TanStack Query client.
+ * HeroUI v3 needs no provider of its own. The query client is created once via
+ * useState so it survives re-renders but is not shared across tests/SSR.
  */
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -15,5 +16,9 @@ export function Providers({ children }: { children: ReactNode }) {
         },
       }),
   )
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  return (
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    </ThemeProvider>
+  )
 }
