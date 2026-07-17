@@ -1,5 +1,6 @@
 package com.knowledgehub.knowledge.ingestion.application;
 
+import com.knowledgehub.knowledge.ingestion.domain.DuplicateSourceException;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
 import com.knowledgehub.knowledge.ingestion.domain.SourceDeleted;
 import com.knowledgehub.knowledge.ingestion.domain.SourceRegistered;

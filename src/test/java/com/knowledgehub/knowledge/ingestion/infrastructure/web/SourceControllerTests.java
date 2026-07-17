@@ -14,10 +14,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.knowledgehub.knowledge.ingestion.application.DuplicateSourceException;
 import com.knowledgehub.knowledge.ingestion.application.SourceNotFoundException;
 import com.knowledgehub.knowledge.ingestion.application.SourceService;
 import com.knowledgehub.knowledge.ingestion.application.SourceSpec;
+import com.knowledgehub.knowledge.ingestion.domain.DuplicateSourceException;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
 import com.knowledgehub.knowledge.ingestion.domain.SourceType;
 import java.util.List;

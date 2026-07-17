@@ -1,6 +1,7 @@
 package com.knowledgehub.access.application;
 
 import com.knowledgehub.access.domain.Credential;
+import com.knowledgehub.access.domain.DuplicateCredentialNameException;
 import com.knowledgehub.access.domain.port.CredentialRepository;
 import com.knowledgehub.access.domain.port.PrincipalRepository;
 import java.security.SecureRandom;

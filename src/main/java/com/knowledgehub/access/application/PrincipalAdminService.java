@@ -2,6 +2,7 @@ package com.knowledgehub.access.application;
 
 import com.knowledgehub.access.domain.AuthenticatedPrincipal;
 import com.knowledgehub.access.domain.DefaultPolicy;
+import com.knowledgehub.access.domain.DuplicatePrincipalException;
 import com.knowledgehub.access.domain.Principal;
 import com.knowledgehub.access.domain.PrincipalType;
 import com.knowledgehub.access.domain.Role;
