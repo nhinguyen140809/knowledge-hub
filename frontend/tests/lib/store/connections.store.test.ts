@@ -61,6 +61,18 @@ describe('connections store', () => {
     expect(useConnectionStore.getState().activeId).toBeNull()
   })
 
+  it('disconnect drops the key but keeps the connection entry', () => {
+    useConnectionStore.getState().addConnection({ label: 'A', baseUrl: 'http://a', apiKey: 'k1' })
+
+    const id = useConnectionStore.getState().activeId ?? ''
+    useConnectionStore.getState().disconnect(id)
+
+    const state = useConnectionStore.getState()
+    expect(state.connections).toHaveLength(1)
+    expect(state.connections[0].apiKey).toBe('')
+    expect(useConnectionKeys.getState().keys[id]).toBeUndefined()
+  })
+
   it('keeps apiKey out of localStorage and only in sessionStorage', () => {
     useConnectionStore
       .getState()

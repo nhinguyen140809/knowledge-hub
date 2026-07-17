@@ -16,6 +16,8 @@ export interface ConnectionState {
   addConnection: (input: Omit<Connection, 'id'>) => void
   /** Forget a backend; if it was active, fall back to the first remaining one. */
   removeConnection: (id: string) => void
+  /** Log out of a backend: drop its key but keep the connection entry. */
+  disconnect: (id: string) => void
   /** Switch which backend subsequent requests target. */
   setActive: (id: string) => void
 }
@@ -82,6 +84,12 @@ export const useConnectionStore = create<ConnectionState>()(
           const activeId = state.activeId === id ? (connections[0]?.id ?? null) : state.activeId
           return { connections, activeId }
         })
+      },
+      disconnect: (id) => {
+        useConnectionKeys.getState().drop(id)
+        set((state) => ({
+          connections: state.connections.map((c) => (c.id === id ? { ...c, apiKey: '' } : c)),
+        }))
       },
       setActive: (id) => set({ activeId: id }),
     }),
