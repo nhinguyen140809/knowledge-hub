@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { getActiveConnection, useConnectionKeys, useConnectionStore } from './connections.store'
+import {
+  getActiveConnection,
+  useConnectionKeys,
+  useConnectionStore,
+} from '@/lib/store/connections.store'
 
 function reset() {
   useConnectionStore.setState({ connections: [], activeId: null })

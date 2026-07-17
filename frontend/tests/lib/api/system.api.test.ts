@@ -8,7 +8,7 @@ describe('system api in mock mode', () => {
 
   it('accepts any credentials and returns mock system info', async () => {
     vi.stubEnv('VITE_API_MODE', 'mock')
-    const { validateConnection } = await import('./system.api')
+    const { validateConnection } = await import('@/lib/api/system.api')
 
     const info = await validateConnection('http://anything', 'anykey')
 
