@@ -2,10 +2,10 @@ package com.knowledgehub.knowledge.analysis.infrastructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.knowledgehub.knowledge.analysis.domain.AnalysisResult;
 import com.knowledgehub.knowledge.analysis.domain.Chunk;
 import com.knowledgehub.knowledge.analysis.domain.ChunkConfig;
 import com.knowledgehub.knowledge.analysis.domain.ChunkType;
-import com.knowledgehub.knowledge.analysis.domain.ChunkingResult;
 import com.knowledgehub.knowledge.ingestion.domain.FsProvenance;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import com.knowledgehub.knowledge.ingestion.infrastructure.MediaTypes;
@@ -13,9 +13,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
-class DocChunkerTests {
+class DocAnalyzerTests {
 
-  private final DocChunker chunker = new DocChunker();
+  private final DocAnalyzer analyzer = new DocAnalyzer();
 
   private static RawArtifact markdown(String text) {
     return RawArtifact.raw(
@@ -37,7 +37,7 @@ class DocChunkerTests {
         beta paragraph two.
         """;
 
-    ChunkingResult result = chunker.chunk(markdown(text), new ChunkConfig(512, 0));
+    AnalysisResult result = analyzer.analyze(markdown(text), new ChunkConfig(512, 0));
 
     assertThat(result.chunks()).hasSize(2);
     assertThat(result.chunks().get(0).text()).startsWith("# First");
@@ -57,7 +57,7 @@ class DocChunkerTests {
         para three has some words here.
         """;
 
-    ChunkingResult result = chunker.chunk(markdown(text), new ChunkConfig(10, 0));
+    AnalysisResult result = analyzer.analyze(markdown(text), new ChunkConfig(10, 0));
 
     assertThat(result.chunks()).hasSizeGreaterThan(1);
     assertThat(result.chunks()).allSatisfy(c -> assertThat(c.tokenCount()).isLessThanOrEqualTo(10));
@@ -74,8 +74,8 @@ class DocChunkerTests {
         gamma words again and again and again.
         """;
 
-    ChunkingResult none = chunker.chunk(markdown(text), new ChunkConfig(20, 0));
-    ChunkingResult overlapping = chunker.chunk(markdown(text), new ChunkConfig(20, 10));
+    AnalysisResult none = analyzer.analyze(markdown(text), new ChunkConfig(20, 0));
+    AnalysisResult overlapping = analyzer.analyze(markdown(text), new ChunkConfig(20, 10));
 
     assertThat(none.chunks()).hasSizeGreaterThan(1);
     // Overlap duplicates trailing tokens, so the total text covered grows and chunk count does not
@@ -94,7 +94,7 @@ class DocChunkerTests {
         second paragraph line three.
         """;
 
-    ChunkingResult result = chunker.chunk(markdown(text), new ChunkConfig(512, 0));
+    AnalysisResult result = analyzer.analyze(markdown(text), new ChunkConfig(512, 0));
 
     // One section (single heading); the chunk spans from the heading (line 1) to the last content
     // line (line 4).
@@ -105,8 +105,8 @@ class DocChunkerTests {
 
   @Test
   void assignsValidLineRangesAndDocType() {
-    ChunkingResult result =
-        chunker.chunk(markdown("# Title\nbody line.\n"), new ChunkConfig(512, 0));
+    AnalysisResult result =
+        analyzer.analyze(markdown("# Title\nbody line.\n"), new ChunkConfig(512, 0));
 
     Chunk chunk = result.chunks().get(0);
     assertThat(chunk.type()).isEqualTo(ChunkType.DOC);
@@ -115,7 +115,7 @@ class DocChunkerTests {
     assertThat(chunk.entityId()).isNull();
   }
 
-  private static int totalLength(ChunkingResult result) {
+  private static int totalLength(AnalysisResult result) {
     return result.chunks().stream().mapToInt(c -> c.text().length()).sum();
   }
 }

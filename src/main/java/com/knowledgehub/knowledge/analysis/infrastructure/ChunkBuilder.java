@@ -7,7 +7,7 @@ import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 /**
  * Bridges an artifact span to the domain {@link Chunk} factory: counts the tokens — the one piece
  * that needs the tokenizer — and lets the domain derive the content hash and stable ids. This keeps
- * the chunkers focused on <em>where</em> to cut, not on bookkeeping.
+ * the analyzers focused on <em>where</em> to cut, not on bookkeeping.
  */
 final class ChunkBuilder {
 

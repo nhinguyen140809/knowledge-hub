@@ -12,10 +12,10 @@ import com.github.javaparser.ast.body.EnumDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
+import com.knowledgehub.knowledge.analysis.domain.AnalysisResult;
 import com.knowledgehub.knowledge.analysis.domain.Chunk;
 import com.knowledgehub.knowledge.analysis.domain.ChunkConfig;
 import com.knowledgehub.knowledge.analysis.domain.ChunkType;
-import com.knowledgehub.knowledge.analysis.domain.ChunkingResult;
 import com.knowledgehub.knowledge.analysis.domain.CodeEntity;
 import com.knowledgehub.knowledge.analysis.domain.CodeEntityLevel;
 import com.knowledgehub.knowledge.infrastructure.lang.JavaLanguage;
@@ -31,30 +31,31 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
- * AST-aware chunker for Java source (via JavaParser). It cuts on declaration boundaries — one chunk
- * per method/constructor (never split mid-function, even past the token budget), plus a "shell"
- * chunk per type holding the class context (signature + fields) with member bodies removed so the
- * text is not duplicated. It also extracts the {@link CodeEntity} hierarchy (type → methods/fields)
- * for graph linking. Leading Javadoc/comments are kept with each chunk to strengthen the signal.
+ * AST-aware analyzer for Java source (via JavaParser). It cuts on declaration boundaries — one
+ * chunk per method/constructor (never split mid-function, even past the token budget), plus a
+ * "shell" chunk per type holding the class context (signature + fields) with member bodies removed
+ * so the text is not duplicated. It also extracts the {@link CodeEntity} hierarchy (type →
+ * methods/fields) for graph linking. Leading Javadoc/comments are kept with each chunk to
+ * strengthen the signal.
  *
- * <p>The Java implementation of the code-chunker strategy: it binds to {@link JavaLanguage} (so the
- * {@code .java} extension it claims comes from that one registration) and inherits the extension
- * test from {@link AbstractCodeChunker}. Another language is one more subclass with its own parser,
- * never a change here. Highest precedence so it wins over the document fallback for {@code .java}
- * files.
+ * <p>The Java implementation of the code-analyzer strategy: it binds to {@link JavaLanguage} (so
+ * the {@code .java} extension it claims comes from that one registration) and inherits the
+ * extension test from {@link AbstractCodeAnalyzer}. Another language is one more subclass with its
+ * own parser, never a change here. Highest precedence so it wins over the document fallback for
+ * {@code .java} files.
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
-public class JavaCodeChunker extends AbstractCodeChunker {
+public class JavaAnalyzer extends AbstractCodeAnalyzer {
 
-  private static final Logger log = LoggerFactory.getLogger(JavaCodeChunker.class);
+  private static final Logger log = LoggerFactory.getLogger(JavaAnalyzer.class);
 
-  public JavaCodeChunker(JavaLanguage language) {
+  public JavaAnalyzer(JavaLanguage language) {
     super(language);
   }
 
   @Override
-  public ChunkingResult chunk(RawArtifact artifact, ChunkConfig config) {
+  public AnalysisResult analyze(RawArtifact artifact, ChunkConfig config) {
     ParseResult<CompilationUnit> parsed = new JavaParser().parse(artifact.text());
     CompilationUnit cu =
         parsed.isSuccessful() ? parsed.getResult().orElseThrow() : fail(artifact.path(), parsed);
@@ -67,7 +68,7 @@ public class JavaCodeChunker extends AbstractCodeChunker {
     for (TypeDeclaration<?> type : cu.getTypes()) {
       processType(artifact, lines, packageName, null, type, config.maxTokens(), chunks, entities);
     }
-    return new ChunkingResult(chunks, entities);
+    return new AnalysisResult(chunks, entities);
   }
 
   private static CompilationUnit fail(String path, ParseResult<CompilationUnit> parsed) {

@@ -34,7 +34,7 @@ class LinkStageTests {
   void skipsLinkingForASkippedArtifact() {
     IndexingContext context =
         new IndexingContext(IndexingFixtures.markdownArtifact("x"), new ChunkConfig(512, 0));
-    context.markSkipped("no chunker");
+    context.markSkipped("no analyzer");
 
     new LinkStage(linking).apply(context);
 

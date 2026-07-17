@@ -1,10 +1,10 @@
 package com.knowledgehub.knowledge.analysis.infrastructure;
 
+import com.knowledgehub.knowledge.analysis.domain.AnalysisResult;
 import com.knowledgehub.knowledge.analysis.domain.Chunk;
 import com.knowledgehub.knowledge.analysis.domain.ChunkConfig;
 import com.knowledgehub.knowledge.analysis.domain.ChunkType;
-import com.knowledgehub.knowledge.analysis.domain.Chunker;
-import com.knowledgehub.knowledge.analysis.domain.ChunkingResult;
+import com.knowledgehub.knowledge.analysis.domain.LanguageAnalyzer;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,19 +14,19 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
- * Structure-aware chunker for documents (Markdown, PDF/Office text, plain text). It first splits
+ * Structure-aware analyzer for documents (Markdown, PDF/Office text, plain text). It first splits
  * the text into sections at every Markdown heading so a chunk never crosses a heading, then fills
  * each section with chunks up to {@code maxTokens} using a recursive boundary preference (paragraph
  * → line → sentence → word → character) and a configurable token-level overlap carried between
  * adjacent chunks. Splitting works on character offsets into the original text, so every chunk
  * keeps an exact 1-based source line range.
  *
- * <p>Lowest precedence so it acts as the fallback once language-specific chunkers have had their
+ * <p>Lowest precedence so it acts as the fallback once language-specific analyzers have had their
  * say (it accepts any artifact that carries text).
  */
 @Component
 @Order(Ordered.LOWEST_PRECEDENCE)
-public class DocChunker implements Chunker {
+public class DocAnalyzer implements LanguageAnalyzer {
 
   private static final Pattern HEADING = Pattern.compile("^#{1,6}\\s.*");
 
@@ -36,7 +36,7 @@ public class DocChunker implements Chunker {
   }
 
   @Override
-  public ChunkingResult chunk(RawArtifact artifact, ChunkConfig config) {
+  public AnalysisResult analyze(RawArtifact artifact, ChunkConfig config) {
     List<Chunk> chunks = new ArrayList<>();
     for (Section section : sections(artifact.text())) {
       for (int[] span : split(section.text(), config.maxTokens(), config.overlap())) {
@@ -56,7 +56,7 @@ public class DocChunker implements Chunker {
                 null));
       }
     }
-    return ChunkingResult.ofChunks(chunks);
+    return AnalysisResult.ofChunks(chunks);
   }
 
   /**

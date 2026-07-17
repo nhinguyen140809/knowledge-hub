@@ -3,10 +3,10 @@ package com.knowledgehub.knowledge.analysis.infrastructure;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.knowledgehub.knowledge.analysis.domain.AnalysisResult;
 import com.knowledgehub.knowledge.analysis.domain.Chunk;
 import com.knowledgehub.knowledge.analysis.domain.ChunkConfig;
 import com.knowledgehub.knowledge.analysis.domain.ChunkType;
-import com.knowledgehub.knowledge.analysis.domain.ChunkingResult;
 import com.knowledgehub.knowledge.analysis.domain.CodeEntity;
 import com.knowledgehub.knowledge.analysis.domain.CodeEntityLevel;
 import com.knowledgehub.knowledge.infrastructure.lang.JavaLanguage;
@@ -17,9 +17,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
-class JavaCodeChunkerTests {
+class JavaAnalyzerTests {
 
-  private final JavaCodeChunker chunker = new JavaCodeChunker(new JavaLanguage());
+  private final JavaAnalyzer analyzer = new JavaAnalyzer(new JavaLanguage());
 
   private static final String SOURCE =
       """
@@ -52,13 +52,13 @@ class JavaCodeChunkerTests {
 
   @Test
   void supportsOnlyJavaFiles() {
-    assertThat(chunker.supports(java("Greeter.java", SOURCE))).isTrue();
-    assertThat(chunker.supports(java("notes.md", "x"))).isFalse();
+    assertThat(analyzer.supports(java("Greeter.java", SOURCE))).isTrue();
+    assertThat(analyzer.supports(java("notes.md", "x"))).isFalse();
   }
 
   @Test
   void cutsOneChunkPerMethodWithoutSplittingTheBody() {
-    ChunkingResult result = chunker.chunk(java("Greeter.java", SOURCE), new ChunkConfig(8, 0));
+    AnalysisResult result = analyzer.analyze(java("Greeter.java", SOURCE), new ChunkConfig(8, 0));
 
     Chunk greet =
         result.chunks().stream()
@@ -74,7 +74,7 @@ class JavaCodeChunkerTests {
 
   @Test
   void extractsTheEntityHierarchy() {
-    ChunkingResult result = chunker.chunk(java("Greeter.java", SOURCE), new ChunkConfig(512, 0));
+    AnalysisResult result = analyzer.analyze(java("Greeter.java", SOURCE), new ChunkConfig(512, 0));
 
     CodeEntity type =
         result.codeEntities().stream()
@@ -103,7 +103,7 @@ class JavaCodeChunkerTests {
 
   @Test
   void shellChunkHoldsClassContextWithoutMethodBodies() {
-    ChunkingResult result = chunker.chunk(java("Greeter.java", SOURCE), new ChunkConfig(512, 0));
+    AnalysisResult result = analyzer.analyze(java("Greeter.java", SOURCE), new ChunkConfig(512, 0));
 
     Chunk shell =
         result.chunks().stream()
@@ -125,7 +125,7 @@ class JavaCodeChunkerTests {
         }
         """;
 
-    ChunkingResult result = chunker.chunk(java("Coords.java", source), new ChunkConfig(512, 0));
+    AnalysisResult result = analyzer.analyze(java("Coords.java", source), new ChunkConfig(512, 0));
 
     assertThat(result.codeEntities())
         .filteredOn(e -> e.level() == CodeEntityLevel.FIELD)
@@ -136,7 +136,8 @@ class JavaCodeChunkerTests {
   @Test
   void throwsOnUnparseableJava() {
     assertThatThrownBy(
-            () -> chunker.chunk(java("Bad.java", "this is not java {{{"), new ChunkConfig(512, 0)))
+            () ->
+                analyzer.analyze(java("Bad.java", "this is not java {{{"), new ChunkConfig(512, 0)))
         .isInstanceOf(IllegalArgumentException.class);
   }
 }

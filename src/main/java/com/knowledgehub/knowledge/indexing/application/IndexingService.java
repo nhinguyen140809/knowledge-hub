@@ -36,7 +36,7 @@ public class IndexingService {
   public IndexingService(
       IngestionService ingestion,
       AppProperties properties,
-      ChunkStage chunkStage,
+      AnalyzeStage chunkStage,
       DedupStage dedupStage,
       EmbedStage embedStage,
       StoreStage storeStage,

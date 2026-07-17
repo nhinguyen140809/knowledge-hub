@@ -1,8 +1,8 @@
 package com.knowledgehub.knowledge.analysis.domain;
 
 /**
- * Tunables that shape chunking, passed to every {@link Chunker}. Built from configuration at the
- * application boundary so the chunkers stay free of framework concerns.
+ * Tunables that shape chunking, passed to every {@link LanguageAnalyzer}. Built from configuration
+ * at the application boundary so the analyzers stay free of framework concerns.
  *
  * @param maxTokens target maximum tokens per chunk (a chunk may be smaller, never deliberately
  *     larger except an indivisible unit such as a single oversized function)

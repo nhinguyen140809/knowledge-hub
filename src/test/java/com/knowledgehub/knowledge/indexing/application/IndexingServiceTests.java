@@ -10,8 +10,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.knowledgehub.knowledge.analysis.infrastructure.DocChunker;
-import com.knowledgehub.knowledge.analysis.infrastructure.JavaCodeChunker;
+import com.knowledgehub.knowledge.analysis.infrastructure.DocAnalyzer;
+import com.knowledgehub.knowledge.analysis.infrastructure.JavaAnalyzer;
 import com.knowledgehub.knowledge.domain.EmbeddingPort;
 import com.knowledgehub.knowledge.domain.VectorStorePort;
 import com.knowledgehub.knowledge.graph.application.LinkSummary;
@@ -48,7 +48,7 @@ class IndexingServiceTests {
     return new IndexingService(
         ingestion,
         new AppProperties(null, null, null, null, null, null),
-        new ChunkStage(List.of(new JavaCodeChunker(new JavaLanguage()), new DocChunker())),
+        new AnalyzeStage(List.of(new JavaAnalyzer(new JavaLanguage()), new DocAnalyzer())),
         new DedupStage(chunks),
         new EmbedStage(embedding),
         new StoreStage(vectorStore, chunks, entities),

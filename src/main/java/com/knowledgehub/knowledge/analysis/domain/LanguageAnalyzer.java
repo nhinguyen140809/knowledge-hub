@@ -4,13 +4,13 @@ import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 
 /**
  * Cuts an artifact into chunks (and, for code, extracts entities). A Strategy: each variant handles
- * one kind of input — one per source language ({@code JavaCodeChunker}) plus the {@code DocChunker}
+ * one kind of input — one per source language ({@code JavaAnalyzer}) plus the {@code DocAnalyzer}
  * fallback; the selector injects the whole set and picks the first that {@link #supports} the
  * artifact, so adding a language is one new adapter.
  */
-public interface Chunker {
+public interface LanguageAnalyzer {
 
-  /** Whether this chunker can handle the given artifact (by media type and/or path). */
+  /** Whether this analyzer can handle the given artifact (by media type and/or path). */
   boolean supports(RawArtifact artifact);
 
   /**
@@ -21,5 +21,5 @@ public interface Chunker {
    * @param config the chunking tunables
    * @return the chunks plus any extracted code entities
    */
-  ChunkingResult chunk(RawArtifact artifact, ChunkConfig config);
+  AnalysisResult analyze(RawArtifact artifact, ChunkConfig config);
 }

@@ -2,14 +2,14 @@ package com.knowledgehub.knowledge.indexing.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.knowledgehub.knowledge.analysis.domain.AnalysisResult;
 import com.knowledgehub.knowledge.analysis.domain.ChunkConfig;
-import com.knowledgehub.knowledge.analysis.domain.Chunker;
-import com.knowledgehub.knowledge.analysis.domain.ChunkingResult;
+import com.knowledgehub.knowledge.analysis.domain.LanguageAnalyzer;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-class ChunkStageTests {
+class AnalyzeStageTests {
 
   private static final ChunkConfig CONFIG = new ChunkConfig(512, 0);
 
@@ -18,42 +18,42 @@ class ChunkStageTests {
   }
 
   @Test
-  void usesTheFirstSupportingChunker() {
-    Chunker supporting =
-        new Chunker() {
+  void usesTheFirstSupportingAnalyzer() {
+    LanguageAnalyzer supporting =
+        new LanguageAnalyzer() {
           @Override
           public boolean supports(RawArtifact artifact) {
             return true;
           }
 
           @Override
-          public ChunkingResult chunk(RawArtifact artifact, ChunkConfig config) {
-            return ChunkingResult.ofChunks(List.of(IndexingFixtures.docChunk("body")));
+          public AnalysisResult analyze(RawArtifact artifact, ChunkConfig config) {
+            return AnalysisResult.ofChunks(List.of(IndexingFixtures.docChunk("body")));
           }
         };
 
-    IndexingContext result = new ChunkStage(List.of(supporting)).apply(context());
+    IndexingContext result = new AnalyzeStage(List.of(supporting)).apply(context());
 
     assertThat(result.isSkipped()).isFalse();
     assertThat(result.chunks()).hasSize(1);
   }
 
   @Test
-  void skipsWhenNoChunkerSupportsTheArtifact() {
-    Chunker none =
-        new Chunker() {
+  void skipsWhenNoAnalyzerSupportsTheArtifact() {
+    LanguageAnalyzer none =
+        new LanguageAnalyzer() {
           @Override
           public boolean supports(RawArtifact artifact) {
             return false;
           }
 
           @Override
-          public ChunkingResult chunk(RawArtifact artifact, ChunkConfig config) {
+          public AnalysisResult analyze(RawArtifact artifact, ChunkConfig config) {
             throw new AssertionError("must not be called");
           }
         };
 
-    IndexingContext result = new ChunkStage(List.of(none)).apply(context());
+    IndexingContext result = new AnalyzeStage(List.of(none)).apply(context());
 
     assertThat(result.isSkipped()).isTrue();
     assertThat(result.chunks()).isEmpty();
@@ -61,20 +61,20 @@ class ChunkStageTests {
 
   @Test
   void skipsWhenChunkingThrows() {
-    Chunker failing =
-        new Chunker() {
+    LanguageAnalyzer failing =
+        new LanguageAnalyzer() {
           @Override
           public boolean supports(RawArtifact artifact) {
             return true;
           }
 
           @Override
-          public ChunkingResult chunk(RawArtifact artifact, ChunkConfig config) {
+          public AnalysisResult analyze(RawArtifact artifact, ChunkConfig config) {
             throw new IllegalArgumentException("bad input");
           }
         };
 
-    IndexingContext result = new ChunkStage(List.of(failing)).apply(context());
+    IndexingContext result = new AnalyzeStage(List.of(failing)).apply(context());
 
     assertThat(result.isSkipped()).isTrue();
     assertThat(result.skipReason()).contains("chunking failed");

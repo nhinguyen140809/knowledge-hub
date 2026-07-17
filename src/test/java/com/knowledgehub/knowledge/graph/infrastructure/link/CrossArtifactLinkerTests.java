@@ -37,7 +37,7 @@ class CrossArtifactLinkerTests {
           "Foo",
           List.of("F1", "F2"),
           "CodeChunker",
-          List.of("E:chunker"),
+          List.of("E:analyzer"),
           "Chunk",
           List.of("E:chunk"));
   private static final Map<String, List<String>> BY_PATH =
@@ -155,7 +155,7 @@ class CrossArtifactLinkerTests {
     assertThat(candidates)
         .anySatisfy(
             c -> {
-              assertThat(c.toId()).isEqualTo("E:chunker"); // compound, unique -> strong
+              assertThat(c.toId()).isEqualTo("E:analyzer"); // compound, unique -> strong
               assertThat(c.score()).isEqualTo(0.7);
             })
         .anySatisfy(

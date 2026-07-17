@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Reads Markdown verbatim as UTF-8. The source is already Markdown, so keeping the exact bytes
- * preserves the heading markers ({@code #}) the structure-aware document chunker sections on — a
+ * preserves the heading markers ({@code #}) the structure-aware document analyzer sections on — a
  * parse-and-re-render step would strip them into metadata and flatten the structure.
  */
 @Component

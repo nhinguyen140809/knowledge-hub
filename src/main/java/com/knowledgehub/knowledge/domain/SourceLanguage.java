@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
  * auto-collected into the {@code SourceLanguages} registry: supporting a new language starts with
  * one new {@code @Component} implementing this, with no change to existing classes. Today the
  * document linkers consume it (code-file test, reference spellings, test conventions);
- * language-specific parsers — a chunker, a structural extractor — attach alongside as their own
+ * language-specific parsers — a analyzer, a structural extractor — attach alongside as their own
  * strategy implementations for the same language.
  */
 public interface SourceLanguage {

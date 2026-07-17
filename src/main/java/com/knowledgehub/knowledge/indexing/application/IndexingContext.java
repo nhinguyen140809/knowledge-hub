@@ -18,7 +18,7 @@ class IndexingContext {
   private final RawArtifact artifact;
   private final ChunkConfig config;
 
-  // All chunks cut from the artifact and the code entities alongside them (set by ChunkStage).
+  // All chunks cut from the artifact and the code entities alongside them (set by AnalyzeStage).
   private List<Chunk> chunks = List.of();
   private List<CodeEntity> entities = List.of();
   // The subset of chunks whose content is not already indexed — the ones worth embedding — and how
