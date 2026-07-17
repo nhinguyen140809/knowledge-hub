@@ -1,7 +1,7 @@
 package com.knowledgehub.knowledge.ingestion.application;
 
 import com.knowledgehub.knowledge.ingestion.domain.Source;
-import com.knowledgehub.knowledge.ingestion.domain.SourceRepository;
+import com.knowledgehub.knowledge.ingestion.domain.port.SourceRepository;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

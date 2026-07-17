@@ -2,7 +2,7 @@ package com.knowledgehub.knowledge.graph.infrastructure.persistence;
 
 import com.knowledgehub.knowledge.domain.RelationType;
 import com.knowledgehub.knowledge.domain.Relationship;
-import com.knowledgehub.knowledge.graph.domain.RelationshipRepository;
+import com.knowledgehub.knowledge.graph.domain.port.RelationshipRepository;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;

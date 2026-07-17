@@ -1,7 +1,7 @@
 package com.knowledgehub.knowledge.indexing.infrastructure.persistence;
 
 import com.knowledgehub.knowledge.analysis.domain.CodeEntity;
-import com.knowledgehub.knowledge.indexing.domain.CodeEntityRepository;
+import com.knowledgehub.knowledge.indexing.domain.port.CodeEntityRepository;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

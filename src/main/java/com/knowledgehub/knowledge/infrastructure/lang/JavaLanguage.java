@@ -1,6 +1,6 @@
 package com.knowledgehub.knowledge.infrastructure.lang;
 
-import com.knowledgehub.knowledge.domain.SourceLanguage;
+import com.knowledgehub.knowledge.domain.port.SourceLanguage;
 import java.util.List;
 import java.util.regex.Pattern;
 import org.springframework.stereotype.Component;

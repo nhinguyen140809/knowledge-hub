@@ -8,11 +8,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.knowledgehub.access.domain.CredentialRepository;
 import com.knowledgehub.access.domain.Principal;
-import com.knowledgehub.access.domain.PrincipalRepository;
 import com.knowledgehub.access.domain.PrincipalType;
 import com.knowledgehub.access.domain.Role;
+import com.knowledgehub.access.domain.port.CredentialRepository;
+import com.knowledgehub.access.domain.port.PrincipalRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;

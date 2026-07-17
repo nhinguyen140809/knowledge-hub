@@ -1,7 +1,7 @@
 package com.knowledgehub.knowledge.graph.infrastructure.resolve;
 
-import com.knowledgehub.knowledge.graph.domain.EntityResolver;
 import com.knowledgehub.knowledge.graph.domain.ResolutionScope;
+import com.knowledgehub.knowledge.graph.domain.port.EntityResolver;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;

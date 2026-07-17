@@ -2,7 +2,7 @@ package com.knowledgehub.retrieval.infrastructure.search;
 
 import com.knowledgehub.knowledge.domain.Filter;
 import com.knowledgehub.knowledge.domain.ScoredId;
-import com.knowledgehub.retrieval.domain.GraphTraversalPort;
+import com.knowledgehub.retrieval.domain.port.GraphTraversalPort;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;

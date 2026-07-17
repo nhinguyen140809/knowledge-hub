@@ -1,10 +1,10 @@
 package com.knowledgehub.knowledge.ingestion.infrastructure.connector;
 
-import com.knowledgehub.knowledge.ingestion.domain.Connector;
 import com.knowledgehub.knowledge.ingestion.domain.GitProvenance;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
 import com.knowledgehub.knowledge.ingestion.domain.SourceType;
+import com.knowledgehub.knowledge.ingestion.domain.port.Connector;
 import com.knowledgehub.knowledge.ingestion.infrastructure.MediaTypes;
 import com.knowledgehub.shared.id.Hashing;
 import java.io.IOException;

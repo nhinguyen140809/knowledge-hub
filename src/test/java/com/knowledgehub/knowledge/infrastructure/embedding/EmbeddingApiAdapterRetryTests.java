@@ -7,7 +7,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.knowledgehub.knowledge.domain.EmbeddingPort;
+import com.knowledgehub.knowledge.domain.port.EmbeddingPort;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;

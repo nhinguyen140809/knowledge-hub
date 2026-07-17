@@ -1,7 +1,7 @@
 package com.knowledgehub.knowledge.ingestion.infrastructure.reader;
 
-import com.knowledgehub.knowledge.ingestion.domain.DocumentReader;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
+import com.knowledgehub.knowledge.ingestion.domain.port.DocumentReader;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;

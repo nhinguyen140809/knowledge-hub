@@ -1,7 +1,7 @@
 package com.knowledgehub.knowledge.indexing.infrastructure.persistence;
 
 import com.knowledgehub.knowledge.analysis.domain.Chunk;
-import com.knowledgehub.knowledge.indexing.domain.ChunkRepository;
+import com.knowledgehub.knowledge.indexing.domain.port.ChunkRepository;
 import com.knowledgehub.knowledge.ingestion.domain.Provenance;
 import com.knowledgehub.knowledge.ingestion.domain.VersionRef;
 import java.util.Collection;

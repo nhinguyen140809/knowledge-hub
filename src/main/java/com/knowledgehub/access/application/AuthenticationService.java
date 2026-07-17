@@ -1,8 +1,8 @@
 package com.knowledgehub.access.application;
 
 import com.knowledgehub.access.domain.AuthenticatedPrincipal;
-import com.knowledgehub.access.domain.Authenticator;
-import com.knowledgehub.access.domain.CredentialRepository;
+import com.knowledgehub.access.domain.port.Authenticator;
+import com.knowledgehub.access.domain.port.CredentialRepository;
 import java.time.Instant;
 import java.util.Optional;
 import org.springframework.stereotype.Service;

@@ -6,12 +6,12 @@ import static org.mockito.Mockito.when;
 
 import com.knowledgehub.access.domain.AuthenticatedPrincipal;
 import com.knowledgehub.access.domain.DefaultPolicy;
-import com.knowledgehub.access.domain.GrantRepository;
 import com.knowledgehub.access.domain.Role;
-import com.knowledgehub.access.domain.SystemConfigRepository;
+import com.knowledgehub.access.domain.port.GrantRepository;
+import com.knowledgehub.access.domain.port.SystemConfigRepository;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
-import com.knowledgehub.knowledge.ingestion.domain.SourceRepository;
 import com.knowledgehub.knowledge.ingestion.domain.SourceType;
+import com.knowledgehub.knowledge.ingestion.domain.port.SourceRepository;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;

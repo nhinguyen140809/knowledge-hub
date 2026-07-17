@@ -1,6 +1,6 @@
 package com.knowledgehub.access.infrastructure.retention;
 
-import com.knowledgehub.access.domain.CredentialRepository;
+import com.knowledgehub.access.domain.port.CredentialRepository;
 import com.knowledgehub.shared.config.AppProperties;
 import java.time.Instant;
 import java.time.ZoneOffset;

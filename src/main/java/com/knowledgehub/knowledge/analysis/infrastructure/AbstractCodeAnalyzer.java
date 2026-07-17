@@ -1,7 +1,7 @@
 package com.knowledgehub.knowledge.analysis.infrastructure;
 
-import com.knowledgehub.knowledge.analysis.domain.LanguageAnalyzer;
-import com.knowledgehub.knowledge.domain.SourceLanguage;
+import com.knowledgehub.knowledge.analysis.domain.port.LanguageAnalyzer;
+import com.knowledgehub.knowledge.domain.port.SourceLanguage;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import java.util.Locale;
 

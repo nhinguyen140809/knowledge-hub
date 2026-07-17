@@ -12,12 +12,12 @@ import static org.mockito.Mockito.when;
 
 import com.knowledgehub.knowledge.analysis.infrastructure.DocAnalyzer;
 import com.knowledgehub.knowledge.analysis.infrastructure.JavaAnalyzer;
-import com.knowledgehub.knowledge.domain.EmbeddingPort;
-import com.knowledgehub.knowledge.domain.VectorStorePort;
+import com.knowledgehub.knowledge.domain.port.EmbeddingPort;
+import com.knowledgehub.knowledge.domain.port.VectorStorePort;
 import com.knowledgehub.knowledge.graph.application.LinkSummary;
 import com.knowledgehub.knowledge.graph.application.LinkingService;
-import com.knowledgehub.knowledge.indexing.domain.ChunkRepository;
-import com.knowledgehub.knowledge.indexing.domain.CodeEntityRepository;
+import com.knowledgehub.knowledge.indexing.domain.port.ChunkRepository;
+import com.knowledgehub.knowledge.indexing.domain.port.CodeEntityRepository;
 import com.knowledgehub.knowledge.infrastructure.lang.JavaLanguage;
 import com.knowledgehub.knowledge.ingestion.application.IngestionService;
 import com.knowledgehub.knowledge.ingestion.domain.FsProvenance;

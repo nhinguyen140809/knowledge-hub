@@ -2,7 +2,7 @@ package com.knowledgehub.knowledge.graph.infrastructure.link;
 
 import com.knowledgehub.knowledge.analysis.domain.Chunk;
 import com.knowledgehub.knowledge.analysis.domain.ChunkType;
-import com.knowledgehub.knowledge.graph.domain.CrossArtifactLinker;
+import com.knowledgehub.knowledge.graph.domain.port.CrossArtifactLinker;
 import com.knowledgehub.knowledge.infrastructure.lang.SourceLanguages;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import java.util.List;

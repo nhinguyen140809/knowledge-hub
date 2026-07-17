@@ -11,7 +11,7 @@ import com.knowledgehub.knowledge.domain.ScoredId;
 import com.knowledgehub.retrieval.domain.Hit;
 import com.knowledgehub.retrieval.domain.HitMetadata;
 import com.knowledgehub.retrieval.domain.Query;
-import com.knowledgehub.retrieval.domain.RetrievalReadPort;
+import com.knowledgehub.retrieval.domain.port.RetrievalReadPort;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;

@@ -1,7 +1,7 @@
 package com.knowledgehub.retrieval.application;
 
-import com.knowledgehub.knowledge.domain.EmbeddingPort;
-import com.knowledgehub.knowledge.domain.VectorStorePort;
+import com.knowledgehub.knowledge.domain.port.EmbeddingPort;
+import com.knowledgehub.knowledge.domain.port.VectorStorePort;
 import com.knowledgehub.shared.config.AppProperties;
 import com.knowledgehub.shared.pipeline.Stage;
 import org.springframework.stereotype.Component;

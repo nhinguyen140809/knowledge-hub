@@ -1,10 +1,10 @@
 package com.knowledgehub.knowledge.ingestion.application;
 
-import com.knowledgehub.knowledge.ingestion.domain.Connector;
-import com.knowledgehub.knowledge.ingestion.domain.DocumentReader;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
-import com.knowledgehub.knowledge.ingestion.domain.SourceRepository;
+import com.knowledgehub.knowledge.ingestion.domain.port.Connector;
+import com.knowledgehub.knowledge.ingestion.domain.port.DocumentReader;
+import com.knowledgehub.knowledge.ingestion.domain.port.SourceRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;

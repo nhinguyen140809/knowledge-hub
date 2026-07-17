@@ -1,7 +1,7 @@
 package com.knowledgehub.access.infrastructure.security;
 
 import com.knowledgehub.access.domain.AuthenticatedPrincipal;
-import com.knowledgehub.access.domain.Authenticator;
+import com.knowledgehub.access.domain.port.Authenticator;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

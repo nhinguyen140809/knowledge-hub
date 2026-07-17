@@ -8,9 +8,9 @@ import static io.qdrant.client.WithPayloadSelectorFactory.include;
 
 import com.knowledgehub.knowledge.domain.ChunkVector;
 import com.knowledgehub.knowledge.domain.Filter;
-import com.knowledgehub.knowledge.domain.HybridVectorStore;
 import com.knowledgehub.knowledge.domain.ScoredId;
 import com.knowledgehub.knowledge.domain.SparseVector;
+import com.knowledgehub.knowledge.domain.port.HybridVectorStore;
 import io.qdrant.client.QdrantClient;
 import io.qdrant.client.ValueFactory;
 import io.qdrant.client.grpc.JsonWithInt.Value;

@@ -2,7 +2,7 @@ package com.knowledgehub.retrieval.infrastructure.search;
 
 import com.knowledgehub.knowledge.domain.Filter;
 import com.knowledgehub.knowledge.domain.ScoredId;
-import com.knowledgehub.retrieval.domain.KeywordSearchPort;
+import com.knowledgehub.retrieval.domain.port.KeywordSearchPort;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;

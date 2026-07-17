@@ -1,6 +1,6 @@
 package com.knowledgehub.access.infrastructure.persistence;
 
-import com.knowledgehub.access.domain.GrantRepository;
+import com.knowledgehub.access.domain.port.GrantRepository;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;

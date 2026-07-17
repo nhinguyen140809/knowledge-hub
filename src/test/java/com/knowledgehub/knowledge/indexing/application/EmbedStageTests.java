@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.knowledgehub.knowledge.analysis.domain.Chunk;
 import com.knowledgehub.knowledge.analysis.domain.ChunkConfig;
-import com.knowledgehub.knowledge.domain.EmbeddingPort;
+import com.knowledgehub.knowledge.domain.port.EmbeddingPort;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
