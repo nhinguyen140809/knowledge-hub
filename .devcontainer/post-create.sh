@@ -16,6 +16,9 @@ if ! command -v claude >/dev/null 2>&1; then
   npm install -g @anthropic-ai/claude-code
 fi
 
+echo "==> Enabling pnpm (package manager for frontend/) via corepack"
+corepack enable pnpm 2>/dev/null || npm install -g pnpm
+
 echo "==> Installing d2 (diagram renderer) (if missing)"
 if ! command -v d2 >/dev/null 2>&1; then
   curl -fsSL https://d2lang.com/install.sh | sh -s --
@@ -55,5 +58,14 @@ fi
 
 echo "==> Warming the Maven dependency cache (offline resolve)"
 ./mvnw -B -q -DskipTests dependency:go-offline || true
+
+# --- Frontend deps: install once so a fresh Codespace is ready to `pnpm dev` ---
+if [ -f frontend/package.json ]; then
+  echo "==> Installing frontend dependencies (pnpm)"
+  (cd frontend && pnpm install --frozen-lockfile) \
+    || (cd frontend && pnpm install)
+else
+  echo "==> No frontend/ yet — skipping pnpm install"
+fi
 
 echo "==> Done. Run 'just up' to start the stack, or 'just dev' for the app only."

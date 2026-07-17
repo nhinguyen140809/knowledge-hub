@@ -3,17 +3,19 @@
   "image": "mcr.microsoft.com/devcontainers/java:21-bookworm",
 
   // Docker-in-Docker so `docker compose` and Testcontainers work inside the Codespace.
-  // Node is only here so the Claude Code CLI can be installed if you want it in-terminal.
+  // Node runs the frontend/ toolchain (Vite dev server + build) and the Claude Code CLI.
+  // Pinned to 24 (current LTS) for reproducible builds; pnpm is added in post-create.sh.
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
-    "ghcr.io/devcontainers/features/node:1": { "version": "lts" },
+    "ghcr.io/devcontainers/features/node:1": { "version": "24" },
     // python3 is preinstalled but without pip/venv — needed for perf/ (perf/README.md)
     "ghcr.io/devcontainers/features/python:1": { "installTools": false }
   },
 
-  "forwardPorts": [8000, 7474, 7687, 6333, 6334],
+  "forwardPorts": [8000, 5173, 7474, 7687, 6333, 6334],
   "portsAttributes": {
-    "8000": { "label": "app — REST + MCP (/mcp)" },
+    "8000": { "label": "app (REST + MCP)" },
+    "5173": { "label": "frontend" },
     "7474": { "label": "neo4j browser" },
     "7687": { "label": "neo4j bolt" },
     "6333": { "label": "qdrant dashboard" },
@@ -46,7 +48,10 @@
       "extensions": [
         "vscjava.vscode-java-pack",
         "redhat.vscode-yaml",
-        "anthropic.claude-code"
+        "anthropic.claude-code",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss"
       ]
     }
   }
