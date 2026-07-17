@@ -6,7 +6,7 @@ import { type ReactNode, useState } from 'react'
  * just the TanStack Query client — created once via useState so it survives
  * re-renders but is not shared across tests/SSR.
  */
-export function AppProviders({ children }: { children: ReactNode }) {
+export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
