@@ -19,7 +19,7 @@ class LinkStageTests {
 
   @Test
   void linksTheArtifactAndRecordsTheCount() {
-    when(linking.link(any(), anyList())).thenReturn(new LinkSummary(4, 1));
+    when(linking.link(any(), anyList(), anyList(), anyList())).thenReturn(new LinkSummary(4, 1));
     IndexingContext context =
         new IndexingContext(IndexingFixtures.markdownArtifact("x"), new ChunkConfig(512, 0));
     context.setAnalyzed(
@@ -31,7 +31,7 @@ class LinkStageTests {
     IndexingContext result = new LinkStage(linking).apply(context);
 
     assertThat(result.relationshipsLinked()).isEqualTo(4);
-    verify(linking).link(any(), anyList());
+    verify(linking).link(any(), anyList(), anyList(), anyList());
   }
 
   @Test
@@ -42,6 +42,6 @@ class LinkStageTests {
 
     new LinkStage(linking).apply(context);
 
-    verify(linking, never()).link(any(), anyList());
+    verify(linking, never()).link(any(), anyList(), anyList(), anyList());
   }
 }

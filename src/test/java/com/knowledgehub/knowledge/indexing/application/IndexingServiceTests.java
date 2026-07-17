@@ -41,7 +41,7 @@ class IndexingServiceTests {
   private final LinkingService linking = mock(LinkingService.class);
 
   {
-    when(linking.link(any(), anyList())).thenReturn(LinkSummary.NONE);
+    when(linking.link(any(), anyList(), anyList(), anyList())).thenReturn(LinkSummary.NONE);
   }
 
   private IndexingService service() {
