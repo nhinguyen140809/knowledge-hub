@@ -1,6 +1,6 @@
 package com.knowledgehub.retrieval.application;
 
-import com.knowledgehub.retrieval.domain.KeywordSearchPort;
+import com.knowledgehub.retrieval.domain.port.KeywordSearchPort;
 import com.knowledgehub.shared.config.AppProperties;
 import com.knowledgehub.shared.pipeline.Stage;
 import org.springframework.stereotype.Component;

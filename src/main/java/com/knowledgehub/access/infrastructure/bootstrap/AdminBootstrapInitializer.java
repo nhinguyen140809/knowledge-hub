@@ -1,11 +1,11 @@
 package com.knowledgehub.access.infrastructure.bootstrap;
 
 import com.knowledgehub.access.application.Sha256;
-import com.knowledgehub.access.domain.CredentialRepository;
 import com.knowledgehub.access.domain.Principal;
-import com.knowledgehub.access.domain.PrincipalRepository;
 import com.knowledgehub.access.domain.PrincipalType;
 import com.knowledgehub.access.domain.Role;
+import com.knowledgehub.access.domain.port.CredentialRepository;
+import com.knowledgehub.access.domain.port.PrincipalRepository;
 import com.knowledgehub.shared.config.AppProperties;
 import java.time.Instant;
 import java.util.UUID;

@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.knowledgehub.TestcontainersConfiguration;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
-import com.knowledgehub.knowledge.ingestion.domain.SourceRepository;
 import com.knowledgehub.knowledge.ingestion.domain.SourceType;
+import com.knowledgehub.knowledge.ingestion.domain.port.SourceRepository;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,8 +1,8 @@
 package com.knowledgehub.knowledge.ingestion.infrastructure.persistence;
 
 import com.knowledgehub.knowledge.ingestion.domain.Source;
-import com.knowledgehub.knowledge.ingestion.domain.SourceRepository;
 import com.knowledgehub.knowledge.ingestion.domain.SourceType;
+import com.knowledgehub.knowledge.ingestion.domain.port.SourceRepository;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Component;

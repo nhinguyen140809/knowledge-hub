@@ -2,7 +2,7 @@ package com.knowledgehub.knowledge.indexing.application;
 
 import com.knowledgehub.knowledge.analysis.domain.Chunk;
 import com.knowledgehub.knowledge.domain.ChunkVector;
-import com.knowledgehub.knowledge.domain.EmbeddingPort;
+import com.knowledgehub.knowledge.domain.port.EmbeddingPort;
 import com.knowledgehub.shared.pipeline.Stage;
 import java.util.ArrayList;
 import java.util.HashMap;

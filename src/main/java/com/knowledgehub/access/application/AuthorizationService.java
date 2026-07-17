@@ -1,12 +1,12 @@
 package com.knowledgehub.access.application;
 
 import com.knowledgehub.access.domain.AuthenticatedPrincipal;
-import com.knowledgehub.access.domain.Authorizer;
 import com.knowledgehub.access.domain.DefaultPolicy;
-import com.knowledgehub.access.domain.GrantRepository;
-import com.knowledgehub.access.domain.SystemConfigRepository;
+import com.knowledgehub.access.domain.port.Authorizer;
+import com.knowledgehub.access.domain.port.GrantRepository;
+import com.knowledgehub.access.domain.port.SystemConfigRepository;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
-import com.knowledgehub.knowledge.ingestion.domain.SourceRepository;
+import com.knowledgehub.knowledge.ingestion.domain.port.SourceRepository;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;

@@ -1,6 +1,6 @@
 package com.knowledgehub.knowledge.indexing.infrastructure.persistence;
 
-import com.knowledgehub.knowledge.indexing.domain.CommitRepository;
+import com.knowledgehub.knowledge.indexing.domain.port.CommitRepository;
 import com.knowledgehub.knowledge.ingestion.domain.CommitRecord;
 import java.time.Instant;
 import java.util.Collection;

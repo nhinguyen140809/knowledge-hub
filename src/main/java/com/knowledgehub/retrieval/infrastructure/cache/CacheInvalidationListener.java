@@ -1,6 +1,6 @@
 package com.knowledgehub.retrieval.infrastructure.cache;
 
-import com.knowledgehub.knowledge.sync.application.IndexCompleted;
+import com.knowledgehub.knowledge.sync.domain.IndexCompleted;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 

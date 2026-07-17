@@ -1,7 +1,7 @@
 package com.knowledgehub.retrieval.application;
 
-import com.knowledgehub.retrieval.domain.FusionStrategy;
 import com.knowledgehub.retrieval.domain.RankedList;
+import com.knowledgehub.retrieval.domain.port.FusionStrategy;
 import com.knowledgehub.shared.config.AppProperties;
 import com.knowledgehub.shared.config.AppProperties.Retrieval.HybridWeights;
 import com.knowledgehub.shared.pipeline.Stage;

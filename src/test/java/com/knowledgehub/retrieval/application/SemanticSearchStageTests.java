@@ -7,10 +7,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.knowledgehub.knowledge.domain.EmbeddingPort;
 import com.knowledgehub.knowledge.domain.Filter;
 import com.knowledgehub.knowledge.domain.ScoredId;
-import com.knowledgehub.knowledge.domain.VectorStorePort;
+import com.knowledgehub.knowledge.domain.port.EmbeddingPort;
+import com.knowledgehub.knowledge.domain.port.VectorStorePort;
 import com.knowledgehub.retrieval.domain.Query;
 import com.knowledgehub.shared.config.AppProperties;
 import java.util.List;

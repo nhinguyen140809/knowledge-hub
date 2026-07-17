@@ -1,7 +1,7 @@
 package com.knowledgehub.access.infrastructure.persistence;
 
 import com.knowledgehub.access.domain.DefaultPolicy;
-import com.knowledgehub.access.domain.SystemConfigRepository;
+import com.knowledgehub.access.domain.port.SystemConfigRepository;
 import java.util.Map;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Component;

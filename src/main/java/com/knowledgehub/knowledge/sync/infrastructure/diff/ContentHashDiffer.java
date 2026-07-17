@@ -1,10 +1,10 @@
 package com.knowledgehub.knowledge.sync.infrastructure.diff;
 
-import com.knowledgehub.knowledge.ingestion.domain.Connector;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
+import com.knowledgehub.knowledge.ingestion.domain.port.Connector;
 import com.knowledgehub.knowledge.sync.domain.ChangeSet;
-import com.knowledgehub.knowledge.sync.domain.SourceDiffer;
+import com.knowledgehub.knowledge.sync.domain.port.SourceDiffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

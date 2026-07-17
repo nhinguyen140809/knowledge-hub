@@ -1,7 +1,7 @@
 package com.knowledgehub.knowledge.sync.infrastructure.persistence;
 
 import com.knowledgehub.knowledge.sync.domain.FreshnessInfo;
-import com.knowledgehub.knowledge.sync.domain.FreshnessRepository;
+import com.knowledgehub.knowledge.sync.domain.port.FreshnessRepository;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;

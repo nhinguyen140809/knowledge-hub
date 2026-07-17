@@ -3,8 +3,8 @@ package com.knowledgehub.access.infrastructure.security;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.knowledgehub.access.domain.AuthenticatedPrincipal;
-import com.knowledgehub.access.domain.Authorizer;
 import com.knowledgehub.access.domain.Role;
+import com.knowledgehub.access.domain.port.Authorizer;
 import com.knowledgehub.shared.config.AppProperties;
 import java.time.Duration;
 import java.util.Set;

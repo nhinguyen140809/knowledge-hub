@@ -1,7 +1,7 @@
 package com.knowledgehub.knowledge.sync.infrastructure.evict;
 
-import com.knowledgehub.knowledge.domain.VectorStorePort;
-import com.knowledgehub.knowledge.sync.domain.Evictor;
+import com.knowledgehub.knowledge.domain.port.VectorStorePort;
+import com.knowledgehub.knowledge.sync.domain.port.Evictor;
 import java.util.Collection;
 import java.util.List;
 import org.springframework.data.neo4j.core.Neo4jClient;

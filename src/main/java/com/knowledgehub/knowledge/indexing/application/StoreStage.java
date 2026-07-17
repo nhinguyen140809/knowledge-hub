@@ -1,8 +1,8 @@
 package com.knowledgehub.knowledge.indexing.application;
 
-import com.knowledgehub.knowledge.domain.VectorStorePort;
-import com.knowledgehub.knowledge.indexing.domain.ChunkRepository;
-import com.knowledgehub.knowledge.indexing.domain.CodeEntityRepository;
+import com.knowledgehub.knowledge.domain.port.VectorStorePort;
+import com.knowledgehub.knowledge.indexing.domain.port.ChunkRepository;
+import com.knowledgehub.knowledge.indexing.domain.port.CodeEntityRepository;
 import com.knowledgehub.shared.pipeline.Stage;
 import org.springframework.stereotype.Component;
 

@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.knowledgehub.knowledge.analysis.domain.AnalysisResult;
 import com.knowledgehub.knowledge.analysis.domain.ChunkConfig;
-import com.knowledgehub.knowledge.analysis.domain.LanguageAnalyzer;
+import com.knowledgehub.knowledge.analysis.domain.port.LanguageAnalyzer;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import java.util.List;
 import org.junit.jupiter.api.Test;

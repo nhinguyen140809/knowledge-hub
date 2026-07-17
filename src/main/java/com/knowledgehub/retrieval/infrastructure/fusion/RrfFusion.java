@@ -1,8 +1,8 @@
 package com.knowledgehub.retrieval.infrastructure.fusion;
 
 import com.knowledgehub.knowledge.domain.ScoredId;
-import com.knowledgehub.retrieval.domain.FusionStrategy;
 import com.knowledgehub.retrieval.domain.RankedList;
+import com.knowledgehub.retrieval.domain.port.FusionStrategy;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;

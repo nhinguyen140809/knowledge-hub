@@ -6,12 +6,12 @@ import static org.mockito.Mockito.when;
 
 import com.knowledgehub.TestcontainersConfiguration;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
-import com.knowledgehub.knowledge.ingestion.domain.SourceRepository;
 import com.knowledgehub.knowledge.ingestion.domain.SourceType;
+import com.knowledgehub.knowledge.ingestion.domain.port.SourceRepository;
 import com.knowledgehub.knowledge.sync.application.SyncService;
-import com.knowledgehub.knowledge.sync.domain.Evictor;
-import com.knowledgehub.knowledge.sync.domain.FreshnessRepository;
 import com.knowledgehub.knowledge.sync.domain.SyncResult;
+import com.knowledgehub.knowledge.sync.domain.port.Evictor;
+import com.knowledgehub.knowledge.sync.domain.port.FreshnessRepository;
 import com.knowledgehub.retrieval.application.RetrievalService;
 import com.knowledgehub.retrieval.domain.Query;
 import com.knowledgehub.retrieval.infrastructure.cache.RetrievalCache;

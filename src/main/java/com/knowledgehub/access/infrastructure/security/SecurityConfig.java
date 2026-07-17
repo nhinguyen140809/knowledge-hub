@@ -2,7 +2,7 @@ package com.knowledgehub.access.infrastructure.security;
 
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
-import com.knowledgehub.access.domain.Authenticator;
+import com.knowledgehub.access.domain.port.Authenticator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;

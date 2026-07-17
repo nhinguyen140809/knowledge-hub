@@ -2,7 +2,7 @@ package com.knowledgehub.retrieval.infrastructure.search;
 
 import com.knowledgehub.knowledge.domain.Filter;
 import com.knowledgehub.retrieval.domain.HitMetadata;
-import com.knowledgehub.retrieval.domain.RetrievalReadPort;
+import com.knowledgehub.retrieval.domain.port.RetrievalReadPort;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;

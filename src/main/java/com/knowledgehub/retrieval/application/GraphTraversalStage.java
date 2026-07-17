@@ -1,7 +1,7 @@
 package com.knowledgehub.retrieval.application;
 
 import com.knowledgehub.knowledge.domain.ScoredId;
-import com.knowledgehub.retrieval.domain.GraphTraversalPort;
+import com.knowledgehub.retrieval.domain.port.GraphTraversalPort;
 import com.knowledgehub.shared.config.AppProperties;
 import com.knowledgehub.shared.pipeline.Stage;
 import java.util.LinkedHashSet;

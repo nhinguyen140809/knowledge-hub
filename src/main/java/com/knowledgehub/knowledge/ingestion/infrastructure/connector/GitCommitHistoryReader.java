@@ -1,9 +1,9 @@
 package com.knowledgehub.knowledge.ingestion.infrastructure.connector;
 
-import com.knowledgehub.knowledge.ingestion.domain.CommitHistoryPort;
 import com.knowledgehub.knowledge.ingestion.domain.CommitRecord;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
 import com.knowledgehub.knowledge.ingestion.domain.SourceType;
+import com.knowledgehub.knowledge.ingestion.domain.port.CommitHistoryPort;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;

@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.knowledgehub.knowledge.analysis.domain.Chunk;
 import com.knowledgehub.knowledge.analysis.domain.ChunkConfig;
-import com.knowledgehub.knowledge.indexing.domain.ChunkRepository;
+import com.knowledgehub.knowledge.indexing.domain.port.ChunkRepository;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;

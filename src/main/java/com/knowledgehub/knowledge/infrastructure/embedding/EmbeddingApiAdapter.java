@@ -1,6 +1,6 @@
 package com.knowledgehub.knowledge.infrastructure.embedding;
 
-import com.knowledgehub.knowledge.domain.EmbeddingPort;
+import com.knowledgehub.knowledge.domain.port.EmbeddingPort;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;

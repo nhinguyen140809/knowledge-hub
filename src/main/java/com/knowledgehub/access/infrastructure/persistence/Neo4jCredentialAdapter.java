@@ -1,10 +1,10 @@
 package com.knowledgehub.access.infrastructure.persistence;
 
 import com.knowledgehub.access.domain.Credential;
-import com.knowledgehub.access.domain.CredentialRepository;
 import com.knowledgehub.access.domain.Principal;
 import com.knowledgehub.access.domain.PrincipalType;
 import com.knowledgehub.access.domain.Role;
+import com.knowledgehub.access.domain.port.CredentialRepository;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;

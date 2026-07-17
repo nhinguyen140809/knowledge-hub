@@ -1,7 +1,7 @@
 package com.knowledgehub.knowledge.indexing.application;
 
 import com.knowledgehub.knowledge.analysis.domain.AnalysisResult;
-import com.knowledgehub.knowledge.analysis.domain.LanguageAnalyzer;
+import com.knowledgehub.knowledge.analysis.domain.port.LanguageAnalyzer;
 import com.knowledgehub.shared.pipeline.Stage;
 import java.util.List;
 import org.slf4j.Logger;

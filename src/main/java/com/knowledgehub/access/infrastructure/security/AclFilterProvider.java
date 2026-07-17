@@ -4,7 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Ticker;
 import com.knowledgehub.access.domain.AuthenticatedPrincipal;
-import com.knowledgehub.access.domain.Authorizer;
+import com.knowledgehub.access.domain.port.Authorizer;
 import com.knowledgehub.shared.config.AppProperties;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;

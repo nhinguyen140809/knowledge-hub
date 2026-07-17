@@ -4,13 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
-import com.knowledgehub.knowledge.ingestion.domain.Connector;
-import com.knowledgehub.knowledge.ingestion.domain.DocumentReader;
 import com.knowledgehub.knowledge.ingestion.domain.FsProvenance;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
-import com.knowledgehub.knowledge.ingestion.domain.SourceRepository;
 import com.knowledgehub.knowledge.ingestion.domain.SourceType;
+import com.knowledgehub.knowledge.ingestion.domain.port.Connector;
+import com.knowledgehub.knowledge.ingestion.domain.port.DocumentReader;
+import com.knowledgehub.knowledge.ingestion.domain.port.SourceRepository;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;

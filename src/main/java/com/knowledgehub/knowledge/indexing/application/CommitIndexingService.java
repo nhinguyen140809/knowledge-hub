@@ -1,12 +1,12 @@
 package com.knowledgehub.knowledge.indexing.application;
 
 import com.knowledgehub.knowledge.domain.ChunkVector;
-import com.knowledgehub.knowledge.domain.EmbeddingPort;
-import com.knowledgehub.knowledge.domain.VectorStorePort;
-import com.knowledgehub.knowledge.indexing.domain.CommitRepository;
-import com.knowledgehub.knowledge.ingestion.domain.CommitHistoryPort;
+import com.knowledgehub.knowledge.domain.port.EmbeddingPort;
+import com.knowledgehub.knowledge.domain.port.VectorStorePort;
+import com.knowledgehub.knowledge.indexing.domain.port.CommitRepository;
 import com.knowledgehub.knowledge.ingestion.domain.CommitRecord;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
+import com.knowledgehub.knowledge.ingestion.domain.port.CommitHistoryPort;
 import com.knowledgehub.shared.config.AppProperties;
 import java.time.Instant;
 import java.util.ArrayList;
