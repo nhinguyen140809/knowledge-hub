@@ -18,6 +18,7 @@ import com.knowledgehub.knowledge.ingestion.domain.SourceType;
 import com.knowledgehub.knowledge.ingestion.domain.port.SourceRepository;
 import com.knowledgehub.knowledge.sync.domain.ChangeSet;
 import com.knowledgehub.knowledge.sync.domain.FreshnessInfo;
+import com.knowledgehub.knowledge.sync.domain.IndexCompleted;
 import com.knowledgehub.knowledge.sync.domain.SyncResult;
 import com.knowledgehub.knowledge.sync.domain.port.Evictor;
 import com.knowledgehub.knowledge.sync.domain.port.FreshnessRepository;
