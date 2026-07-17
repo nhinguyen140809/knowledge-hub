@@ -11,9 +11,9 @@ import static org.mockito.Mockito.when;
 
 import com.knowledgehub.knowledge.indexing.application.CommitIndexingService;
 import com.knowledgehub.knowledge.indexing.application.IndexingService;
-import com.knowledgehub.knowledge.ingestion.application.SourceDeleted;
 import com.knowledgehub.knowledge.ingestion.application.SourceNotFoundException;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
+import com.knowledgehub.knowledge.ingestion.domain.SourceDeleted;
 import com.knowledgehub.knowledge.ingestion.domain.SourceType;
 import com.knowledgehub.knowledge.ingestion.domain.port.SourceRepository;
 import com.knowledgehub.knowledge.sync.domain.ChangeSet;

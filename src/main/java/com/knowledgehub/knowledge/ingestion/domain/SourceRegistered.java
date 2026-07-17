@@ -1,4 +1,4 @@
-package com.knowledgehub.knowledge.ingestion.application;
+package com.knowledgehub.knowledge.ingestion.domain;
 
 /**
  * Domain event published after a source is registered, so the indexing flow can react (index it for

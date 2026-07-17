@@ -2,12 +2,13 @@ package com.knowledgehub.knowledge.sync.application;
 
 import com.knowledgehub.knowledge.indexing.application.CommitIndexingService;
 import com.knowledgehub.knowledge.indexing.application.IndexingService;
-import com.knowledgehub.knowledge.ingestion.application.SourceDeleted;
 import com.knowledgehub.knowledge.ingestion.application.SourceNotFoundException;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
+import com.knowledgehub.knowledge.ingestion.domain.SourceDeleted;
 import com.knowledgehub.knowledge.ingestion.domain.port.SourceRepository;
 import com.knowledgehub.knowledge.sync.domain.ChangeSet;
 import com.knowledgehub.knowledge.sync.domain.FreshnessInfo;
+import com.knowledgehub.knowledge.sync.domain.IndexCompleted;
 import com.knowledgehub.knowledge.sync.domain.SyncResult;
 import com.knowledgehub.knowledge.sync.domain.port.Evictor;
 import com.knowledgehub.knowledge.sync.domain.port.FreshnessRepository;
