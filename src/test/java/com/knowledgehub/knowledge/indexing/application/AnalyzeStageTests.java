@@ -60,7 +60,7 @@ class AnalyzeStageTests {
   }
 
   @Test
-  void skipsWhenChunkingThrows() {
+  void skipsWhenAnalysisThrows() {
     LanguageAnalyzer failing =
         new LanguageAnalyzer() {
           @Override
@@ -77,6 +77,6 @@ class AnalyzeStageTests {
     IndexingContext result = new AnalyzeStage(List.of(failing)).apply(context());
 
     assertThat(result.isSkipped()).isTrue();
-    assertThat(result.skipReason()).contains("chunking failed");
+    assertThat(result.skipReason()).contains("analysis failed");
   }
 }

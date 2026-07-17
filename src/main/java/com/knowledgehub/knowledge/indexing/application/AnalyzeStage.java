@@ -10,8 +10,9 @@ import org.springframework.stereotype.Component;
 
 /**
  * First filter: picks the first {@link LanguageAnalyzer} that supports the artifact (Strategy by
- * {@code supports}/order) and cuts it into chunks plus code entities. An artifact no analyzer
- * handles, or that fails to chunk, is marked skipped so the rest of the run continues.
+ * {@code supports}/order) and runs the single analysis pass — chunks, code entities, and the
+ * relations/pending references the syntax decides. An artifact no analyzer handles, or that fails
+ * to analyze, is marked skipped so the rest of the run continues.
  */
 @Component
 class AnalyzeStage implements Stage<IndexingContext> {
@@ -41,9 +42,10 @@ class AnalyzeStage implements Stage<IndexingContext> {
     }
     try {
       AnalysisResult result = analyzer.analyze(context.artifact(), context.config());
-      context.setChunked(result.chunks(), result.codeEntities());
+      context.setAnalyzed(
+          result.chunks(), result.codeEntities(), result.relations(), result.pendingReferences());
     } catch (RuntimeException e) {
-      context.markSkipped("chunking failed: " + e);
+      context.markSkipped("analysis failed: " + e);
       log.warn("Skipping artifact {}: {}", context.artifact().path(), e.toString());
     }
     return context;

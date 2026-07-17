@@ -34,9 +34,10 @@ import org.springframework.stereotype.Component;
  * AST-aware analyzer for Java source (via JavaParser). It cuts on declaration boundaries — one
  * chunk per method/constructor (never split mid-function, even past the token budget), plus a
  * "shell" chunk per type holding the class context (signature + fields) with member bodies removed
- * so the text is not duplicated. It also extracts the {@link CodeEntity} hierarchy (type →
- * methods/fields) for graph linking. Leading Javadoc/comments are kept with each chunk to
- * strengthen the signal.
+ * so the text is not duplicated. The same single parse also yields the {@link CodeEntity} hierarchy
+ * (type → methods/fields) and, via {@link JavaRelationCollector}, the relationships the syntax
+ * decides — resolved same-file edges plus pending references for the linking step. Leading
+ * Javadoc/comments are kept with each chunk to strengthen the signal.
  *
  * <p>The Java implementation of the code-analyzer strategy: it binds to {@link JavaLanguage} (so
  * the {@code .java} extension it claims comes from that one registration) and inherits the
@@ -68,7 +69,11 @@ public class JavaAnalyzer extends AbstractCodeAnalyzer {
     for (TypeDeclaration<?> type : cu.getTypes()) {
       processType(artifact, lines, packageName, null, type, config.maxTokens(), chunks, entities);
     }
-    return new AnalysisResult(chunks, entities);
+    // The relation walk shares this parse: same CompilationUnit, same id derivation.
+    JavaRelationCollector.Collected collected =
+        JavaRelationCollector.collect(cu, artifact.provenance().sourceId(), artifact.path());
+    return new AnalysisResult(
+        chunks, entities, collected.relations(), collected.pendingReferences());
   }
 
   private static CompilationUnit fail(String path, ParseResult<CompilationUnit> parsed) {
@@ -87,11 +92,8 @@ public class JavaAnalyzer extends AbstractCodeAnalyzer {
     String sourceId = artifact.provenance().sourceId();
     String path = artifact.path();
     String fileId = IdFactory.fileId(sourceId, path);
-    String qualifiedName =
-        enclosingQualifier.isEmpty()
-            ? type.getNameAsString()
-            : enclosingQualifier + "." + type.getNameAsString();
-    String entityId = CodeEntity.deriveId(sourceId, path, qualifiedName);
+    String qualifiedName = JavaEntityIds.qualified(enclosingQualifier, type.getNameAsString());
+    String entityId = JavaEntityIds.typeId(sourceId, path, qualifiedName);
     Range typeRange = type.getRange().orElseThrow();
     CodeEntityLevel level = levelOf(type);
 
@@ -116,13 +118,13 @@ public class JavaAnalyzer extends AbstractCodeAnalyzer {
       Range range = withLeadingComment(callable);
       mark(excluded, range);
       String memberName = callable.getNameAsString();
-      String signature = callable.getDeclarationAsString(false, false, false);
+      String signature = JavaEntityIds.signature(callable);
       CodeEntityLevel memberLevel =
           callable instanceof ConstructorDeclaration
               ? CodeEntityLevel.CONSTRUCTOR
               : CodeEntityLevel.METHOD;
       String memberQualifiedName = qualifiedName + "#" + signature;
-      String memberId = CodeEntity.deriveId(sourceId, path, memberQualifiedName);
+      String memberId = JavaEntityIds.callableId(sourceId, path, qualifiedName, callable);
       entities.add(
           new CodeEntity(
               memberId,
@@ -172,7 +174,7 @@ public class JavaAnalyzer extends AbstractCodeAnalyzer {
         String fieldQualifiedName = qualifiedName + "#" + fieldName;
         entities.add(
             new CodeEntity(
-                CodeEntity.deriveId(sourceId, path, fieldQualifiedName),
+                JavaEntityIds.fieldId(sourceId, path, qualifiedName, fieldName),
                 sourceId,
                 fileId,
                 entityId,

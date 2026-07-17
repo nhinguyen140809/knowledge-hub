@@ -3,7 +3,9 @@ package com.knowledgehub.knowledge.indexing.application;
 import com.knowledgehub.knowledge.analysis.domain.Chunk;
 import com.knowledgehub.knowledge.analysis.domain.ChunkConfig;
 import com.knowledgehub.knowledge.analysis.domain.CodeEntity;
+import com.knowledgehub.knowledge.analysis.domain.PendingReference;
 import com.knowledgehub.knowledge.domain.ChunkVector;
+import com.knowledgehub.knowledge.domain.Relationship;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import java.util.List;
 
@@ -18,9 +20,13 @@ class IndexingContext {
   private final RawArtifact artifact;
   private final ChunkConfig config;
 
-  // All chunks cut from the artifact and the code entities alongside them (set by AnalyzeStage).
+  // Everything the single analysis pass produced: chunks, the code entities alongside them, the
+  // same-artifact edges already resolved, and the named references awaiting resolution by linking
+  // (set by AnalyzeStage).
   private List<Chunk> chunks = List.of();
   private List<CodeEntity> entities = List.of();
+  private List<Relationship> relations = List.of();
+  private List<PendingReference> pendingReferences = List.of();
   // The subset of chunks whose content is not already indexed — the ones worth embedding — and how
   // many were skipped as already present (set by DedupStage).
   private List<Chunk> newChunks = List.of();
@@ -58,6 +64,14 @@ class IndexingContext {
     return entities;
   }
 
+  List<Relationship> relations() {
+    return relations;
+  }
+
+  List<PendingReference> pendingReferences() {
+    return pendingReferences;
+  }
+
   List<Chunk> newChunks() {
     return newChunks;
   }
@@ -82,9 +96,15 @@ class IndexingContext {
     return skipReason;
   }
 
-  void setChunked(List<Chunk> chunks, List<CodeEntity> entities) {
+  void setAnalyzed(
+      List<Chunk> chunks,
+      List<CodeEntity> entities,
+      List<Relationship> relations,
+      List<PendingReference> pendingReferences) {
     this.chunks = List.copyOf(chunks);
     this.entities = List.copyOf(entities);
+    this.relations = List.copyOf(relations);
+    this.pendingReferences = List.copyOf(pendingReferences);
   }
 
   void setNewChunks(List<Chunk> newChunks, int cached) {

@@ -23,7 +23,7 @@ class DedupStageTests {
     Chunk cached = IndexingFixtures.docChunk("old content");
     IndexingContext context =
         new IndexingContext(IndexingFixtures.markdownArtifact("x"), new ChunkConfig(512, 0));
-    context.setChunked(List.of(kept, cached), List.of());
+    context.setAnalyzed(List.of(kept, cached), List.of(), List.of(), List.of());
     when(repository.existingContentHashes(eq(IndexingFixtures.SOURCE), any()))
         .thenReturn(Set.of(cached.contentHash()));
 

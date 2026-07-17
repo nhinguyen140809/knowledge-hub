@@ -6,7 +6,7 @@ import java.util.Map;
 
 /**
  * Turns textual references (from call sites, imports, or prose in a document) into the ids of
- * existing {@link com.knowledgehub.knowledge.indexing.domain.CodeEntity} nodes. This is what keeps
+ * existing {@link com.knowledgehub.knowledge.analysis.domain.CodeEntity} nodes. This is what keeps
  * the graph from fragmenting: a name at a use site is mapped back to the node that declares it,
  * preferring the requesting source and widening to other sources for cross-source links.
  *

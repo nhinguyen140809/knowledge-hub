@@ -22,7 +22,11 @@ class LinkStageTests {
     when(linking.link(any(), anyList())).thenReturn(new LinkSummary(4, 1));
     IndexingContext context =
         new IndexingContext(IndexingFixtures.markdownArtifact("x"), new ChunkConfig(512, 0));
-    context.setChunked(java.util.List.of(IndexingFixtures.docChunk("body")), java.util.List.of());
+    context.setAnalyzed(
+        java.util.List.of(IndexingFixtures.docChunk("body")),
+        java.util.List.of(),
+        java.util.List.of(),
+        java.util.List.of());
 
     IndexingContext result = new LinkStage(linking).apply(context);
 
