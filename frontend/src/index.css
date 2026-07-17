@@ -1,0 +1,9 @@
+/* HeroUI v3 ships its theme on top of Tailwind CSS v4; this single import pulls
+   in Tailwind's base + utilities and the HeroUI component styles. The
+   @tailwindcss/vite plugin (see vite.config.ts) generates the utility classes
+   our own components use. */
+@import '@heroui/react/styles';
+
+:root {
+  color-scheme: light dark;
+}
