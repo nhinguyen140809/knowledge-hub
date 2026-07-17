@@ -38,9 +38,10 @@ test-real:
 test-git-live:
     SPRING_PROFILES_ACTIVE= GIT_LIVE_TEST=true {{mvn}} -B test -Dtest=GitSourceLiveIndexingTests
 
-# format check + build + tests
+# format check + build + tests. SPRING_PROFILES_ACTIVE is cleared for the same reason as `test`:
+# .env's prod profile would break Testcontainers' dynamic URI override.
 verify:
-    {{mvn}} -B spotless:check verify
+    SPRING_PROFILES_ACTIVE= {{mvn}} -B spotless:check verify
 
 # auto-format code (Spotless)
 format:

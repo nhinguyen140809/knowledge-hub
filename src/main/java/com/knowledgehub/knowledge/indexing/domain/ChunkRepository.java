@@ -1,5 +1,6 @@
 package com.knowledgehub.knowledge.indexing.domain;
 
+import com.knowledgehub.knowledge.analysis.domain.Chunk;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;

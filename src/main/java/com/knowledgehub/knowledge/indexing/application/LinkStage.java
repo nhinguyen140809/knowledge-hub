@@ -6,10 +6,11 @@ import com.knowledgehub.shared.pipeline.Stage;
 import org.springframework.stereotype.Component;
 
 /**
- * Final filter: links the artifact's stored nodes into the knowledge graph (structural relations
- * plus accepted cross-artifact links). It runs after the nodes are stored, so the relationship
- * targets already exist, and delegates the actual linking to the graph layer's {@link
- * LinkingService} — the indexing pipeline only supplies the artifact and its chunks.
+ * Final filter: links the artifact's stored nodes into the knowledge graph. It runs after the nodes
+ * are stored, so the relationship targets already exist, and delegates the actual linking to the
+ * graph layer's {@link LinkingService} — the indexing pipeline only hands over what the analysis
+ * pass produced: the chunks, the already-resolved local relations, and the pending references
+ * awaiting resolution.
  *
  * <p>Linking runs for every non-skipped artifact, including one whose chunks were all cached: a
  * reference can point at a file indexed later, so re-linking unchanged content is how those
@@ -30,7 +31,9 @@ class LinkStage implements Stage<IndexingContext> {
     if (context.isSkipped()) {
       return context;
     }
-    LinkSummary summary = linkingService.link(context.artifact(), context.chunks());
+    LinkSummary summary =
+        linkingService.link(
+            context.artifact(), context.chunks(), context.relations(), context.pendingReferences());
     context.setRelationshipsLinked(summary.relationshipsWritten());
     return context;
   }

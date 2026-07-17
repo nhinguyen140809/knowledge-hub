@@ -2,12 +2,12 @@ package com.knowledgehub.knowledge.graph.infrastructure.link;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.knowledgehub.knowledge.analysis.domain.Chunk;
+import com.knowledgehub.knowledge.analysis.domain.ChunkType;
+import com.knowledgehub.knowledge.domain.RelationType;
 import com.knowledgehub.knowledge.graph.domain.EntityResolver;
 import com.knowledgehub.knowledge.graph.domain.LinkCandidate;
-import com.knowledgehub.knowledge.graph.domain.RelationType;
 import com.knowledgehub.knowledge.graph.domain.ResolutionScope;
-import com.knowledgehub.knowledge.indexing.domain.Chunk;
-import com.knowledgehub.knowledge.indexing.domain.ChunkType;
 import com.knowledgehub.knowledge.infrastructure.lang.JavaLanguage;
 import com.knowledgehub.knowledge.infrastructure.lang.SourceLanguages;
 import com.knowledgehub.knowledge.ingestion.domain.FsProvenance;
@@ -37,7 +37,7 @@ class CrossArtifactLinkerTests {
           "Foo",
           List.of("F1", "F2"),
           "CodeChunker",
-          List.of("E:chunker"),
+          List.of("E:analyzer"),
           "Chunk",
           List.of("E:chunk"));
   private static final Map<String, List<String>> BY_PATH =
@@ -155,7 +155,7 @@ class CrossArtifactLinkerTests {
     assertThat(candidates)
         .anySatisfy(
             c -> {
-              assertThat(c.toId()).isEqualTo("E:chunker"); // compound, unique -> strong
+              assertThat(c.toId()).isEqualTo("E:analyzer"); // compound, unique -> strong
               assertThat(c.score()).isEqualTo(0.7);
             })
         .anySatisfy(

@@ -1,10 +1,10 @@
 package com.knowledgehub.knowledge.graph.infrastructure.link;
 
+import com.knowledgehub.knowledge.analysis.domain.Chunk;
+import com.knowledgehub.knowledge.domain.RelationType;
 import com.knowledgehub.knowledge.graph.domain.EntityResolver;
 import com.knowledgehub.knowledge.graph.domain.LinkCandidate;
-import com.knowledgehub.knowledge.graph.domain.RelationType;
 import com.knowledgehub.knowledge.graph.domain.ResolutionScope;
-import com.knowledgehub.knowledge.indexing.domain.Chunk;
 import com.knowledgehub.knowledge.infrastructure.lang.SourceLanguages;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import java.util.ArrayList;
@@ -28,8 +28,8 @@ import org.springframework.stereotype.Component;
  * qualified names, one for bare names), so a document is a couple of queries regardless of length.
  *
  * <p>Example — a chunk reading <em>"CodeChunker cuts code by AST; see
- * com.example.chunking.DocChunker; every Chunk keeps its text"</em> proposes three DESCRIBES
- * candidates: to {@code DocChunker} at 0.9 (qualified name, one match), to {@code CodeChunker} at
+ * com.example.chunking.DocAnalyzer; every Chunk keeps its text"</em> proposes three DESCRIBES
+ * candidates: to {@code DocAnalyzer} at 0.9 (qualified name, one match), to {@code CodeChunker} at
  * 0.7 (compound bare name, one match), and to {@code Chunk} at 0.4 (single word that is also
  * ordinary prose) — the last falls under the default confidence threshold and never reaches the
  * graph.
@@ -83,9 +83,9 @@ class IdentifierMatchLinker extends AbstractDocumentLinker {
 
   /**
    * One candidate per qualified mention that resolved to exactly one entity — {@code
-   * com.example.chunking.DocChunker} in the chunk text becomes {@code (chunk DESCRIBES DocChunker,
-   * 0.9, evidence = the name)}. Targets are recorded in {@code linked} so the weaker bare-name pass
-   * skips them.
+   * com.example.chunking.DocAnalyzer} in the chunk text becomes {@code (chunk DESCRIBES
+   * DocAnalyzer, 0.9, evidence = the name)}. Targets are recorded in {@code linked} so the weaker
+   * bare-name pass skips them.
    */
   private void qualifiedCandidates(
       Chunk chunk, Map<String, String> resolved, Set<String> linked, List<LinkCandidate> out) {

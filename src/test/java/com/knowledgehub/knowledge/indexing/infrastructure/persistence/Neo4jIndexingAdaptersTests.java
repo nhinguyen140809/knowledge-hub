@@ -3,11 +3,11 @@ package com.knowledgehub.knowledge.indexing.infrastructure.persistence;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.knowledgehub.TestcontainersConfiguration;
-import com.knowledgehub.knowledge.indexing.domain.Chunk;
+import com.knowledgehub.knowledge.analysis.domain.Chunk;
+import com.knowledgehub.knowledge.analysis.domain.ChunkType;
+import com.knowledgehub.knowledge.analysis.domain.CodeEntity;
+import com.knowledgehub.knowledge.analysis.domain.CodeEntityLevel;
 import com.knowledgehub.knowledge.indexing.domain.ChunkRepository;
-import com.knowledgehub.knowledge.indexing.domain.ChunkType;
-import com.knowledgehub.knowledge.indexing.domain.CodeEntity;
-import com.knowledgehub.knowledge.indexing.domain.CodeEntityLevel;
 import com.knowledgehub.knowledge.indexing.domain.CodeEntityRepository;
 import com.knowledgehub.knowledge.ingestion.domain.FsProvenance;
 import com.knowledgehub.knowledge.ingestion.domain.Provenance;

@@ -5,9 +5,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.knowledgehub.knowledge.analysis.domain.Chunk;
+import com.knowledgehub.knowledge.analysis.domain.ChunkConfig;
 import com.knowledgehub.knowledge.domain.EmbeddingPort;
-import com.knowledgehub.knowledge.indexing.domain.Chunk;
-import com.knowledgehub.knowledge.indexing.domain.ChunkConfig;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 

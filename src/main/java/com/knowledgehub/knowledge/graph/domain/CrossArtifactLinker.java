@@ -1,6 +1,6 @@
 package com.knowledgehub.knowledge.graph.domain;
 
-import com.knowledgehub.knowledge.indexing.domain.Chunk;
+import com.knowledgehub.knowledge.analysis.domain.Chunk;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import java.util.List;
 

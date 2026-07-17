@@ -10,14 +10,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.knowledgehub.knowledge.analysis.infrastructure.DocAnalyzer;
+import com.knowledgehub.knowledge.analysis.infrastructure.JavaAnalyzer;
 import com.knowledgehub.knowledge.domain.EmbeddingPort;
 import com.knowledgehub.knowledge.domain.VectorStorePort;
 import com.knowledgehub.knowledge.graph.application.LinkSummary;
 import com.knowledgehub.knowledge.graph.application.LinkingService;
 import com.knowledgehub.knowledge.indexing.domain.ChunkRepository;
 import com.knowledgehub.knowledge.indexing.domain.CodeEntityRepository;
-import com.knowledgehub.knowledge.indexing.infrastructure.chunking.DocChunker;
-import com.knowledgehub.knowledge.indexing.infrastructure.chunking.JavaCodeChunker;
 import com.knowledgehub.knowledge.infrastructure.lang.JavaLanguage;
 import com.knowledgehub.knowledge.ingestion.application.IngestionService;
 import com.knowledgehub.knowledge.ingestion.domain.FsProvenance;
@@ -41,14 +41,14 @@ class IndexingServiceTests {
   private final LinkingService linking = mock(LinkingService.class);
 
   {
-    when(linking.link(any(), anyList())).thenReturn(LinkSummary.NONE);
+    when(linking.link(any(), anyList(), anyList(), anyList())).thenReturn(LinkSummary.NONE);
   }
 
   private IndexingService service() {
     return new IndexingService(
         ingestion,
         new AppProperties(null, null, null, null, null, null),
-        new ChunkStage(List.of(new JavaCodeChunker(new JavaLanguage()), new DocChunker())),
+        new AnalyzeStage(List.of(new JavaAnalyzer(new JavaLanguage()), new DocAnalyzer())),
         new DedupStage(chunks),
         new EmbedStage(embedding),
         new StoreStage(vectorStore, chunks, entities),

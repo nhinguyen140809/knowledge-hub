@@ -21,7 +21,7 @@ final class ReaderSupport {
   // AutoDetectParser and the converter are thread-safe and stateless, so a single shared instance
   // serves every reader; only the per-parse handler and metadata are created fresh each call.
   private static final Parser PARSER = new AutoDetectParser();
-  // Force ATX headings ('# Title'), not setext underlines ('Title\n====='): the document chunker
+  // Force ATX headings ('# Title'), not setext underlines ('Title\n====='): the document analyzer
   // sections on the '#' marker, which only ATX produces.
   private static final FlexmarkHtmlConverter HTML_TO_MARKDOWN =
       FlexmarkHtmlConverter.builder(
@@ -33,7 +33,7 @@ final class ReaderSupport {
   /**
    * Extracts a rich document (PDF, Office, HTML, …) as Markdown: Apache Tika parses the bytes to
    * structured XHTML (headings, lists, tables become elements), then Flexmark converts that HTML to
-   * Markdown, so a heading survives as {@code #} for the structure-aware document chunker.
+   * Markdown, so a heading survives as {@code #} for the structure-aware document analyzer.
    *
    * @throws IllegalStateException if the content cannot be parsed
    */

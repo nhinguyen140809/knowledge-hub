@@ -3,13 +3,13 @@ package com.knowledgehub.knowledge.graph.infrastructure;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.knowledgehub.TestcontainersConfiguration;
+import com.knowledgehub.knowledge.analysis.domain.CodeEntity;
+import com.knowledgehub.knowledge.analysis.domain.CodeEntityLevel;
+import com.knowledgehub.knowledge.domain.RelationType;
+import com.knowledgehub.knowledge.domain.Relationship;
 import com.knowledgehub.knowledge.graph.domain.EntityResolver;
-import com.knowledgehub.knowledge.graph.domain.RelationType;
-import com.knowledgehub.knowledge.graph.domain.Relationship;
 import com.knowledgehub.knowledge.graph.domain.RelationshipRepository;
 import com.knowledgehub.knowledge.graph.domain.ResolutionScope;
-import com.knowledgehub.knowledge.indexing.domain.CodeEntity;
-import com.knowledgehub.knowledge.indexing.domain.CodeEntityLevel;
 import com.knowledgehub.knowledge.indexing.domain.CodeEntityRepository;
 import com.knowledgehub.shared.id.IdFactory;
 import java.util.List;

@@ -8,9 +8,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.knowledgehub.knowledge.analysis.domain.ChunkConfig;
 import com.knowledgehub.knowledge.graph.application.LinkSummary;
 import com.knowledgehub.knowledge.graph.application.LinkingService;
-import com.knowledgehub.knowledge.indexing.domain.ChunkConfig;
 import org.junit.jupiter.api.Test;
 
 class LinkStageTests {
@@ -19,25 +19,29 @@ class LinkStageTests {
 
   @Test
   void linksTheArtifactAndRecordsTheCount() {
-    when(linking.link(any(), anyList())).thenReturn(new LinkSummary(4, 1));
+    when(linking.link(any(), anyList(), anyList(), anyList())).thenReturn(new LinkSummary(4, 1));
     IndexingContext context =
         new IndexingContext(IndexingFixtures.markdownArtifact("x"), new ChunkConfig(512, 0));
-    context.setChunked(java.util.List.of(IndexingFixtures.docChunk("body")), java.util.List.of());
+    context.setAnalyzed(
+        java.util.List.of(IndexingFixtures.docChunk("body")),
+        java.util.List.of(),
+        java.util.List.of(),
+        java.util.List.of());
 
     IndexingContext result = new LinkStage(linking).apply(context);
 
     assertThat(result.relationshipsLinked()).isEqualTo(4);
-    verify(linking).link(any(), anyList());
+    verify(linking).link(any(), anyList(), anyList(), anyList());
   }
 
   @Test
   void skipsLinkingForASkippedArtifact() {
     IndexingContext context =
         new IndexingContext(IndexingFixtures.markdownArtifact("x"), new ChunkConfig(512, 0));
-    context.markSkipped("no chunker");
+    context.markSkipped("no analyzer");
 
     new LinkStage(linking).apply(context);
 
-    verify(linking, never()).link(any(), anyList());
+    verify(linking, never()).link(any(), anyList(), anyList(), anyList());
   }
 }

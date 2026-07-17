@@ -1,5 +1,7 @@
 package com.knowledgehub.knowledge.graph.domain;
 
+import com.knowledgehub.knowledge.domain.RelationType;
+import com.knowledgehub.knowledge.domain.Relationship;
 import java.util.Objects;
 
 /**

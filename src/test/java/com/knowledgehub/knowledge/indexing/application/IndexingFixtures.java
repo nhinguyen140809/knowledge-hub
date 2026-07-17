@@ -1,7 +1,7 @@
 package com.knowledgehub.knowledge.indexing.application;
 
-import com.knowledgehub.knowledge.indexing.domain.Chunk;
-import com.knowledgehub.knowledge.indexing.domain.ChunkType;
+import com.knowledgehub.knowledge.analysis.domain.Chunk;
+import com.knowledgehub.knowledge.analysis.domain.ChunkType;
 import com.knowledgehub.knowledge.ingestion.domain.FsProvenance;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import com.knowledgehub.knowledge.ingestion.infrastructure.MediaTypes;

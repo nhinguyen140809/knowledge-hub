@@ -1,0 +1,95 @@
+# Data Processing — 1 · Ingestion & indexing pipeline (per data type)
+# Data-flow view of the indexing PIPES & FILTERS pipeline (AnalyzeStage -> DedupStage ->
+# EmbedStage -> StoreStage -> LinkStage); module structure in COMPONENT-DIAGRAM.d2.
+# Triggered by the SourceRegistered domain event or a sync trigger.
+# One parse per code file: the analyzer emits chunks, entities, and relations together —
+# same-file relations already resolved, cross-file ones as pending references that the
+# linking stage resolves after the nodes are stored.
+# Render:  d2 PIPELINE-INDEXING.d2 PIPELINE-INDEXING.svg
+# (render config below is embedded so the D2 playground applies it too)
+vars: {
+  d2-config: {
+    layout-engine: dagre
+    pad: 16
+  }
+}
+
+direction: right
+
+# ---- Stage 2: analysis per type ----------------------------------------------
+proc: "2 · Analysis per type (one parse)" {
+  code: "Source code" {
+    c1: "AST parser\n(parse once)"
+    c2: "Chunk by AST node"
+    c3: "Extract entities\n+ relations\n+ pending refs"
+    c1 -> c2
+    c1 -> c3
+  }
+  doc: "Documents" {
+    dmd: "Markdown \nreader"
+    dpdf: "PDF reader"
+    d1: "Structure-aware \nchunk"
+    dmd -> d1
+    dpdf -> d1
+  }
+  gh: "Git history" {
+    g1: "Parse commits"
+    g2: "Commit entities + MODIFIES"
+    g1 -> g2
+  }
+}
+
+emb: "3 · Embedding" {
+  ecache: "Cached?" {shape: diamond}
+  e1: "Spring AI \nEmbeddingModel"
+  e2: "External \nEmbedding API" {shape: oval}
+  ecache -> e1: miss {direction: down}
+  e1 -> e2
+}
+
+store: "4 · Storage & indexing" {
+  qdr: "Qdrant\nvectors" {shape: cylinder}
+  graph: "Neo4j \nKnowledge \nGraph" {shape: cylinder}
+}
+
+# ---- Stages 1 · sources · 5 -------------------------------------------------
+ing: "1 · Ingestion" {
+  conn: "Connector"
+  prov: "Attach provenance \n+\n content_hash"
+  dedup: "Changed?" {shape: diamond}
+  classify: "Classify \nby type" {shape: diamond}
+  skip: "Skip - no-op"
+  conn -> prov -> dedup
+  dedup -> skip: unchanged
+  dedup -> classify: new / \nmodified
+}
+
+src: "Sources" {
+  git: "Git \nrepository" {shape: cylinder}
+  fs: "Filesystem \nfolder" {shape: cylinder}
+}
+
+linking: "5 · Knowledge linking" {
+  l1: "Resolve pending refs\n+ cross-artifact,\ncross-source links\n(+ confidence score)"
+}
+
+# ---- Cross-stage flow --------------------------------------------------------
+src.git -> ing.conn
+src.fs -> ing.conn
+
+ing.classify -> proc.code.c1: code
+ing.classify -> proc.doc.dmd: Markdown
+ing.classify -> proc.doc.dpdf: PDF
+ing.classify -> proc.gh.g1: git log
+
+proc.code.c2 -> emb.ecache
+proc.doc.d1 -> emb.ecache
+
+emb.e2 -> store.qdr
+emb.ecache -> store.qdr: "hit: reuse vector"
+proc.code.c3 -> store.graph: "entities"
+proc.code.c3 -> linking.l1: "relations +\npending refs"
+proc.gh.g2 -> emb.e1: "commit message"
+proc.gh.g2 -> store.graph
+
+store.graph -> linking.l1 -> store.graph

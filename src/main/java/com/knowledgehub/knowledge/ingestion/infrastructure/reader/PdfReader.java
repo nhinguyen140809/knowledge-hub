@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 /**
  * Reads PDF into Markdown via Apache Tika + Flexmark. A tagged PDF surfaces its heading structure
  * as Markdown headings for structure-aware chunking; an untagged PDF (no semantic heading tags —
- * the common case) yields paragraph text the chunker still splits by size.
+ * the common case) yields paragraph text the analyzer still splits by size.
  */
 @Component
 @Order(0)

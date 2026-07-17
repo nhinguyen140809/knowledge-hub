@@ -4,10 +4,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
+import com.knowledgehub.knowledge.analysis.domain.Chunk;
+import com.knowledgehub.knowledge.analysis.domain.ChunkConfig;
 import com.knowledgehub.knowledge.domain.ChunkVector;
 import com.knowledgehub.knowledge.domain.VectorStorePort;
-import com.knowledgehub.knowledge.indexing.domain.Chunk;
-import com.knowledgehub.knowledge.indexing.domain.ChunkConfig;
 import com.knowledgehub.knowledge.indexing.domain.ChunkRepository;
 import com.knowledgehub.knowledge.indexing.domain.CodeEntityRepository;
 import java.util.List;

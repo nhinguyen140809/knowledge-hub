@@ -6,8 +6,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.knowledgehub.knowledge.indexing.domain.Chunk;
-import com.knowledgehub.knowledge.indexing.domain.ChunkConfig;
+import com.knowledgehub.knowledge.analysis.domain.Chunk;
+import com.knowledgehub.knowledge.analysis.domain.ChunkConfig;
 import com.knowledgehub.knowledge.indexing.domain.ChunkRepository;
 import java.util.List;
 import java.util.Set;
@@ -23,7 +23,7 @@ class DedupStageTests {
     Chunk cached = IndexingFixtures.docChunk("old content");
     IndexingContext context =
         new IndexingContext(IndexingFixtures.markdownArtifact("x"), new ChunkConfig(512, 0));
-    context.setChunked(List.of(kept, cached), List.of());
+    context.setAnalyzed(List.of(kept, cached), List.of(), List.of(), List.of());
     when(repository.existingContentHashes(eq(IndexingFixtures.SOURCE), any()))
         .thenReturn(Set.of(cached.contentHash()));
 

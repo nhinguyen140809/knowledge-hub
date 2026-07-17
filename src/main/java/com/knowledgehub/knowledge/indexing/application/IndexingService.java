@@ -1,7 +1,7 @@
 package com.knowledgehub.knowledge.indexing.application;
 
-import com.knowledgehub.knowledge.indexing.domain.Chunk;
-import com.knowledgehub.knowledge.indexing.domain.ChunkConfig;
+import com.knowledgehub.knowledge.analysis.domain.Chunk;
+import com.knowledgehub.knowledge.analysis.domain.ChunkConfig;
 import com.knowledgehub.knowledge.ingestion.application.IngestionService;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import com.knowledgehub.shared.config.AppProperties;
@@ -36,7 +36,7 @@ public class IndexingService {
   public IndexingService(
       IngestionService ingestion,
       AppProperties properties,
-      ChunkStage chunkStage,
+      AnalyzeStage chunkStage,
       DedupStage dedupStage,
       EmbedStage embedStage,
       StoreStage storeStage,

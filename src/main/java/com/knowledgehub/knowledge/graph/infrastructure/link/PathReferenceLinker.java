@@ -1,10 +1,10 @@
 package com.knowledgehub.knowledge.graph.infrastructure.link;
 
+import com.knowledgehub.knowledge.analysis.domain.Chunk;
+import com.knowledgehub.knowledge.domain.RelationType;
 import com.knowledgehub.knowledge.graph.domain.EntityResolver;
 import com.knowledgehub.knowledge.graph.domain.LinkCandidate;
-import com.knowledgehub.knowledge.graph.domain.RelationType;
 import com.knowledgehub.knowledge.graph.domain.ResolutionScope;
-import com.knowledgehub.knowledge.indexing.domain.Chunk;
 import com.knowledgehub.knowledge.infrastructure.lang.SourceLanguages;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import java.util.ArrayList;

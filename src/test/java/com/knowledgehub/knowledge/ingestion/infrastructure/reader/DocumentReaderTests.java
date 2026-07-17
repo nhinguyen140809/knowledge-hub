@@ -37,7 +37,7 @@ class DocumentReaderTests {
     String source = "# Title\n\nHello world from markdown.";
     String text = reader.extractText(artifact("R.md", MediaTypes.MARKDOWN, source));
 
-    // Verbatim: the heading marker survives so the document chunker can section on it.
+    // Verbatim: the heading marker survives so the document analyzer can section on it.
     assertThat(text).isEqualTo(source);
   }
 
@@ -56,7 +56,7 @@ class DocumentReaderTests {
 
     String text = reader.extractText(artifact("doc.html", MediaTypes.OCTET_STREAM, html));
 
-    // The heading becomes a Markdown '#' heading, so structure survives for the chunker.
+    // The heading becomes a Markdown '#' heading, so structure survives for the analyzer.
     assertThat(text).contains("# Title").contains("Body text.");
   }
 }
