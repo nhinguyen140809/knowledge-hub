@@ -11,9 +11,9 @@ export function ConnectionSwitcher() {
   const setActive = useConnectionStore((s) => s.setActive)
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex w-full items-center gap-2">
       <select
-        className="rounded-md border border-neutral-300 bg-white px-2 py-1 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+        className="min-w-0 flex-1 rounded-md border border-neutral-300 bg-white px-2 py-1 text-sm dark:border-neutral-700 dark:bg-neutral-900"
         value={activeId ?? ''}
         onChange={(e) => setActive(e.target.value)}
       >
@@ -23,7 +23,7 @@ export function ConnectionSwitcher() {
           </option>
         ))}
       </select>
-      <Button type="button" onPress={() => navigate('/connect')}>
+      <Button type="button" size="sm" variant="secondary" onPress={() => navigate('/connect')}>
         + Add
       </Button>
     </div>

@@ -2,8 +2,8 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { ConnectScreen } from '../features/auth/ConnectScreen'
 import { PrivateRoute } from '../features/auth/PrivateRoute'
 import { DashboardPage } from '../features/dashboard/DashboardPage'
-import { AppLayout } from '../shared/layout/AppLayout'
-import { NotFoundPage } from '../shared/NotFoundPage'
+import { AppLayout } from '../shared/components/layout/AppLayout'
+import { NotFoundPage } from '../shared/components/NotFoundPage'
 
 const router = createBrowserRouter([
   // Public: reachable without an active backend connection.

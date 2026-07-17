@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { type ReactNode, useState } from 'react'
-import { ThemeProvider } from '@/shared/theme/ThemeProvider'
+import { ThemeProvider } from '@/shared/components/theme/ThemeProvider'
+import { Toast } from '@heroui/react'
 
 /**
  * App-wide providers: theme (next-themes) wrapping the TanStack Query client.
@@ -18,7 +19,9 @@ export function Providers({ children }: { children: ReactNode }) {
   )
   return (
     <ThemeProvider>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <Toast.Provider>
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      </Toast.Provider>
     </ThemeProvider>
   )
 }
