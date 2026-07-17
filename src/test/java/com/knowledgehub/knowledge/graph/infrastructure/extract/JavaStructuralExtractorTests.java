@@ -3,9 +3,9 @@ package com.knowledgehub.knowledge.graph.infrastructure.extract;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.knowledgehub.knowledge.analysis.domain.CodeEntity;
+import com.knowledgehub.knowledge.domain.RelationType;
+import com.knowledgehub.knowledge.domain.Relationship;
 import com.knowledgehub.knowledge.graph.domain.EntityResolver;
-import com.knowledgehub.knowledge.graph.domain.RelationType;
-import com.knowledgehub.knowledge.graph.domain.Relationship;
 import com.knowledgehub.knowledge.graph.domain.ResolutionScope;
 import com.knowledgehub.knowledge.ingestion.domain.FsProvenance;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;

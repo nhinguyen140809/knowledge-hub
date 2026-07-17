@@ -1,4 +1,4 @@
-package com.knowledgehub.knowledge.graph.domain;
+package com.knowledgehub.knowledge.domain;
 
 /**
  * The kind of knowledge a relationship encodes, which decides how it is produced and trusted.

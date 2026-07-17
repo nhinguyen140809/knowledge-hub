@@ -6,10 +6,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.knowledgehub.knowledge.domain.RelationType;
+import com.knowledgehub.knowledge.domain.Relationship;
 import com.knowledgehub.knowledge.graph.domain.CrossArtifactLinker;
 import com.knowledgehub.knowledge.graph.domain.LinkCandidate;
-import com.knowledgehub.knowledge.graph.domain.RelationType;
-import com.knowledgehub.knowledge.graph.domain.Relationship;
 import com.knowledgehub.knowledge.graph.domain.RelationshipRepository;
 import com.knowledgehub.knowledge.graph.domain.StructuralExtractor;
 import com.knowledgehub.knowledge.ingestion.domain.FsProvenance;

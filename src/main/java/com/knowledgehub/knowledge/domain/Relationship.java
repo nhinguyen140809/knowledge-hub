@@ -1,4 +1,4 @@
-package com.knowledgehub.knowledge.graph.domain;
+package com.knowledgehub.knowledge.domain;
 
 import java.util.Objects;
 

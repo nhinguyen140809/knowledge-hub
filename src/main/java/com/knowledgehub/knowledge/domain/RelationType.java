@@ -1,4 +1,4 @@
-package com.knowledgehub.knowledge.graph.domain;
+package com.knowledgehub.knowledge.domain;
 
 /**
  * Every relationship type the knowledge graph can hold, grouped by {@link RelationCategory}. The

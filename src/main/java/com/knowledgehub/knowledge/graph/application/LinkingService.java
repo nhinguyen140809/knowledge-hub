@@ -1,9 +1,9 @@
 package com.knowledgehub.knowledge.graph.application;
 
 import com.knowledgehub.knowledge.analysis.domain.Chunk;
+import com.knowledgehub.knowledge.domain.Relationship;
 import com.knowledgehub.knowledge.graph.domain.CrossArtifactLinker;
 import com.knowledgehub.knowledge.graph.domain.LinkCandidate;
-import com.knowledgehub.knowledge.graph.domain.Relationship;
 import com.knowledgehub.knowledge.graph.domain.RelationshipRepository;
 import com.knowledgehub.knowledge.graph.domain.StructuralExtractor;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;

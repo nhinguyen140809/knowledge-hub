@@ -3,6 +3,8 @@ package com.knowledgehub.knowledge.graph.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.knowledgehub.knowledge.domain.RelationType;
+import com.knowledgehub.knowledge.domain.Relationship;
 import org.junit.jupiter.api.Test;
 
 class LinkCandidateTests {

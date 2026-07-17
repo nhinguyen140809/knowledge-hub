@@ -1,5 +1,6 @@
 package com.knowledgehub.knowledge.graph.domain;
 
+import com.knowledgehub.knowledge.domain.Relationship;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import java.util.List;
 
