@@ -1,6 +1,6 @@
 package com.knowledgehub.knowledge.indexing.application;
 
-import com.knowledgehub.knowledge.indexing.domain.Chunk;
+import com.knowledgehub.knowledge.analysis.domain.Chunk;
 import com.knowledgehub.knowledge.indexing.domain.ChunkRepository;
 import com.knowledgehub.shared.pipeline.Stage;
 import java.util.List;

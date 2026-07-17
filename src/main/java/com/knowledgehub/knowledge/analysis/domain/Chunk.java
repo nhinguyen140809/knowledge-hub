@@ -1,4 +1,4 @@
-package com.knowledgehub.knowledge.indexing.domain;
+package com.knowledgehub.knowledge.analysis.domain;
 
 import com.knowledgehub.knowledge.ingestion.domain.Provenance;
 import com.knowledgehub.shared.id.Hashing;

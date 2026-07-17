@@ -8,9 +8,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.knowledgehub.knowledge.analysis.domain.ChunkConfig;
 import com.knowledgehub.knowledge.graph.application.LinkSummary;
 import com.knowledgehub.knowledge.graph.application.LinkingService;
-import com.knowledgehub.knowledge.indexing.domain.ChunkConfig;
 import org.junit.jupiter.api.Test;
 
 class LinkStageTests {

@@ -1,5 +1,6 @@
 package com.knowledgehub.knowledge.indexing.domain;
 
+import com.knowledgehub.knowledge.analysis.domain.CodeEntity;
 import java.util.List;
 
 /**

@@ -1,4 +1,4 @@
-package com.knowledgehub.knowledge.indexing.domain;
+package com.knowledgehub.knowledge.analysis.domain;
 
 import java.util.Locale;
 

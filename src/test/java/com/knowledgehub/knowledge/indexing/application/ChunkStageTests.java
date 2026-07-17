@@ -2,9 +2,9 @@ package com.knowledgehub.knowledge.indexing.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.knowledgehub.knowledge.indexing.domain.ChunkConfig;
-import com.knowledgehub.knowledge.indexing.domain.Chunker;
-import com.knowledgehub.knowledge.indexing.domain.ChunkingResult;
+import com.knowledgehub.knowledge.analysis.domain.ChunkConfig;
+import com.knowledgehub.knowledge.analysis.domain.Chunker;
+import com.knowledgehub.knowledge.analysis.domain.ChunkingResult;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import java.util.List;
 import org.junit.jupiter.api.Test;

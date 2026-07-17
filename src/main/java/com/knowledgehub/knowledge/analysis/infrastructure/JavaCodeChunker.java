@@ -1,4 +1,4 @@
-package com.knowledgehub.knowledge.indexing.infrastructure.chunking;
+package com.knowledgehub.knowledge.analysis.infrastructure;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
@@ -12,12 +12,12 @@ import com.github.javaparser.ast.body.EnumDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
-import com.knowledgehub.knowledge.indexing.domain.Chunk;
-import com.knowledgehub.knowledge.indexing.domain.ChunkConfig;
-import com.knowledgehub.knowledge.indexing.domain.ChunkType;
-import com.knowledgehub.knowledge.indexing.domain.ChunkingResult;
-import com.knowledgehub.knowledge.indexing.domain.CodeEntity;
-import com.knowledgehub.knowledge.indexing.domain.CodeEntityLevel;
+import com.knowledgehub.knowledge.analysis.domain.Chunk;
+import com.knowledgehub.knowledge.analysis.domain.ChunkConfig;
+import com.knowledgehub.knowledge.analysis.domain.ChunkType;
+import com.knowledgehub.knowledge.analysis.domain.ChunkingResult;
+import com.knowledgehub.knowledge.analysis.domain.CodeEntity;
+import com.knowledgehub.knowledge.analysis.domain.CodeEntityLevel;
 import com.knowledgehub.knowledge.infrastructure.lang.JavaLanguage;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import com.knowledgehub.shared.id.IdFactory;

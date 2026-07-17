@@ -1,7 +1,7 @@
-package com.knowledgehub.knowledge.indexing.infrastructure.chunking;
+package com.knowledgehub.knowledge.analysis.infrastructure;
 
+import com.knowledgehub.knowledge.analysis.domain.Chunker;
 import com.knowledgehub.knowledge.domain.SourceLanguage;
-import com.knowledgehub.knowledge.indexing.domain.Chunker;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import java.util.Locale;
 

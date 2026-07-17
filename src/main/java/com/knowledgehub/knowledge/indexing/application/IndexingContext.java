@@ -1,9 +1,9 @@
 package com.knowledgehub.knowledge.indexing.application;
 
+import com.knowledgehub.knowledge.analysis.domain.Chunk;
+import com.knowledgehub.knowledge.analysis.domain.ChunkConfig;
+import com.knowledgehub.knowledge.analysis.domain.CodeEntity;
 import com.knowledgehub.knowledge.domain.ChunkVector;
-import com.knowledgehub.knowledge.indexing.domain.Chunk;
-import com.knowledgehub.knowledge.indexing.domain.ChunkConfig;
-import com.knowledgehub.knowledge.indexing.domain.CodeEntity;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import java.util.List;
 

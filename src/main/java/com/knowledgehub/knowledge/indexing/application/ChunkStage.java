@@ -1,7 +1,7 @@
 package com.knowledgehub.knowledge.indexing.application;
 
-import com.knowledgehub.knowledge.indexing.domain.Chunker;
-import com.knowledgehub.knowledge.indexing.domain.ChunkingResult;
+import com.knowledgehub.knowledge.analysis.domain.Chunker;
+import com.knowledgehub.knowledge.analysis.domain.ChunkingResult;
 import com.knowledgehub.shared.pipeline.Stage;
 import java.util.List;
 import org.slf4j.Logger;

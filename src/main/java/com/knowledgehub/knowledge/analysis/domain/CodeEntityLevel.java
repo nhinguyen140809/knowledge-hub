@@ -1,4 +1,4 @@
-package com.knowledgehub.knowledge.indexing.domain;
+package com.knowledgehub.knowledge.analysis.domain;
 
 /**
  * Granularity of a {@link CodeEntity} extracted from source. These are the levels an AST provides

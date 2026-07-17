@@ -1,4 +1,4 @@
-package com.knowledgehub.knowledge.indexing.domain;
+package com.knowledgehub.knowledge.analysis.domain;
 
 /**
  * Tunables that shape chunking, passed to every {@link Chunker}. Built from configuration at the

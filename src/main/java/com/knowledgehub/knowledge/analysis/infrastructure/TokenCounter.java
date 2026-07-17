@@ -1,4 +1,4 @@
-package com.knowledgehub.knowledge.indexing.infrastructure.chunking;
+package com.knowledgehub.knowledge.analysis.infrastructure;
 
 import com.knuddels.jtokkit.Encodings;
 import com.knuddels.jtokkit.api.Encoding;

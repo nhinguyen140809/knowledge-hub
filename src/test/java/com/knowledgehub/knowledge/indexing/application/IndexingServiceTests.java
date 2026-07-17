@@ -10,14 +10,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.knowledgehub.knowledge.analysis.infrastructure.DocChunker;
+import com.knowledgehub.knowledge.analysis.infrastructure.JavaCodeChunker;
 import com.knowledgehub.knowledge.domain.EmbeddingPort;
 import com.knowledgehub.knowledge.domain.VectorStorePort;
 import com.knowledgehub.knowledge.graph.application.LinkSummary;
 import com.knowledgehub.knowledge.graph.application.LinkingService;
 import com.knowledgehub.knowledge.indexing.domain.ChunkRepository;
 import com.knowledgehub.knowledge.indexing.domain.CodeEntityRepository;
-import com.knowledgehub.knowledge.indexing.infrastructure.chunking.DocChunker;
-import com.knowledgehub.knowledge.indexing.infrastructure.chunking.JavaCodeChunker;
 import com.knowledgehub.knowledge.infrastructure.lang.JavaLanguage;
 import com.knowledgehub.knowledge.ingestion.application.IngestionService;
 import com.knowledgehub.knowledge.ingestion.domain.FsProvenance;
