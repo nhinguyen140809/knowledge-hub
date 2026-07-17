@@ -1,5 +1,5 @@
 import { isMock } from '../config'
-import { apiFetch, request } from './http.client'
+import { apiFetch, request } from './axios'
 import { mockResolve } from './mocks/mock.util'
 import { mockSystemInfo } from './mocks/system.mock'
 
