@@ -1,11 +1,13 @@
 import { type ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
-import { useConnectionStore } from '../../lib/store/connections.store'
+import { useActiveConnection } from '../../lib/store/connections.store'
 
-/** Guards routes that need an active backend connection; ConnectScreen is the
- *  public route users land on without one. */
+/** Guards routes that need a usable backend connection: one that is active AND
+ *  still has its apiKey. Keys live in sessionStorage, so after the tab closes the
+ *  connection list survives but the key is gone — this catches that "reopened,
+ *  key missing" case too and sends the user back to reconnect. */
 export function PrivateRoute({ children }: { children: ReactNode }) {
-  const activeId = useConnectionStore((s) => s.activeId)
-  if (!activeId) return <Navigate to="/connect" replace />
+  const active = useActiveConnection()
+  if (!active?.apiKey) return <Navigate to="/connect" replace />
   return <>{children}</>
 }
