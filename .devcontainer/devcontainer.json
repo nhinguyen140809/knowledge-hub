@@ -49,7 +49,7 @@
         "vscjava.vscode-java-pack",
         "redhat.vscode-yaml",
         "anthropic.claude-code",
-        "dbaeumer.vscode-eslint",
+        "oxc.oxc-vscode",
         "esbenp.prettier-vscode",
         "bradlc.vscode-tailwindcss",
         "skellock.just",

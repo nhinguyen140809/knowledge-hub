@@ -22,7 +22,7 @@ export function DashboardPage() {
         <Card.Content className="flex flex-col gap-1">
           <p className="text-sm text-neutral-500">Active connection</p>
           <p className="font-medium">{active?.label}</p>
-          <p className="break-all text-sm text-neutral-500">{active?.baseUrl}</p>
+          <p className="text-sm break-all text-neutral-500">{active?.baseUrl}</p>
         </Card.Content>
       </Card>
 
