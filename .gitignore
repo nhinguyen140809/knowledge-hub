@@ -42,3 +42,6 @@ docs/research/
 docs/development/
 docs/plan/
 docs/internship-report/
+
+# --- Local agent tooling ---
+.claude/
