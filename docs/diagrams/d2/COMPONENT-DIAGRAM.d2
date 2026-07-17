@@ -1,13 +1,12 @@
 # Module / Component Architecture — Knowledge Hub (whole-system code structure)
 # Component (package) view: only the 4 bounded contexts (access, knowledge, retrieval, system)
-# and the submodules inside `knowledge` (ingestion, indexing, graph, sync) — no shared kernel,
-# datastores, or external services. Boxes are Java packages; an arrow means A actually calls into
-# B at runtime (a service/port method invocation or a domain event A reacts to) — verified against
-# real usage in src/main/java, not just an `import`. Merely reusing another package's plain domain
-# type (e.g. passing a Chunk/RawArtifact around) does NOT get an edge, since that is not
-# communication between components. Dashed = domain event. `system` has zero cross-context
-# dependencies (self-contained). Detailed class views of a submodule: CLASS-INDEXING.d2,
-# CLASS-RETRIEVAL.d2, CLASS-ACCESS.d2.
+# and the submodules inside `knowledge` (ingestion, analysis, indexing, graph, sync) — no shared
+# kernel, datastores, or external services. Boxes are Java packages; an arrow means A actually
+# calls into B at runtime (a service/port method invocation or a domain event A reacts to) —
+# verified against real usage in src/main/java, not just an `import`. Merely reusing another
+# package's plain domain type (e.g. passing a Chunk/RawArtifact/PendingReference around) does NOT
+# get an edge, since that is not communication between components. Dashed = domain event. `system`
+# has zero cross-context dependencies (self-contained).
 # Render:  d2 COMPONENT-DIAGRAM.d2 component-diagram.svg   (or .pdf for LaTeX)
 vars: {
   d2-config: {
@@ -38,7 +37,8 @@ hub: "" {
   knowledge: "knowledge (write side)" {
     class: ctx
     ingestion: "ingestion" {class: sub}
-    indexing: "indexing" {class: sub}
+    analysis: "analysis \n(chunk + relations)" {class: sub}
+    indexing: "indexing \n(pipeline)" {class: sub}
     graph: "graph (linking)" {class: sub}
     sync: "sync" {class: sub}
   }
@@ -56,13 +56,16 @@ hub.knowledge.ingestion -> hub.access: "AclFilterProvider\n(allowed sources)"
 # NOTE: ingestion also publishes a SourceRegistered event (SourceService.register) but nothing
 # subscribes to it today — indexing is triggered directly (REST/MCP), not by that event — so no
 # edge is drawn for it.
-# IndexingService calls IngestionService.ingest(sourceId) to pull the artifacts it chunks
+# IndexingService calls IngestionService.ingest(sourceId) to pull the artifacts it analyzes
 hub.knowledge.indexing -> hub.knowledge.ingestion: "IngestionService.ingest()"
+# AnalyzeStage picks the LanguageAnalyzer for the artifact — one parse yields chunks, entities,
+# resolved same-file relations, and pending references
+hub.knowledge.indexing -> hub.knowledge.analysis: "LanguageAnalyzer\n.analyze()\n(first pipeline stage)"
 hub.knowledge.indexing -> hub.knowledge.graph: "LinkingService\n(final pipeline stage)"
-# NOTE: graph does NOT call back into indexing/ingestion — LinkingService only receives already-
-# built Chunk/RawArtifact values as method parameters from its caller. That is domain-model reuse,
-# not a service dependency, so (unlike an earlier version of this diagram) no edge is drawn for it;
-# graph is a pure leaf relative to the other write-side submodules.
+# NOTE: graph does NOT call back into indexing/analysis/ingestion — LinkingService only receives
+# already-built Chunk/Relationship/PendingReference values as method parameters from its caller.
+# That is domain-model reuse, not a service dependency, so no edge is drawn for it; graph and
+# analysis are pure leaves relative to the other write-side submodules.
 # SyncService calls ingestion's SourceRepository to fetch the Source it diffs against
 hub.knowledge.sync -> hub.knowledge.ingestion: "SourceRepository\n(find source to diff)"
 hub.knowledge.sync -> hub.knowledge.indexing: "IndexingService\nCommitIndexingService"
