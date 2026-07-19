@@ -45,3 +45,6 @@ docs/internship-report/
 
 # --- Local agent tooling ---
 .claude/
+
+# --- Codespace private backup (contains .env + private docs) ---
+codespace-private.tar.gz
