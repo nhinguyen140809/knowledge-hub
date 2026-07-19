@@ -1,7 +1,53 @@
-import { Button, Card, Chip, Skeleton } from '@heroui/react'
-import { Plus } from 'lucide-react'
+import { AlertDialog, Button, Card, Chip, Skeleton } from '@heroui/react'
+import { Ban } from 'lucide-react'
 import { formatTimestamp } from '@/shared/lib/datetime.utils'
-import { useCredentials } from '../hooks/useCredentials'
+import { useCredentials, useRevokeCredential } from '../hooks/useCredentials'
+import { IssueCredentialDialog } from './IssueCredentialDialog'
+
+/** Revoking is a soft-delete that immediately breaks whatever is using the key,
+ *  so it is confirmed rather than fired on a single click. */
+function RevokeButton({ credentialId, name }: { credentialId: string; name: string }) {
+  const revoke = useRevokeCredential()
+  return (
+    <AlertDialog>
+      <Button isIconOnly size="sm" variant="ghost" aria-label={`Revoke ${name}`}>
+        <Ban size={15} />
+      </Button>
+      <AlertDialog.Backdrop>
+        <AlertDialog.Container>
+          <AlertDialog.Dialog className="sm:max-w-[420px]">
+            <AlertDialog.CloseTrigger />
+            <AlertDialog.Header>
+              <AlertDialog.Icon status="danger">
+                <Ban className="size-5" />
+              </AlertDialog.Icon>
+              <AlertDialog.Heading>Revoke this credential?</AlertDialog.Heading>
+            </AlertDialog.Header>
+            <AlertDialog.Body>
+              <p>
+                Requests using <strong>{name}</strong> start failing authentication immediately.
+                This cannot be undone — issue a new credential instead.
+              </p>
+            </AlertDialog.Body>
+            <AlertDialog.Footer>
+              <Button slot="close" variant="tertiary">
+                Cancel
+              </Button>
+              <Button
+                slot="close"
+                variant="danger"
+                isPending={revoke.isPending}
+                onPress={() => revoke.mutate(credentialId)}
+              >
+                Revoke
+              </Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </AlertDialog.Backdrop>
+    </AlertDialog>
+  )
+}
 
 /** Credentials issued to the selected principal. Secrets are never listed — the
  *  raw secret exists only in the response that issued it. */
@@ -12,10 +58,7 @@ export function PrincipalCredentialsPanel({ principalId }: { principalId: string
     <Card>
       <Card.Header className="flex-row items-center justify-between">
         <Card.Title>Credentials</Card.Title>
-        <Button size="sm" variant="secondary" isDisabled={!principalId}>
-          <Plus size={16} />
-          Credential
-        </Button>
+        <IssueCredentialDialog principalId={principalId} />
       </Card.Header>
       <Card.Content className="flex flex-col gap-3">
         {!principalId && <p className="text-muted text-sm">Select a principal to see its keys.</p>}
@@ -47,9 +90,14 @@ export function PrincipalCredentialsPanel({ principalId }: { principalId: string
                     : ' · never used'}
                 </span>
               </div>
-              <Chip size="sm" variant="soft" color={credential.revoked ? 'danger' : 'success'}>
-                {credential.revoked ? 'revoked' : 'active'}
-              </Chip>
+              <div className="flex shrink-0 items-center gap-1">
+                <Chip size="sm" variant="soft" color={credential.revoked ? 'danger' : 'success'}>
+                  {credential.revoked ? 'revoked' : 'active'}
+                </Chip>
+                {!credential.revoked && (
+                  <RevokeButton credentialId={credential.credentialId} name={credential.name} />
+                )}
+              </div>
             </div>
           ))}
       </Card.Content>
