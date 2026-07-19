@@ -1,39 +1,23 @@
 import { Button, Card, Input, Label, TextField } from '@heroui/react'
-import { useMutation } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { validateConnection } from '../../lib/api/system.api'
-import { useConnectionStore } from '../../lib/store/connections.store'
+import { useConnect } from '../hooks/useConnect'
 
 /** The "login" screen. There is no session endpoint: the admin API key IS the
  *  credential, so connecting means validating (baseUrl, apiKey) against an
  *  authenticated endpoint, then remembering it as a backend connection. */
-export function ConnectScreen() {
-  const navigate = useNavigate()
-  const addConnection = useConnectionStore((s) => s.addConnection)
+export function ConnectPage() {
   const [label, setLabel] = useState('')
   const [baseUrl, setBaseUrl] = useState('http://localhost:8000')
   const [apiKey, setApiKey] = useState('')
-
-  const connect = useMutation({
-    mutationFn: () => validateConnection(baseUrl.trim(), apiKey.trim()),
-    onSuccess: (info) => {
-      addConnection({
-        label: label.trim() || info.application,
-        baseUrl: baseUrl.trim(),
-        apiKey: apiKey.trim(),
-      })
-      navigate('/')
-    },
-  })
+  const connect = useConnect()
 
   function onSubmit(e: FormEvent) {
     e.preventDefault()
-    connect.mutate()
+    connect.mutate({ label, baseUrl, apiKey })
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-neutral-50 p-4 dark:bg-neutral-950">
+    <div className="bg-background text-foreground flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <Card.Header>
           <Card.Title>Connect to a backend</Card.Title>
@@ -56,7 +40,7 @@ export function ConnectScreen() {
               <Input placeholder="Bearer token" />
             </TextField>
             {connect.isError && (
-              <p className="text-sm text-red-600 dark:text-red-400">
+              <p className="text-danger text-sm">
                 Kết nối thất bại: {(connect.error as Error).message}
               </p>
             )}

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { fetchSystemInfo } from '@/lib/api/system.api'
+import { fetchSystemInfo } from '../api/dashboard.api'
 import { useActiveConnection } from '@/lib/store/connections.store'
 import { dashboardKeys } from '../api/dashboard.keys'
 

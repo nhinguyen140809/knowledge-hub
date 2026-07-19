@@ -1,6 +1,6 @@
 import { Button } from '@heroui/react'
 import { useNavigate } from 'react-router-dom'
-import { useConnectionStore } from '../../lib/store/connections.store'
+import { useConnectionStore } from '@/lib/store/connections.store'
 
 /** Header control to switch the active backend or add a new one. A native
  *  <select> keeps this dependency-light; richer HeroUI inputs come later. */

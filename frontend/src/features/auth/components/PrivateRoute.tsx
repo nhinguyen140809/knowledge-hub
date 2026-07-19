@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
-import { useActiveConnection } from '../../lib/store/connections.store'
+import { useActiveConnection } from '@/lib/store/connections.store'
 
 /** Guards routes that need a usable backend connection: one that is active AND
  *  still has its apiKey. Keys live in sessionStorage, so after the tab closes the
