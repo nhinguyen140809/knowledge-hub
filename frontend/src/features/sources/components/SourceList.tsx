@@ -22,7 +22,7 @@ export function SourceList({ sources, isPending }: SourceListProps) {
 
   if (!sources || sources.length === 0) {
     return (
-      <Card variant="transparent" className="border-dashed">
+      <Card variant="transparent" className="border border-dashed">
         <Card.Content className="text-muted py-10 text-center text-sm">
           No sources yet. Add one to get started.
         </Card.Content>

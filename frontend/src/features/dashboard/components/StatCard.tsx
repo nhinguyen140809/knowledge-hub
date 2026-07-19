@@ -13,7 +13,9 @@ interface StatCardProps {
 export function StatCard({ label, value, icon, isLoading = false }: StatCardProps) {
   return (
     <Card>
-      <Card.Content className="flex items-center gap-4">
+      {/* Card.Content stacks its children by default; force a row so the icon
+          sits beside the value rather than above it. */}
+      <Card.Content className="flex flex-row items-center gap-4">
         {icon && (
           <div className="bg-accent/10 text-accent flex size-11 shrink-0 items-center justify-center rounded-xl">
             {icon}
