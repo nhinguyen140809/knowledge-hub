@@ -68,4 +68,19 @@ else
   echo "==> No frontend/ yet — skipping pnpm install"
 fi
 
+# --- Headless browser for driving the frontend (screenshots, smoke checks) ---
+# The Chromium binary alone is not enough: it links against system libraries the
+# slim image does not ship, and fails with "libdbus-1.so.3: cannot open shared
+# object file" long before any page loads.
+if [ -f frontend/package.json ]; then
+  echo "==> Installing Chromium system libraries"
+  sudo apt-get update -qq && sudo apt-get install -y -qq \
+    libdbus-1-3 libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
+    libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
+    libgbm1 libasound2 libpango-1.0-0 libcairo2 || true
+
+  echo "==> Downloading the Chromium build playwright-core expects"
+  (cd frontend && npx playwright-core install chromium) || true
+fi
+
 echo "==> Done. Run 'just up' to start the stack, or 'just dev' for the app only."
