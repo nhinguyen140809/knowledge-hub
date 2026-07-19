@@ -5,12 +5,11 @@ import { SourceCard } from './SourceCard'
 interface SourceListProps {
   sources?: Source[]
   isPending: boolean
-  onDelete?: (id: string) => void
 }
 
 /** Renders the source list with its own loading skeletons and empty state, so
  *  the page stays a thin orchestrator. */
-export function SourceList({ sources, isPending, onDelete }: SourceListProps) {
+export function SourceList({ sources, isPending }: SourceListProps) {
   if (isPending) {
     return (
       <div className="flex flex-col gap-3">
@@ -34,7 +33,7 @@ export function SourceList({ sources, isPending, onDelete }: SourceListProps) {
   return (
     <div className="flex flex-col gap-3">
       {sources.map((source) => (
-        <SourceCard key={source.id} source={source} onDelete={onDelete} />
+        <SourceCard key={source.id} source={source} />
       ))}
     </div>
   )

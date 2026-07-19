@@ -5,8 +5,7 @@ import { sourceKeys } from '../api/sources.keys'
 import { SourceList } from '../components/SourceList'
 import { useSources } from '../hooks/useSources'
 
-/** Sources management screen: toolbar (add / sync) over the source list. Create
- *  and delete are stubbed until their mutations land. */
+/** Sources management screen: toolbar (add / refresh) over the source list. */
 export function SourcesPage() {
   const queryClient = useQueryClient()
   const { data, isPending, isFetching } = useSources()

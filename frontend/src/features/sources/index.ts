@@ -1,4 +1,5 @@
 export { SourcesPage } from './pages/SourcesPage'
+export { SourceDetailPage } from './pages/SourceDetailPage'
 export { useSource, useSources, useSourceStatus } from './hooks/useSources'
 export {
   useCreateSource,

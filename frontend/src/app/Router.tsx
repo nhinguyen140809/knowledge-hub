@@ -1,8 +1,9 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { ConnectScreen } from '../features/auth/ConnectScreen'
 import { PrivateRoute } from '../features/auth/PrivateRoute'
+import { AccessPage } from '../features/access'
 import { DashboardPage } from '../features/dashboard'
-import { SourcesPage } from '../features/sources'
+import { SourceDetailPage, SourcesPage } from '../features/sources'
 import { AppLayout } from '../shared/components/layout/AppLayout'
 import { NotFoundPage } from '../shared/components/NotFoundPage'
 
@@ -19,6 +20,8 @@ const router = createBrowserRouter([
     children: [
       { path: '/', element: <DashboardPage /> },
       { path: '/sources', element: <SourcesPage /> },
+      { path: '/sources/:id', element: <SourceDetailPage /> },
+      { path: '/access', element: <AccessPage /> },
     ],
   },
   { path: '*', element: <NotFoundPage /> },
