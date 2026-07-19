@@ -1,5 +1,5 @@
 import { Chip, Separator } from '@heroui/react'
-import { CircleHelp, Database, KeyRound, LayoutDashboard, LogOut } from 'lucide-react'
+import { CircleHelp, Database, KeyRound, LayoutDashboard, LogOut, Search } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import { ConnectionSwitcher } from '@/features/auth'
 import { isMock } from '@/lib/config'
@@ -24,6 +24,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', to: '/', icon: LayoutDashboard, match: 'exact' },
   { label: 'Sources', to: '/sources', icon: Database },
   { label: 'Access control', to: '/access', icon: KeyRound },
+  { label: 'Query', to: '/query', icon: Search },
 ]
 
 /** The app's sidebar: nav from NAV_ITEMS, app name + backend switcher in the
