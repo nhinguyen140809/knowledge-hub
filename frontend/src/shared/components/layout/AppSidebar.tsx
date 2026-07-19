@@ -1,7 +1,6 @@
 import { Chip, Separator } from '@heroui/react'
 import { CircleHelp, Database, KeyRound, LayoutDashboard, LogOut } from 'lucide-react'
-import { type ComponentProps } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { ConnectionSwitcher } from '@/features/auth/ConnectionSwitcher'
 import { isMock } from '@/lib/config'
 import { useConnectionStore } from '@/lib/store/connections.store'
@@ -16,6 +15,7 @@ import {
   SidebarMenuSub,
 } from '@/shared/components/ui/Sidebar'
 import { isActivePath } from '@/shared/lib/navigation.utils'
+import { renderLink } from '@/shared/lib/renderLink'
 import { type NavItem } from '@/shared/types/navigation.type'
 
 /** The app's navigation entries — the data this sidebar renders. */
@@ -23,22 +23,8 @@ import { type NavItem } from '@/shared/types/navigation.type'
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', to: '/', icon: LayoutDashboard, match: 'exact' },
   { label: 'Sources', to: '/sources', icon: Database },
-  {
-    label: 'Access',
-    icon: KeyRound,
-    children: [
-      { label: 'Principals', to: '/access/principals' },
-      { label: 'Grants', to: '/access/grants' },
-      { label: 'Credentials', to: '/access/credentials' },
-    ],
-  },
+  { label: 'Access control', to: '/access', icon: KeyRound },
 ]
-
-/** Bridges HeroUI Button's render prop (typed for <button>) to a router <Link>
- *  (an <a>): keeps HeroUI styling/press behaviour, emits real navigation. */
-function navLink(to: string) {
-  return (props: object) => <Link {...(props as ComponentProps<typeof Link>)} to={to} />
-}
 
 /** The app's sidebar: nav from NAV_ITEMS, app name + backend switcher in the
  *  header, Help/Log out in the footer. All rows are ui/Sidebar primitives. */
@@ -80,7 +66,7 @@ export function AppSidebar() {
                       <SidebarMenuButton
                         size="sm"
                         isActive={isActivePath(pathname, child.to, child.match)}
-                        render={navLink(child.to)}
+                        render={renderLink(child.to)}
                       >
                         {child.label}
                       </SidebarMenuButton>
@@ -92,7 +78,7 @@ export function AppSidebar() {
               <SidebarMenuItem key={item.to}>
                 <SidebarMenuButton
                   isActive={isActivePath(pathname, item.to, item.match)}
-                  render={navLink(item.to)}
+                  render={renderLink(item.to)}
                 >
                   <item.icon size={16} />
                   {item.label}
@@ -105,7 +91,6 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <Separator className="mb-2" />
-        {/* Help has no destination yet — becomes a docs link later. */}
         <SidebarMenuButton>
           <CircleHelp size={16} />
           Help
