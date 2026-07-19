@@ -1,5 +1,4 @@
 export { AccessPage } from './pages/AccessPage'
-export { PrincipalTree } from './components/PrincipalTree'
 export {
   useEffectivePermissions,
   useMembers,
