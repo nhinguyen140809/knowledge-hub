@@ -1,4 +1,4 @@
-import type { SystemInfo } from '@/lib/api/system.api'
+import type { SystemInfo } from '@/shared/types/system.type'
 
 /** Maps 1:1 to HeroUI Chip's semantic colors, so the panel can spread it. */
 export type HealthTone = 'success' | 'warning' | 'danger'

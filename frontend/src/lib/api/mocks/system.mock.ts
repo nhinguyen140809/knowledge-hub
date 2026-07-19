@@ -1,4 +1,4 @@
-import type { SystemInfo } from '../system.api'
+import type { SystemInfo } from '@/shared/types/system.type'
 
 /** Stand-in for GET /api/v1/system/info when VITE_API_MODE=mock. */
 export const mockSystemInfo: SystemInfo = {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { deriveHealthStatus } from '@/features/dashboard/lib/health.util'
-import type { SystemInfo } from '@/lib/api/system.api'
+import type { SystemInfo } from '@/shared/types/system.type'
 
 const info = (over: Partial<SystemInfo> = {}): SystemInfo => ({
   application: 'knowledge-hub',

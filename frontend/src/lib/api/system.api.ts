@@ -1,14 +1,8 @@
+import type { SystemInfo } from '@/shared/types/system.type'
 import { isMock } from '../config'
 import { apiFetch, request } from './axios'
 import { mockResolve } from './mocks/mock.util'
 import { mockSystemInfo } from './mocks/system.mock'
-
-/** Shape of GET /api/v1/system/info (backend SystemInfo record). */
-export interface SystemInfo {
-  application: string
-  version: string
-  activeProfiles: string[]
-}
 
 const SYSTEM_INFO_PATH = '/system/info'
 
