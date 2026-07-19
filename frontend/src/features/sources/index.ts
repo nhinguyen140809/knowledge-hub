@@ -1,4 +1,17 @@
 export { SourcesPage } from './pages/SourcesPage'
-export { useSources } from './hooks/useSources'
+export { useSource, useSources, useSourceStatus } from './hooks/useSources'
+export {
+  useCreateSource,
+  useDeleteSource,
+  useSyncSource,
+  useUpdateSource,
+} from './hooks/useSourceMutations'
 export { sourceKeys } from './api/sources.keys'
-export type { Source } from './types/source.type'
+export type {
+  CreateSourceInput,
+  Source,
+  SourceStatus,
+  SourceType,
+  SyncResult,
+  UpdateSourceInput,
+} from './types/source.type'

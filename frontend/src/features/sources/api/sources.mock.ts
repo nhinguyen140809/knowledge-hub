@@ -1,4 +1,4 @@
-import type { Source } from '../types/source.type'
+import type { Source, SourceStatus, SyncResult } from '../types/source.type'
 
 /** Sample sources so the UI can be explored in mock mode without a backend. */
 export const mockSources: Source[] = [
@@ -33,3 +33,23 @@ export const mockSources: Source[] = [
     description: null,
   },
 ]
+
+export const mockSourceStatus: SourceStatus = {
+  sourceId: 'engineering-wiki',
+  indexed: true,
+  indexedAt: '2026-07-17T08:42:11Z',
+  commitSha: '9f3c1a7e5b2d8c4f6a0e1b3d5c7a9f2e4b6d8c0a',
+  ref: 'main',
+}
+
+export const mockSyncResult: SyncResult = {
+  sourceId: 'engineering-wiki',
+  indexed: 4,
+  reindexed: 2,
+  evicted: 1,
+  skipped: 37,
+  commitsIndexed: 6,
+  durationMs: 1840,
+  toCommit: '9f3c1a7e5b2d8c4f6a0e1b3d5c7a9f2e4b6d8c0a',
+  idempotent: false,
+}
