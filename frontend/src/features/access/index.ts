@@ -1,7 +1,10 @@
+export { AccessPage } from './pages/AccessPage'
+export { PrincipalTree } from './components/PrincipalTree'
 export {
   useEffectivePermissions,
   useMembers,
   usePrincipal,
+  usePrincipalGraph,
   usePrincipals,
 } from './hooks/usePrincipals'
 export {
@@ -10,7 +13,12 @@ export {
   useDeletePrincipal,
   useRemoveMember,
 } from './hooks/usePrincipalMutations'
-export { useCredentials, useIssueCredential, useRevokeCredential } from './hooks/useCredentials'
+export {
+  useAllCredentials,
+  useCredentials,
+  useIssueCredential,
+  useRevokeCredential,
+} from './hooks/useCredentials'
 export { useGrants, useGrantSources, useRevokeSources } from './hooks/useGrants'
 export { useDefaultPolicy, useSetDefaultPolicy } from './hooks/useDefaultPolicy'
 export { accessKeys } from './api/access.keys'
@@ -22,6 +30,7 @@ export type {
   GrantInput,
   IssuedCredential,
   Principal,
+  PrincipalGraph,
   PrincipalType,
   Role,
 } from './types/access.type'

@@ -4,9 +4,21 @@ import {
   fetchEffectivePermissions,
   fetchMembers,
   fetchPrincipal,
+  fetchPrincipalGraph,
   fetchPrincipals,
 } from '../api/access.api'
 import { accessKeys } from '../api/access.keys'
+
+/** Principals plus their membership edges — one call, enough to draw the tree
+ *  (including which principals are roots). */
+export function usePrincipalGraph() {
+  const active = useActiveConnection()
+  return useQuery({
+    queryKey: accessKeys.principalGraph(active?.id),
+    queryFn: fetchPrincipalGraph,
+    enabled: !!active,
+  })
+}
 
 /** All principals (subjects and groups) on the active backend. */
 export function usePrincipals() {

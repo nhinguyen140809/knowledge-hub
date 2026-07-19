@@ -3,16 +3,27 @@ import type {
   EffectivePermissions,
   IssuedCredential,
   Principal,
+  PrincipalGraph,
 } from '../types/access.type'
 
 export const mockPrincipals: Principal[] = [
+  { principalId: 'eng-team', type: 'GROUP', role: 'MEMBER' },
+  { principalId: 'support-team', type: 'GROUP', role: 'MEMBER' },
   { principalId: 'alice', type: 'SUBJECT', role: 'ADMIN' },
   { principalId: 'bob', type: 'SUBJECT', role: 'MEMBER' },
-  { principalId: 'support-team', type: 'GROUP', role: 'MEMBER' },
+  { principalId: 'carol', type: 'SUBJECT', role: 'MEMBER' },
 ]
 
+/** Exercises the shapes the tree has to survive: a nested group (support-team
+ *  inside eng-team) and a principal in two groups at once (carol). */
 export const mockMembers: Record<string, string[]> = {
-  'support-team': ['bob'],
+  'eng-team': ['alice', 'support-team', 'carol'],
+  'support-team': ['bob', 'carol'],
+}
+
+export const mockPrincipalGraph: PrincipalGraph = {
+  principals: mockPrincipals,
+  membership: mockMembers,
 }
 
 export const mockCredentials: Credential[] = [

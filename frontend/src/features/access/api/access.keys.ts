@@ -9,6 +9,10 @@ export const accessKeys = {
 
   principals: (connectionId: string | undefined) =>
     [...accessKeys.all, 'principals', connectionId] as const,
+  principalGraph: (connectionId: string | undefined) =>
+    [...accessKeys.all, 'principal-graph', connectionId] as const,
+  allCredentials: (connectionId: string | undefined) =>
+    [...accessKeys.all, 'all-credentials', connectionId] as const,
   principal: (connectionId: string | undefined, id: string) =>
     [...accessKeys.all, 'principal', connectionId, id] as const,
   members: (connectionId: string | undefined, groupId: string) =>

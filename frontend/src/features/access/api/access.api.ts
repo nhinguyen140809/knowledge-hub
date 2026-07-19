@@ -9,6 +9,7 @@ import type {
   GrantInput,
   IssuedCredential,
   Principal,
+  PrincipalGraph,
 } from '../types/access.type'
 import {
   mockCredentials,
@@ -16,6 +17,7 @@ import {
   mockGrantedSources,
   mockIssuedCredential,
   mockMembers,
+  mockPrincipalGraph,
   mockPrincipals,
 } from './access.mock'
 
@@ -33,6 +35,12 @@ const enc = encodeURIComponent
 export function fetchPrincipals(): Promise<Principal[]> {
   if (isMock) return mockResolve(mockPrincipals)
   return apiFetch<Principal[]>(PRINCIPALS)
+}
+
+/** GET /admin/principals/graph — principals plus membership edges in one call. */
+export function fetchPrincipalGraph(): Promise<PrincipalGraph> {
+  if (isMock) return mockResolve(mockPrincipalGraph)
+  return apiFetch<PrincipalGraph>(`${PRINCIPALS}/graph`)
 }
 
 /** GET /admin/principals/{id} */
@@ -96,6 +104,12 @@ export function issueCredential(principalId: string, name: string): Promise<Issu
     method: 'POST',
     data: { name },
   })
+}
+
+/** GET /admin/credentials — every credential across principals. */
+export function fetchAllCredentials(): Promise<Credential[]> {
+  if (isMock) return mockResolve(mockCredentials)
+  return apiFetch<Credential[]>(CREDENTIALS)
 }
 
 /** DELETE /admin/credentials/{id} — soft-delete (revoke), 204. */

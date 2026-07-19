@@ -1,7 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useActiveConnection } from '@/lib/store/connections.store'
-import { fetchCredentials, issueCredential, revokeCredential } from '../api/access.api'
+import {
+  fetchAllCredentials,
+  fetchCredentials,
+  issueCredential,
+  revokeCredential,
+} from '../api/access.api'
 import { accessKeys } from '../api/access.keys'
+
+/** Every credential across all principals — used for totals and global views. */
+export function useAllCredentials() {
+  const active = useActiveConnection()
+  return useQuery({
+    queryKey: accessKeys.allCredentials(active?.id),
+    queryFn: fetchAllCredentials,
+    enabled: !!active,
+  })
+}
 
 /** A principal's credentials (metadata only — revoked ones are still listed). */
 export function useCredentials(principalId: string | undefined) {

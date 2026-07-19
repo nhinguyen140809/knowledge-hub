@@ -58,3 +58,14 @@ export interface GrantInput {
   principalId: string
   sourceIds: string[]
 }
+
+/**
+ * Every principal plus the membership edges between them. Membership maps a
+ * group id to its direct member ids; a member may be a subject or another group,
+ * and may appear under several groups, so this is a directed graph rather than a
+ * tree.
+ */
+export interface PrincipalGraph {
+  principals: Principal[]
+  membership: Record<string, string[]>
+}
