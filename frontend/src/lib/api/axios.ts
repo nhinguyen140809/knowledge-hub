@@ -46,7 +46,7 @@ export async function request<T>(
  *  React via getState(), so it works from any query/mutation function. */
 export async function apiFetch<T>(path: string, config?: AxiosRequestConfig): Promise<T> {
   const conn = getActiveConnection(useConnectionStore.getState())
-  if (!conn) throw new ApiError(0, 'Chưa chọn backend nào')
+  if (!conn) throw new ApiError(0, 'No backend selected')
   return request<T>(conn.baseUrl, conn.apiKey, path, config)
 }
 
