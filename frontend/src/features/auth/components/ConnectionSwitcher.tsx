@@ -1,9 +1,13 @@
-import { Button } from '@heroui/react'
+import { Description, Label, ListBox, Select, Separator } from '@heroui/react'
+import { Plus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useConnectionStore } from '@/lib/store/connections.store'
 
-/** Header control to switch the active backend or add a new one. A native
- *  <select> keeps this dependency-light; richer HeroUI inputs come later. */
+const ADD_CONNECTION = '__add-connection__'
+
+/** Header control to switch the active backend. Adding a new one is just
+ *  another option in the same select, rather than a separate button next
+ *  to it — picking it navigates to /connect instead of setting the active id. */
 export function ConnectionSwitcher() {
   const navigate = useNavigate()
   const connections = useConnectionStore((s) => s.connections)
@@ -11,21 +15,38 @@ export function ConnectionSwitcher() {
   const setActive = useConnectionStore((s) => s.setActive)
 
   return (
-    <div className="flex w-full items-center gap-2">
-      <select
-        className="min-w-0 flex-1 rounded-md border border-neutral-300 bg-white px-2 py-1 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-        value={activeId ?? ''}
-        onChange={(e) => setActive(e.target.value)}
-      >
-        {connections.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.label} — {c.baseUrl}
-          </option>
-        ))}
-      </select>
-      <Button type="button" size="sm" variant="secondary" onPress={() => navigate('/connect')}>
-        + Add
-      </Button>
-    </div>
+    <Select
+      fullWidth
+      placeholder="Select a backend"
+      selectedKey={activeId}
+      onSelectionChange={(key) => {
+        if (key === ADD_CONNECTION) navigate('/connect')
+        else setActive(String(key))
+      }}
+    >
+      <Label>Current connection</Label>
+      <Select.Trigger>
+        <Select.Value />
+        <Select.Indicator />
+      </Select.Trigger>
+      <Select.Popover className="w-[var(--trigger-width)]">
+        <ListBox>
+          {connections.map((c) => (
+            <ListBox.Item key={c.id} id={c.id} textValue={c.label}>
+              <div className="flex min-w-0 flex-1 flex-col">
+                <Label className="w-full truncate">{c.label}</Label>
+                <Description className="font-mono">{c.baseUrl}</Description>
+              </div>
+              <ListBox.ItemIndicator />
+            </ListBox.Item>
+          ))}
+          {connections.length > 0 && <Separator />}
+          <ListBox.Item id={ADD_CONNECTION} textValue="Add connection">
+            <Plus size={14} aria-hidden />
+            <Label>Add connection</Label>
+          </ListBox.Item>
+        </ListBox>
+      </Select.Popover>
+    </Select>
   )
 }

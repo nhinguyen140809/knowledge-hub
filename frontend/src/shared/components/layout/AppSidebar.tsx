@@ -1,9 +1,10 @@
-import { Chip, Separator } from '@heroui/react'
+import { Avatar, Chip, Separator } from '@heroui/react'
 import { CircleHelp, Database, KeyRound, LayoutDashboard, LogOut, Search } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import { ConnectionSwitcher } from '@/features/auth'
 import { isMock } from '@/lib/config'
 import { useConnectionStore } from '@/lib/store/connections.store'
+import { ThemeToggle } from '@/shared/components/theme/ThemeToggle'
 import {
   Sidebar,
   SidebarContent,
@@ -27,6 +28,14 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Query', to: '/query', icon: Search },
 ]
 
+function AppLogo() {
+  return (
+    <Avatar>
+      <Avatar.Fallback>KH</Avatar.Fallback>
+    </Avatar>
+  )
+}
+
 /** The app's sidebar: nav from NAV_ITEMS, app name + backend switcher in the
  *  header, Help/Log out in the footer. All rows are ui/Sidebar primitives. */
 export function AppSidebar() {
@@ -38,15 +47,22 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader>
         <div className="flex items-center gap-2">
-          <span className="text-foreground text-sm font-semibold">Knowledge Hub</span>
-          {isMock && (
-            <Chip color="warning" size="sm" variant="soft">
-              MOCK
-            </Chip>
-          )}
+          <AppLogo />
+          <div className="flex flex-col gap-1">
+            <span className="text-accent text-xl font-extrabold">Knowledge Hub</span>
+            <div className="flex gap-2">
+              {isMock && (
+                <Chip color="warning" size="md" variant="soft">
+                  MOCK
+                </Chip>
+              )}
+            </div>
+          </div>
         </div>
         <ConnectionSwitcher />
       </SidebarHeader>
+
+      <Separator orientation="horizontal" />
 
       <SidebarContent>
         <SidebarMenu>
@@ -92,6 +108,7 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <Separator className="mb-2" />
+        <ThemeToggle />
         <SidebarMenuButton>
           <CircleHelp size={16} />
           Help

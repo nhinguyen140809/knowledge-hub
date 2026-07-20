@@ -35,7 +35,7 @@ export function Sidebar({ children }: { children: ReactNode }) {
       }`}
     >
       <Activity mode={isOpen ? 'visible' : 'hidden'}>
-        <Surface variant="secondary" className="flex h-full w-64 flex-col border-r">
+        <Surface variant="transparent" className="flex h-full w-64 flex-col border-r">
           {children}
         </Surface>
       </Activity>
