@@ -16,9 +16,7 @@ export function ConnectForm() {
   }
 
   return (
-    <Surface
-      className="flex w-full max-w-md min-w-[320px] flex-col gap-3 rounded-3xl p-6 bg-background text-foreground"
-    >
+    <Surface className="bg-background text-foreground flex w-full max-w-md min-w-[320px] flex-col gap-3 rounded-3xl p-6">
       <h3 className="text-foreground text-xl font-semibold">Connect to a backend</h3>
       <p className="text-muted-foreground text-sm">
         Enter the URL and admin API key of a Knowledge Hub instance
