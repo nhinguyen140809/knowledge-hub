@@ -3,6 +3,11 @@
    @tailwindcss/vite plugin (see vite.config.ts) generates the utility classes
    our own components use. */
 @import '@heroui/react/styles';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/jetbrains-mono/600.css';
+@import '@fontsource/jetbrains-mono/700.css';
+@import '@fontsource/jetbrains-mono/800.css';
 
 /*
  * HeroUI Theme Customization
@@ -54,7 +59,7 @@
   --field-radius: 0.75rem;
 
   /* Font Family */
-  /* Make sure to load JetBrains Mono font in your app */
+  --font-jetbrains-mono: 'JetBrains Mono', monospace;
   --font-sans: var(--font-jetbrains-mono);
 }
 
