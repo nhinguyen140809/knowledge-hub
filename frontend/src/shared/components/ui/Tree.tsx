@@ -14,9 +14,15 @@ import { createContext, useContext, useState, type CSSProperties, type ReactNode
  * nodes are, and guarding against repeats or cycles in a graph, belongs to the
  * caller that owns the data.
  *
- * Nesting is expressed by nested lists rather than per-row padding, so the
- * optional guide line sits exactly on the indent step at every depth.
+ * Nesting is expressed by nested lists rather than per-row padding. The
+ * optional guide line's inline-start offset is pinned to the toggle button's
+ * center (not the indent step), so it always lines up under the chevron of
+ * the row it belongs to.
  */
+
+/** Half the toggle button's size (size-6 = 24px), so a nested group's guide
+ *  line sits under its parent chevron's center rather than the indent step. */
+const CHEVRON_CENTER = 12
 
 interface TreeContextValue {
   level: number
@@ -149,8 +155,15 @@ function TreeGroup({
         <TreeContext value={{ level: level + 1, showGuideLines }}>
           <ul
             role="group"
-            className={`mt-0.5 flex flex-col gap-0.5 ${showGuideLines ? 'border-l pl-1' : ''}`}
-            style={{ marginInlineStart: 'var(--tree-indent)' }}
+            className={`mt-0.5 flex flex-col gap-0.5 ${showGuideLines ? 'border-l' : ''}`}
+            style={
+              showGuideLines
+                ? {
+                    marginInlineStart: CHEVRON_CENTER,
+                    paddingInlineStart: `calc(var(--tree-indent) - ${CHEVRON_CENTER}px)`,
+                  }
+                : { marginInlineStart: 'var(--tree-indent)' }
+            }
           >
             {children}
           </ul>
