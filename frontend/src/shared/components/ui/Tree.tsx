@@ -133,7 +133,7 @@ function TreeGroup({
   ...row
 }: TreeGroupProps) {
   const { level, showGuideLines } = useContext(TreeContext)
-  const [uncontrolledExpanded, setUncontrolledExpanded] = useState(defaultExpanded)
+  const [uncontrolledExpanded, setUncontrolledExpanded] = useState<boolean>(defaultExpanded)
   const isExpanded = controlledExpanded ?? uncontrolledExpanded
 
   const toggle = () => {

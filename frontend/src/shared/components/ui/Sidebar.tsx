@@ -17,7 +17,7 @@ export function SidebarProvider({
   defaultOpen?: boolean
   children: ReactNode
 }) {
-  const [isOpen, setOpen] = useState(defaultOpen)
+  const [isOpen, setOpen] = useState<boolean>(defaultOpen)
   const value = useMemo(() => ({ isOpen, setOpen, toggle: () => setOpen((o) => !o) }), [isOpen])
   return <SidebarContext value={value}>{children}</SidebarContext>
 }
