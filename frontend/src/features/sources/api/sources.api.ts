@@ -8,7 +8,7 @@ import type {
   SyncResult,
   UpdateSourceInput,
 } from '../types/source.type'
-import { mockSourceStatus, mockSources, mockSyncResult } from './sources.mock'
+import { mockSources, mockStatusFor, mockSyncResult } from './sources.mock'
 
 const BASE = '/admin/sources'
 
@@ -36,6 +36,7 @@ export function createSource(input: CreateSourceInput): Promise<Source> {
       ignore: [],
       name: null,
       description: null,
+      updatedAt: null,
       ...input,
     })
   }
@@ -66,6 +67,6 @@ export function syncSource(id: string): Promise<SyncResult> {
 
 /** GET /admin/sources/{id}/status — index freshness. */
 export function fetchSourceStatus(id: string): Promise<SourceStatus> {
-  if (isMock) return mockResolve({ ...mockSourceStatus, sourceId: id })
+  if (isMock) return mockResolve(mockStatusFor(id))
   return apiFetch<SourceStatus>(path(id, '/status'))
 }

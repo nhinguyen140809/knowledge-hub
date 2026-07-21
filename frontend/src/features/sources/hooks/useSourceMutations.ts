@@ -4,8 +4,9 @@ import { sourceKeys } from '../api/sources.keys'
 import type { CreateSourceInput, UpdateSourceInput } from '../types/source.type'
 
 /** Every source mutation invalidates the whole source namespace: a create/delete
- *  changes the list, an update changes list + detail, and a sync changes status. */
-function useInvalidateSources() {
+ *  changes the list, an update changes list + detail, and a sync changes status.
+ *  Also used directly by SourcesPage for its manual refresh button. */
+export function useInvalidateSources() {
   const queryClient = useQueryClient()
   return () => queryClient.invalidateQueries({ queryKey: sourceKeys.all })
 }

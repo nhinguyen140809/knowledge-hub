@@ -17,7 +17,7 @@ export function DeleteSourceButton({ sourceId, label, onDeleted }: DeleteSourceB
 
   return (
     <AlertDialog>
-      <Button isIconOnly size="sm" variant="danger" aria-label={`Delete ${name}`}>
+      <Button isIconOnly size="sm" variant="danger-soft" aria-label={`Delete ${name}`}>
         <Trash2 size={16} />
       </Button>
       <AlertDialog.Backdrop>

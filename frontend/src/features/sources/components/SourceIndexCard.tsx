@@ -1,8 +1,9 @@
-import { Button, Card, Chip, Skeleton } from '@heroui/react'
-import { RefreshCw } from 'lucide-react'
+import { Card, Chip, Skeleton } from '@heroui/react'
+import { useState } from 'react'
 import { formatTimestamp } from '@/shared/lib/datetime.utils'
-import { useSyncSource } from '../hooks/useSourceMutations'
 import { useSourceStatus } from '../hooks/useSources'
+import type { SyncResult } from '../types/source.type'
+import { SyncSourceButton } from './SyncSourceButton'
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -17,53 +18,47 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
  *  re-running it is safe; the result says whether anything actually changed. */
 export function SourceIndexCard({ sourceId }: { sourceId: string }) {
   const { data, isPending } = useSourceStatus(sourceId)
-  const sync = useSyncSource()
+  const [result, setResult] = useState<SyncResult | null>(null)
 
   return (
-    <Card>
-      <Card.Header className="flex-row items-center justify-between">
-        <Card.Title>Index</Card.Title>
-        <Button
-          size="sm"
-          variant="secondary"
-          isPending={sync.isPending}
-          onPress={() => sync.mutate(sourceId)}
-        >
-          <RefreshCw size={16} className={sync.isPending ? 'animate-spin' : ''} />
-          Sync
-        </Button>
+    <Card className="p-6">
+      <Card.Header className="flex-row items-start justify-between">
+        <Card.Title className="text-accent text-lg font-bold">Index</Card.Title>
+        <SyncSourceButton sourceId={sourceId} onSynced={setResult} />
       </Card.Header>
       <Card.Content className="flex flex-col gap-3">
         {isPending && <Skeleton className="h-4 w-2/3 rounded" />}
 
-        {data && !data.indexed && <p className="text-muted text-sm">Never synced.</p>}
+        {data && !data.indexed && <p className="text-muted text-sm">Never synced</p>}
 
         {data?.indexed && (
           <>
             <Row label="Last update">{formatTimestamp(new Date(data.indexedAt!))}</Row>
+
             <Row label="Ref">
-              <span className="font-mono">{data.ref ?? '—'}</span>
+              <span>{data.ref ?? '—'}</span>
             </Row>
+
             <Row label="Commit">
-              <span className="font-mono">{data.commitSha?.slice(0, 10) ?? '—'}</span>
+              <span>{data.commitSha?.slice(0, 10) ?? '—'}</span>
             </Row>
           </>
         )}
 
-        {sync.data && (
+        {result && (
           <div className="flex flex-wrap items-center gap-2 border-t pt-3">
-            {sync.data.idempotent ? (
-              <Chip size="sm" variant="soft">
+            {result.idempotent ? (
+              <Chip size="md" variant="soft">
                 already up to date
               </Chip>
             ) : (
-              <Chip size="sm" variant="soft" color="success">
+              <Chip size="md" variant="soft" color="success">
                 updated
               </Chip>
             )}
-            <span className="text-muted text-xs">
-              +{sync.data.indexed} indexed · {sync.data.reindexed} re-indexed · {sync.data.evicted}{' '}
-              evicted · {sync.data.skipped} skipped · {sync.data.durationMs}ms
+            <span className="text-muted text-sm">
+              + {result.indexed} indexed · {result.reindexed} re-indexed · {result.evicted} evicted
+              · {result.skipped} skipped · {result.durationMs}ms
             </span>
           </div>
         )}

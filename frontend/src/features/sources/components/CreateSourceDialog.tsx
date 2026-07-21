@@ -1,33 +1,65 @@
-import { Button, Input, Label, ListBox, Modal, Select, TextArea, TextField } from '@heroui/react'
+import {
+  Button,
+  FieldError,
+  Form,
+  Input,
+  Label,
+  ListBox,
+  Modal,
+  Select,
+  TextArea,
+  TextField,
+} from '@heroui/react'
 import { Plus } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
+import { TagField } from '@/shared/components/ui/TagField'
+import { useFormReducer } from '@/shared/hooks/useFormReducer'
+import { SOURCE_TYPE_LOCATION } from '../constants/source.config'
 import { useCreateSource } from '../hooks/useSourceMutations'
 import type { SourceType } from '../types/source.type'
 
-/** Globs are entered as a comma-separated line; empty entries are dropped so a
- *  trailing comma does not become a pattern that matches nothing. */
-function parseGlobs(value: string): string[] {
-  return value
-    .split(',')
-    .map((g) => g.trim())
-    .filter(Boolean)
+/** Lowercase letters, digits and single hyphens between them — the id ends up
+ *  in URL paths, and the backend only requires non-blank, so this is enforced
+ *  client-side. */
+const ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
+
+function validateId(value: string): string | null {
+  return ID_PATTERN.test(value)
+    ? null
+    : 'Lowercase letters, numbers and hyphens only (e.g. engineering-wiki)'
 }
 
-const EMPTY = { id: '', uriOrPath: '', ref: '', name: '', description: '', include: '', ignore: '' }
+interface FormState {
+  id: string
+  type: SourceType
+  uriOrPath: string
+  ref: string
+  name: string
+  description: string
+  include: string[]
+  ignore: string[]
+}
+
+const EMPTY: FormState = {
+  id: '',
+  type: 'GIT',
+  uriOrPath: '',
+  ref: '',
+  name: '',
+  description: '',
+  include: [],
+  ignore: [],
+}
 
 export function CreateSourceDialog() {
-  const [isOpen, setOpen] = useState(false)
-  const [type, setType] = useState<SourceType>('GIT')
-  const [form, setForm] = useState(EMPTY)
+  const [isOpen, setOpen] = useState<boolean>(false)
+  const [form, setField, replace] = useFormReducer(EMPTY)
   const create = useCreateSource()
-
-  const set = (key: keyof typeof EMPTY) => (value: string) =>
-    setForm((f) => ({ ...f, [key]: value }))
+  const { hasRef, formLabel, formPlaceholder } = SOURCE_TYPE_LOCATION[form.type]
 
   function close() {
     setOpen(false)
-    setForm(EMPTY)
-    setType('GIT')
+    replace(EMPTY)
     create.reset()
   }
 
@@ -36,12 +68,12 @@ export function CreateSourceDialog() {
     create.mutate(
       {
         id: form.id.trim(),
-        type,
+        type: form.type,
         uriOrPath: form.uriOrPath.trim(),
         // The server treats an omitted field as "unset"; send null rather than ''.
-        ref: type === 'GIT' && form.ref.trim() ? form.ref.trim() : null,
-        include: parseGlobs(form.include),
-        ignore: parseGlobs(form.ignore),
+        ref: hasRef && form.ref.trim() ? form.ref.trim() : null,
+        include: form.include,
+        ignore: form.ignore,
         name: form.name.trim() || null,
         description: form.description.trim() || null,
       },
@@ -57,85 +89,100 @@ export function CreateSourceDialog() {
       </Button>
 
       <Modal.Backdrop isOpen={isOpen} onOpenChange={setOpen}>
-        <Modal.Container size="lg">
+        <Modal.Container size="cover">
           <Modal.Dialog>
             <Modal.CloseTrigger />
             <Modal.Header>
-              <Modal.Heading>Register a source</Modal.Heading>
+              <Modal.Heading className="mb-2 text-lg font-bold">Register a source</Modal.Heading>
             </Modal.Header>
-            <form onSubmit={onSubmit}>
-              <Modal.Body className="flex flex-col gap-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <TextField value={form.id} onChange={set('id')} isRequired>
-                    <Label>Id</Label>
-                    <Input placeholder="engineering-wiki" />
-                  </TextField>
+            <Form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
+              <Modal.Body className="grid gap-6 sm:grid-cols-2">
+                <div className="flex flex-col gap-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <TextField
+                      value={form.id}
+                      onChange={setField('id')}
+                      isRequired
+                      variant="secondary"
+                      validate={validateId}
+                    >
+                      <Label>Id</Label>
+                      <Input placeholder="engineering-wiki" />
+                      <FieldError />
+                    </TextField>
 
-                  <Select
-                    placeholder="Select a type"
-                    selectedKey={type}
-                    onSelectionChange={(key) => setType(key as SourceType)}
+                    <Select
+                      placeholder="Select a type"
+                      selectedKey={form.type}
+                      onSelectionChange={(key) => setField('type')(key as SourceType)}
+                      variant="secondary"
+                    >
+                      <Label>Type</Label>
+                      <Select.Trigger>
+                        <Select.Value />
+                        <Select.Indicator />
+                      </Select.Trigger>
+                      <Select.Popover>
+                        <ListBox>
+                          <ListBox.Item id="GIT" textValue="Git repository">
+                            Git repository
+                            <ListBox.ItemIndicator />
+                          </ListBox.Item>
+                          <ListBox.Item id="FS" textValue="Filesystem folder">
+                            Filesystem folder
+                            <ListBox.ItemIndicator />
+                          </ListBox.Item>
+                        </ListBox>
+                      </Select.Popover>
+                    </Select>
+                  </div>
+
+                  <TextField
+                    value={form.uriOrPath}
+                    onChange={setField('uriOrPath')}
+                    isRequired
+                    variant="secondary"
                   >
-                    <Label>Type</Label>
-                    <Select.Trigger>
-                      <Select.Value />
-                      <Select.Indicator />
-                    </Select.Trigger>
-                    <Select.Popover>
-                      <ListBox>
-                        <ListBox.Item id="GIT" textValue="Git repository">
-                          Git repository
-                          <ListBox.ItemIndicator />
-                        </ListBox.Item>
-                        <ListBox.Item id="FS" textValue="Filesystem folder">
-                          Filesystem folder
-                          <ListBox.ItemIndicator />
-                        </ListBox.Item>
-                      </ListBox>
-                    </Select.Popover>
-                  </Select>
+                    <Label>{formLabel}</Label>
+                    <Input placeholder={formPlaceholder} />
+                  </TextField>
+
+                  {hasRef && (
+                    <TextField value={form.ref} onChange={setField('ref')} variant="secondary">
+                      <Label>Ref (optional)</Label>
+                      <Input placeholder="main" />
+                    </TextField>
+                  )}
+
+                  <TextField value={form.name} onChange={setField('name')} variant="secondary">
+                    <Label>Name (optional)</Label>
+                    <Input placeholder="Engineering Wiki" />
+                  </TextField>
+
+                  <TextField
+                    value={form.description}
+                    onChange={setField('description')}
+                    variant="secondary"
+                  >
+                    <Label>Description (optional)</Label>
+                    <TextArea placeholder="What this source contains" rows={2} />
+                  </TextField>
                 </div>
 
-                <TextField value={form.uriOrPath} onChange={set('uriOrPath')} isRequired>
-                  <Label>{type === 'GIT' ? 'Repository URL' : 'Folder path'}</Label>
-                  <Input
-                    placeholder={
-                      type === 'GIT' ? 'https://github.com/acme/wiki.git' : '/srv/knowledge/docs'
-                    }
+                <div className="flex flex-col gap-4">
+                  <TagField
+                    label="Include globs"
+                    value={form.include}
+                    onChange={setField('include')}
+                    placeholder="**/*.md, docs/**"
                   />
-                </TextField>
-
-                {type === 'GIT' && (
-                  <TextField value={form.ref} onChange={set('ref')}>
-                    <Label>Ref (optional)</Label>
-                    <Input placeholder="main" />
-                  </TextField>
-                )}
-
-                <TextField value={form.name} onChange={set('name')}>
-                  <Label>Name (optional)</Label>
-                  <Input placeholder="Engineering Wiki" />
-                </TextField>
-
-                <TextField value={form.description} onChange={set('description')}>
-                  <Label>Description (optional)</Label>
-                  <TextArea placeholder="What this source contains" rows={2} />
-                </TextField>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <TextField value={form.include} onChange={set('include')}>
-                    <Label>Include globs</Label>
-                    <Input placeholder="**/*.md, docs/**" />
-                  </TextField>
-                  <TextField value={form.ignore} onChange={set('ignore')}>
-                    <Label>Ignore globs</Label>
-                    <Input placeholder="archive/**" />
-                  </TextField>
+                  <TagField
+                    label="Ignore globs"
+                    value={form.ignore}
+                    onChange={setField('ignore')}
+                    placeholder="archive/**"
+                  />
                 </div>
-
-                {create.isError && (
-                  <p className="text-danger text-sm">{(create.error as Error).message}</p>
-                )}
               </Modal.Body>
               <Modal.Footer>
                 <Button variant="tertiary" onPress={close}>
@@ -145,7 +192,7 @@ export function CreateSourceDialog() {
                   Register
                 </Button>
               </Modal.Footer>
-            </form>
+            </Form>
           </Modal.Dialog>
         </Modal.Container>
       </Modal.Backdrop>

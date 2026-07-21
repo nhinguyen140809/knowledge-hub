@@ -18,8 +18,8 @@ function GlobList({
       ) : (
         <div className="flex flex-wrap gap-2">
           {patterns.map((pattern) => (
-            <Chip key={pattern} size="sm" variant="secondary">
-              <span className="font-mono">{pattern}</span>
+            <Chip key={pattern} size="md" variant="secondary">
+              <span>{pattern}</span>
             </Chip>
           ))}
         </div>
@@ -32,9 +32,9 @@ function GlobList({
  *  next sync, which is why they sit next to the index panel. */
 export function SourceGlobsCard({ source }: { source: Source }) {
   return (
-    <Card>
+    <Card className="p-6">
       <Card.Header>
-        <Card.Title>Patterns</Card.Title>
+        <Card.Title className="text-accent text-lg font-bold">Patterns</Card.Title>
       </Card.Header>
       <Card.Content className="flex flex-col gap-4">
         <GlobList label="Include" patterns={source.include} empty="everything" />

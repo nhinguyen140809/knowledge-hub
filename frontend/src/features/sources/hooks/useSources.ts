@@ -23,7 +23,7 @@ export function useSource(id: string | undefined) {
   })
 }
 
-/** Index freshness for a source — the "last update" shown next to it. */
+/** Index freshness (ref/commit + timestamp) for one source's detail view. */
 export function useSourceStatus(id: string | undefined) {
   const active = useActiveConnection()
   return useQuery({

@@ -15,6 +15,8 @@ export interface Source {
   ignore: string[]
   name: string | null
   description: string | null
+  /** ISO-8601 timestamp of the last sync, or null if never synced. */
+  updatedAt: string | null
 }
 
 /** Body of POST /admin/sources. `include`/`ignore` default to empty server-side;
