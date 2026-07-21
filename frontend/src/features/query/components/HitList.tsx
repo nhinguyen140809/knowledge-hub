@@ -1,38 +1,58 @@
 import { Card, Chip, Skeleton } from '@heroui/react'
+import { ChevronRight, Search, SearchX } from 'lucide-react'
+import { Fragment } from 'react'
+import { EmptyState } from '@/shared/components/ui/EmptyState'
 import { formatTimestamp } from '@/shared/lib/datetime.utils'
 import type { Hit } from '../types/query.type'
 
 function lineRange(hit: Hit): string | null {
   const { lineStart, lineEnd } = hit.metadata
   if (lineStart == null) return null
-  return lineEnd != null && lineEnd !== lineStart ? `${lineStart}–${lineEnd}` : `${lineStart}`
+  return lineEnd != null && lineEnd !== lineStart ? `${lineStart}-${lineEnd}` : `${lineStart}`
+}
+
+function hitDescription(hit: Hit): string {
+  const { sourceId, ref, commitSha, indexedAt } = hit.metadata
+  const parts = [sourceId]
+  if (ref) parts.push(`@ ${ref}`)
+  if (commitSha) parts.push(`· ${commitSha.slice(0, 8)}`)
+  if (indexedAt) parts.push(`· indexed ${formatTimestamp(new Date(indexedAt))}`)
+  return parts.join(' ')
+}
+
+/** The graph traversal that reached this hit, as a breadcrumb trail — null
+ *  for a direct match with nothing to walk through. */
+function viaPathTrail(hit: Hit): React.ReactNode {
+  const { viaPath } = hit.metadata
+  if (viaPath.length === 0) return null
+
+  return viaPath.map((step, i) => (
+    <Fragment key={i}>
+      {i > 0 && <ChevronRight size={12} className="inline shrink-0" />}
+      {step}
+    </Fragment>
+  ))
 }
 
 function HitCard({ hit }: { hit: Hit }) {
   const lines = lineRange(hit)
+  const description = hitDescription(hit)
+  const trail = viaPathTrail(hit)
   return (
-    <Card>
+    <Card className="px-6">
       <div className="flex items-start justify-between gap-4">
         <Card.Header className="min-w-0 gap-1">
-          <Card.Title className="truncate font-mono text-sm">
+          <Card.Title className="text-accent truncate text-sm font-bold">
             {hit.metadata.path}
-            {lines && <span className="text-muted">:{lines}</span>}
+            {lines && <span className="text-foreground">:{lines}</span>}
           </Card.Title>
-          <Card.Description className="text-xs">
-            {hit.metadata.sourceId}
-            {hit.metadata.ref && ` @ ${hit.metadata.ref}`}
-            {hit.metadata.commitSha && ` · ${hit.metadata.commitSha.slice(0, 8)}`}
-            {hit.metadata.indexedAt &&
-              ` · indexed ${formatTimestamp(new Date(hit.metadata.indexedAt))}`}
-          </Card.Description>
-          {hit.metadata.viaPath.length > 0 && (
-            <p className="text-muted mt-1 text-xs">
-              reached via {hit.metadata.viaPath.join(' → ')}
-            </p>
+          <Card.Description className="text-xs">{description}</Card.Description>
+          {trail && (
+            <p className="text-muted mt-1 flex items-center gap-1 text-xs">reached via {trail}</p>
           )}
         </Card.Header>
         <div className="flex shrink-0 flex-col items-end gap-2">
-          <Chip size="sm" variant="soft" color="accent">
+          <Chip size="md" variant="soft" color="accent">
             {hit.relevanceScore.toFixed(3)}
           </Chip>
           <Chip size="sm" variant="secondary">
@@ -53,13 +73,7 @@ interface HitListProps {
 /** Ranked results, best first. */
 export function HitList({ hits, isPending, hasSearched }: HitListProps) {
   if (!hasSearched) {
-    return (
-      <Card variant="transparent" className="border border-dashed">
-        <Card.Content className="text-muted py-10 text-center text-sm">
-          Run a query to see results.
-        </Card.Content>
-      </Card>
-    )
+    return <EmptyState icon={<Search size={28} />} description="Run a query to see results." />
   }
 
   if (isPending) {
@@ -74,11 +88,10 @@ export function HitList({ hits, isPending, hasSearched }: HitListProps) {
 
   if (!hits || hits.length === 0) {
     return (
-      <Card variant="transparent" className="border border-dashed">
-        <Card.Content className="text-muted py-10 text-center text-sm">
-          No results. Nothing indexed matches, or the sources you can read do not contain it.
-        </Card.Content>
-      </Card>
+      <EmptyState
+        icon={<SearchX size={28} />}
+        description="No results. Nothing indexed matches, or the sources you can read do not contain it."
+      />
     )
   }
 

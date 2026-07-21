@@ -1,4 +1,4 @@
-import { Card, Chip } from '@heroui/react'
+import { Surface, Chip, ScrollShadow } from '@heroui/react'
 import { useState } from 'react'
 import { HitList } from '../components/HitList'
 import { QueryForm } from '../components/QueryForm'
@@ -13,22 +13,26 @@ export function QueryPage() {
   const { data, isPending, isError, error } = useSearch(submitted)
 
   return (
-    <div className="flex flex-col gap-6">
-      <Card>
-        <Card.Content>
-          <QueryForm onSubmit={setSubmitted} />
-        </Card.Content>
-      </Card>
+    <div className="flex h-full flex-col gap-6">
+      <div className="flex shrink-0 flex-col gap-6">
+        <Surface variant="transparent" className="mb-4">
+            <QueryForm onSubmit={setSubmitted} />
+        </Surface>
 
-      {isError && <p className="text-danger text-sm">{(error as Error).message}</p>}
+        {isError && <p className="text-danger text-sm">{(error as Error).message}</p>}
 
-      {data?.servedFromCanonicalRef && (
-        <Chip size="sm" variant="soft" color="warning" className="self-start">
-          requested ref not indexed — served from the canonical ref
-        </Chip>
-      )}
+        {data?.servedFromCanonicalRef && (
+          <Chip size="md" variant="soft" color="warning" className="self-start">
+            requested ref not indexed, served from the canonical ref
+          </Chip>
+        )}
+      </div>
 
-      <HitList hits={data?.hits} isPending={!!submitted && isPending} hasSearched={!!submitted} />
+      {/* offset absorbs the subpixel gap between scrollTop and scrollHeight on
+          scaled displays, otherwise the bottom shadow never clears at the end. */}
+      <ScrollShadow className="min-h-0 flex-1" offset={2}>
+        <HitList hits={data?.hits} isPending={!!submitted && isPending} hasSearched={!!submitted} />
+      </ScrollShadow>
     </div>
   )
 }
