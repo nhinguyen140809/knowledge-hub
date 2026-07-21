@@ -5,7 +5,7 @@ import {
   fetchCredentials,
   issueCredential,
   revokeCredential,
-} from '../api/access.api'
+} from '../api/credential.api'
 import { accessKeys } from '../api/access.keys'
 
 /** Every credential across all principals — used for totals and global views. */

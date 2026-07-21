@@ -6,7 +6,7 @@ import {
   fetchPrincipal,
   fetchPrincipalGraph,
   fetchPrincipals,
-} from '../api/access.api'
+} from '../api/principal.api'
 import { accessKeys } from '../api/access.keys'
 
 /** Principals plus their membership edges — one call, enough to draw the tree

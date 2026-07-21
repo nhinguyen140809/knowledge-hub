@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { addMember, createPrincipal, deletePrincipal, removeMember } from '../api/access.api'
+import { addMember, createPrincipal, deletePrincipal, removeMember } from '../api/principal.api'
 import { accessKeys } from '../api/access.keys'
 import type { CreatePrincipalInput } from '../types/access.type'
 

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useActiveConnection } from '@/lib/store/connections.store'
-import { fetchDefaultPolicy, setDefaultPolicy } from '../api/access.api'
+import { fetchDefaultPolicy, setDefaultPolicy } from '../api/policy.api'
 import { accessKeys } from '../api/access.keys'
 import type { DefaultPolicy } from '../types/access.type'
 
