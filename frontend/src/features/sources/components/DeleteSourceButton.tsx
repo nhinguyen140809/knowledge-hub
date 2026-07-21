@@ -22,7 +22,7 @@ export function DeleteSourceButton({ sourceId, label, onDeleted }: DeleteSourceB
       </Button>
       <AlertDialog.Backdrop>
         <AlertDialog.Container>
-          <AlertDialog.Dialog className="sm:max-w-[420px]">
+          <AlertDialog.Dialog className="sm:max-w-105">
             <AlertDialog.CloseTrigger />
             <AlertDialog.Header>
               <AlertDialog.Icon status="danger">
