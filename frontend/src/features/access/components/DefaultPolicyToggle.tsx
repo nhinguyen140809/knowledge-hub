@@ -14,7 +14,10 @@ export function DefaultPolicyToggle() {
 
   if (!policy.data) return null
 
-  const isSelected = (setPolicy.variables ?? policy.data) === ALLOW
+  // Optimistic only while in flight: `variables` outlives the mutation (it
+  // sticks around after settling), so falling back to it unconditionally would
+  // keep showing a value that failed to apply.
+  const isSelected = (setPolicy.isPending ? setPolicy.variables : policy.data) === ALLOW
 
   return (
     <Switch
