@@ -15,6 +15,18 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   )
 }
 
+function Result({ result }: { result: SyncResult }) {
+  return (
+    <div className="text-sm font-bold flex gap-4">
+      <span className="text-success">{result.indexed} indexed</span>
+      <span className="text-warning">{result.reindexed} re-indexed</span>
+      <span className="text-danger">{result.evicted} evicted</span>
+      <span className="text-muted">{result.skipped} skipped</span>
+      <span className="text-success">{result.durationMs}ms</span>
+    </div>
+  )
+}
+
 /** Index freshness plus the sync trigger. Sync is idempotent server-side, so
  *  re-running it is safe; the result says whether anything actually changed. */
 export function SourceIndexCard({ sourceId }: { sourceId: string }) {
@@ -57,10 +69,7 @@ export function SourceIndexCard({ sourceId }: { sourceId: string }) {
                 updated
               </Chip>
             )}
-            <span className="text-muted text-sm">
-              + {result.indexed} indexed · {result.reindexed} re-indexed · {result.evicted} evicted
-              · {result.skipped} skipped · {result.durationMs}ms
-            </span>
+            <Result result={result} />
           </div>
         )}
       </Card.Content>
