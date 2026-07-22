@@ -2,6 +2,7 @@ import { Button, Card, Chip, Skeleton } from '@heroui/react'
 import { Ban, KeyRound, MousePointerClick } from 'lucide-react'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { EmptyState } from '@/shared/components/ui/EmptyState'
+import { ErrorState } from '@/shared/components/ui/ErrorState'
 import { formatTimestamp } from '@/shared/lib/datetime.utils'
 import { useCredentials, useRevokeCredential } from '../hooks/useCredentials'
 import type { Credential } from '../types/access.type'
@@ -76,7 +77,7 @@ function CredentialRow({ credential }: { credential: Credential }) {
 /** Credentials issued to the selected principal. Secrets are never listed — the
  *  raw secret exists only in the response that issued it. */
 export function PrincipalCredentialsPanel({ principalId }: { principalId: string | null }) {
-  const { data, isPending } = useCredentials(principalId ?? undefined)
+  const { data, isPending, isError, error } = useCredentials(principalId ?? undefined)
 
   return (
     <Card className="px-6">
@@ -98,6 +99,8 @@ export function PrincipalCredentialsPanel({ principalId }: { principalId: string
             <Skeleton className="h-10 w-full rounded" />
           </>
         )}
+
+        {principalId && isError && <ErrorState description={(error as Error).message} />}
 
         {principalId && data && data.length === 0 && (
           <EmptyState icon={<KeyRound size={28} />} description="No credentials issued" />
