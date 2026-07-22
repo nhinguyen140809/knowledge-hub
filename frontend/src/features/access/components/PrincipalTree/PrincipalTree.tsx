@@ -16,6 +16,9 @@ import type { Principal } from '../../types/access.type'
 interface PrincipalTreeProps {
   selectedId?: string | null
   onSelect?: (principalId: string) => void
+  /** Fires after a principal is successfully deleted — the owner of the
+   *  selection needs it to drop a selection that now points at nothing. */
+  onDeleted?: (principalId: string) => void
 }
 
 /**
@@ -23,7 +26,7 @@ interface PrincipalTreeProps {
  * nest, a principal can belong to several groups, and the backend does not
  * reject cycles.
  */
-export function PrincipalTree({ selectedId, onSelect }: PrincipalTreeProps) {
+export function PrincipalTree({ selectedId, onSelect, onDeleted }: PrincipalTreeProps) {
   const { data, isPending, isError, error } = usePrincipalGraph()
   const [deleteTarget, setDeleteTarget] = useState<Principal | null>(null)
   const [addMemberTarget, setAddMemberTarget] = useState<Principal | null>(null)
@@ -99,7 +102,13 @@ export function PrincipalTree({ selectedId, onSelect }: PrincipalTreeProps) {
         target={deleteTarget}
         onOpenChange={(isOpen) => !isOpen && setDeleteTarget(null)}
         isPending={deletePrincipal.isPending}
-        onConfirm={() => deleteTarget && deletePrincipal.mutate(deleteTarget.principalId)}
+        onConfirm={() => {
+          if (!deleteTarget) return
+          // Captured before mutating: the dialog closes (clearing deleteTarget)
+          // while the request is still in flight.
+          const id = deleteTarget.principalId
+          deletePrincipal.mutate(id, { onSuccess: () => onDeleted?.(id) })
+        }}
       />
 
       <AddMemberDialog

@@ -38,7 +38,11 @@ export function AccessPage() {
             <AddPrincipalDialog />
           </Card.Header>
           <Card.Content>
-            <PrincipalTree selectedId={selectedId} onSelect={setSelectedId} />
+            <PrincipalTree
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onDeleted={(id) => id === selectedId && setSelectedId(null)}
+            />
           </Card.Content>
         </Card>
 
