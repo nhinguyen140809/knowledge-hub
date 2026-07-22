@@ -3,7 +3,7 @@
  * use) makes the sole export an Object.assign result, which the rule cannot
  * recognise as a component. The cost is that editing this file triggers a full
  * reload instead of a hot update; nothing breaks at runtime. */
-import { Button } from '@heroui/react'
+import { Button, Dropdown } from '@heroui/react'
 import { ChevronRight } from 'lucide-react'
 import { createContext, useContext, useState, type CSSProperties, type ReactNode } from 'react'
 
@@ -38,6 +38,10 @@ interface TreeRowProps {
   trailing?: ReactNode
   isSelected?: boolean
   onSelect?: () => void
+  /** Right-click menu content for this row — typically a `Dropdown.Menu`.
+   *  Omit for no menu. The tree has no opinion on what actions make sense;
+   *  it only wires up the right-click gesture and the menu's anchor. */
+  contextMenu?: ReactNode
 }
 
 /** The chevron and the label are separate buttons: nesting a toggle inside a
@@ -48,6 +52,7 @@ function TreeRow({
   trailing,
   isSelected,
   onSelect,
+  contextMenu,
   isExpandable = false,
   isExpanded = false,
   onToggle,
@@ -56,8 +61,24 @@ function TreeRow({
   isExpanded?: boolean
   onToggle?: () => void
 }) {
+  // The anchor is a zero-size point at the cursor, not the row's bounding box,
+  // so the menu opens where the click actually happened instead of always in
+  // the same spot relative to the row.
+  const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number } | null>(null)
+
   return (
-    <div className="flex items-center gap-1">
+    <div
+      className="relative flex items-center gap-1"
+      onContextMenu={
+        contextMenu
+          ? (e) => {
+              e.preventDefault()
+              const rect = e.currentTarget.getBoundingClientRect()
+              setMenuAnchor({ x: e.clientX - rect.left, y: e.clientY - rect.top })
+            }
+          : undefined
+      }
+    >
       {isExpandable ? (
         <Button
           isIconOnly
@@ -86,6 +107,22 @@ function TreeRow({
         <span className="truncate">{label}</span>
         {trailing && <span className="ml-auto shrink-0">{trailing}</span>}
       </Button>
+      {contextMenu && (
+        <Dropdown
+          isOpen={menuAnchor !== null}
+          onOpenChange={(isOpen) => !isOpen && setMenuAnchor(null)}
+        >
+          {/* Invisible, zero-size anchor pinned to the click position — the
+           *  point itself, not the trigger's edges, is where the menu opens. */}
+          <Dropdown.Trigger
+            aria-hidden
+            excludeFromTabOrder
+            className="pointer-events-none absolute size-0"
+            style={menuAnchor ? { left: menuAnchor.x, top: menuAnchor.y } : undefined}
+          />
+          <Dropdown.Popover placement="bottom left">{contextMenu}</Dropdown.Popover>
+        </Dropdown>
+      )}
     </div>
   )
 }
