@@ -1,5 +1,6 @@
-import { AlertDialog, Button } from '@heroui/react'
+import { Button } from '@heroui/react'
 import { Trash2 } from 'lucide-react'
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { useDeleteSource } from '../hooks/useSourceMutations'
 
 interface DeleteSourceButtonProps {
@@ -16,42 +17,30 @@ export function DeleteSourceButton({ sourceId, label, onDeleted }: DeleteSourceB
   const name = label ?? sourceId
 
   return (
-    <AlertDialog>
-      <Button isIconOnly size="sm" variant="danger-soft" aria-label={`Delete ${name}`}>
-        <Trash2 size={16} />
-      </Button>
-      <AlertDialog.Backdrop>
-        <AlertDialog.Container>
-          <AlertDialog.Dialog className="sm:max-w-105">
-            <AlertDialog.CloseTrigger />
-            <AlertDialog.Header>
-              <AlertDialog.Icon status="danger">
-                <Trash2 className="size-5" />
-              </AlertDialog.Icon>
-              <AlertDialog.Heading>Delete this source?</AlertDialog.Heading>
-            </AlertDialog.Header>
-            <AlertDialog.Body>
-              <p>
-                <strong>{name}</strong> and everything indexed from it will be removed. Queries will
-                stop returning its content. This cannot be undone.
-              </p>
-            </AlertDialog.Body>
-            <AlertDialog.Footer>
-              <Button slot="close" variant="tertiary">
-                Cancel
-              </Button>
-              <Button
-                slot="close"
-                variant="danger"
-                isPending={remove.isPending}
-                onPress={() => remove.mutate(sourceId, { onSuccess: onDeleted })}
-              >
-                Delete source
-              </Button>
-            </AlertDialog.Footer>
-          </AlertDialog.Dialog>
-        </AlertDialog.Container>
-      </AlertDialog.Backdrop>
-    </AlertDialog>
+    <ConfirmDialog
+      trigger={
+        <Button isIconOnly size="sm" variant="danger-soft" aria-label={`Delete ${name}`}>
+          <Trash2 size={16} />
+        </Button>
+      }
+      icon={<Trash2 className="size-5" />}
+      heading="Delete this source?"
+      message={
+        <p>
+          <strong>{name}</strong> and everything indexed from it will be removed. Queries will stop
+          returning its content. This cannot be undone.
+        </p>
+      }
+      confirmButton={
+        <Button
+          slot="close"
+          variant="danger"
+          isPending={remove.isPending}
+          onPress={() => remove.mutate(sourceId, { onSuccess: onDeleted })}
+        >
+          Delete source
+        </Button>
+      }
+    />
   )
 }
