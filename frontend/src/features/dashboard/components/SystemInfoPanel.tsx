@@ -1,4 +1,5 @@
 import { Card, Chip, Skeleton } from '@heroui/react'
+import { ErrorState } from '@/shared/components/ui/ErrorState'
 import { formatTimestamp } from '@/shared/lib/datetime.utils'
 import { useSystemInfo } from '../hooks/useSystemInfo'
 import { deriveHealthStatus } from '../lib/health.util'
@@ -37,7 +38,7 @@ export function SystemInfoPanel() {
             <Skeleton className="h-4 w-3/5 rounded" />
           </div>
         )}
-        {isError && <p className="text-danger text-sm">{(error as Error).message}</p>}
+        {isError && <ErrorState description={(error as Error).message} />}
         {data && (
           <>
             <Row label="Product">{data.application}</Row>

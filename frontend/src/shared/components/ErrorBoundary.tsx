@@ -1,7 +1,6 @@
 import { Button } from '@heroui/react'
-import { AlertTriangle } from 'lucide-react'
 import { Component, type ErrorInfo, type ReactNode } from 'react'
-import { EmptyState } from './ui/EmptyState'
+import { ErrorState } from './ui/ErrorState'
 
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -33,14 +32,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (!this.state.error) return this.props.children
 
     return (
-      <EmptyState
-        icon={<AlertTriangle size={28} />}
-        description={this.state.error.message || 'Something went wrong.'}
-      >
+      <ErrorState description={this.state.error.message || 'Something went wrong.'}>
         <Button size="sm" variant="primary" onPress={this.reset}>
           Try again
         </Button>
-      </EmptyState>
+      </ErrorState>
     )
   }
 }

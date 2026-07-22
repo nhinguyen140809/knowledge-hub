@@ -1,9 +1,10 @@
-import type {
-  Credential,
-  EffectivePermissions,
-  IssuedCredential,
-  Principal,
-  PrincipalGraph,
+import {
+  DENY,
+  type Credential,
+  type EffectivePermissions,
+  type IssuedCredential,
+  type Principal,
+  type PrincipalGraph,
 } from '../types/access.type'
 
 export const mockPrincipals: Principal[] = [
@@ -60,7 +61,7 @@ export const mockGrantedSources: string[] = ['engineering-wiki', 'product-docs']
 
 export const mockEffectivePermissions: EffectivePermissions = {
   principalId: 'bob',
-  defaultPolicy: 'DENY',
+  defaultPolicy: DENY,
   readableSources: ['engineering-wiki', 'product-docs', 'support-macros'],
   grantedVia: {
     'engineering-wiki': ['bob'],

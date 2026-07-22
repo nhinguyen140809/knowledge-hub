@@ -1,5 +1,6 @@
 import { Surface, Chip, ScrollShadow } from '@heroui/react'
 import { useState } from 'react'
+import { ErrorState } from '@/shared/components/ui/ErrorState'
 import { HitList } from '../components/HitList'
 import { QueryForm } from '../components/QueryForm'
 import { useSearch } from '../hooks/useSearch'
@@ -16,10 +17,10 @@ export function QueryPage() {
     <div className="flex h-full flex-col gap-6">
       <div className="flex shrink-0 flex-col gap-6">
         <Surface variant="transparent" className="mb-4">
-            <QueryForm onSubmit={setSubmitted} />
+          <QueryForm onSubmit={setSubmitted} />
         </Surface>
 
-        {isError && <p className="text-danger text-sm">{(error as Error).message}</p>}
+        {isError && <ErrorState description={(error as Error).message} />}
 
         {data?.servedFromCanonicalRef && (
           <Chip size="md" variant="soft" color="warning" className="self-start">

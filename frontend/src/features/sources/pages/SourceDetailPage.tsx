@@ -1,6 +1,7 @@
 import { Button, Skeleton } from '@heroui/react'
 import { ArrowLeft } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ErrorState } from '@/shared/components/ui/ErrorState'
 import { renderLink } from '@/shared/lib/renderLink'
 import { DeleteSourceButton } from '../components/DeleteSourceButton'
 import { EditSourceDialog } from '../components/EditSourceDialog'
@@ -38,7 +39,7 @@ export function SourceDetailPage() {
 
       {isPending && <Skeleton className="h-40 w-full rounded-2xl" />}
 
-      {isError && <p className="text-danger text-sm">{(error as Error).message}</p>}
+      {isError && <ErrorState description={(error as Error).message} />}
 
       {data && (
         <div className="flex flex-col gap-4">
