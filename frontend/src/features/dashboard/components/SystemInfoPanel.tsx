@@ -3,6 +3,7 @@ import { ErrorState } from '@/shared/components/ui/ErrorState'
 import { formatTimestamp } from '@/shared/lib/datetime.utils'
 import { useSystemInfo } from '../hooks/useSystemInfo'
 import { deriveHealthStatus } from '../lib/health.util'
+import { NO_VALUE } from '@/shared/constants'
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -43,7 +44,7 @@ export function SystemInfoPanel() {
           <>
             <Row label="Product">{data.application}</Row>
             <Row label="Version">{data.version}</Row>
-            <Row label="Profiles">{data.activeProfiles.join(', ') || '—'}</Row>
+            <Row label="Profiles">{data.activeProfiles.join(', ') || NO_VALUE}</Row>
             <Row label="Last update">{formatTimestamp(dataUpdatedAt)}</Row>
           </>
         )}

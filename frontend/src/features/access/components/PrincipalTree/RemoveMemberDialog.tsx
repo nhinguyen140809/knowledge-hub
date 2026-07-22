@@ -30,8 +30,8 @@ export function RemoveMemberDialog({
       message={
         <p>
           <strong>{target?.member.principalId}</strong> is removed from{' '}
-          <strong>{target?.groupId}</strong>. It keeps its own grants and any access inherited
-          through other groups — this only removes the one membership edge.
+          <strong>{target?.groupId}</strong>. Only this one membership edge is removed: it keeps its
+          own grants and any access inherited through other groups.
         </p>
       }
       confirmButton={

@@ -5,6 +5,7 @@ import {
   SOURCE_TYPE_LOCATION,
 } from '../constants/source.config'
 import type { Source } from '../types/source.type'
+import { NO_VALUE } from '@/shared/constants'
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -41,7 +42,7 @@ export function SourceSummaryCard({ source }: { source: Source }) {
 
         {hasRef && (
           <Row label="Ref">
-            <span>{source.ref ?? '—'}</span>
+            <span>{source.ref ?? NO_VALUE}</span>
           </Row>
         )}
       </Card.Content>

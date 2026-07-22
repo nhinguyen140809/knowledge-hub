@@ -4,6 +4,7 @@ import { formatTimestamp } from '@/shared/lib/datetime.utils'
 import { useSourceStatus } from '../hooks/useSources'
 import type { SyncResult } from '../types/source.type'
 import { SyncSourceButton } from './SyncSourceButton'
+import { NO_VALUE } from '@/shared/constants'
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -36,11 +37,11 @@ export function SourceIndexCard({ sourceId }: { sourceId: string }) {
             <Row label="Last update">{formatTimestamp(new Date(data.indexedAt!))}</Row>
 
             <Row label="Ref">
-              <span>{data.ref ?? '—'}</span>
+              <span>{data.ref ?? NO_VALUE}</span>
             </Row>
 
             <Row label="Commit">
-              <span>{data.commitSha?.slice(0, 10) ?? '—'}</span>
+              <span>{data.commitSha?.slice(0, 10) ?? NO_VALUE}</span>
             </Row>
           </>
         )}
