@@ -20,9 +20,12 @@ interface MoveToGroupDialogProps {
   onOpenChange: (isOpen: boolean) => void
 }
 
-/** Moving is remove-then-add, not a dedicated backend operation — membership
- *  is just an edge, and there's no "move" primitive for it. If the principal
- *  has no current parent in this row, this degrades to a plain add. */
+/** Moving is two edge operations, not a dedicated backend primitive. Add runs
+ *  first: if it fails, the old membership is untouched, whereas removing first
+ *  could drop the principal from both groups on a partial failure. The
+ *  in-between state (briefly in both groups) grants at most extra read access
+ *  for a moment, which is the safer direction. If the principal has no current
+ *  parent in this row, this degrades to a plain add. */
 export function MoveToGroupDialog({ target, candidates, onOpenChange }: MoveToGroupDialogProps) {
   const [groupId, setGroupId] = useState<string | null>(null)
   const addMember = useAddMember()
@@ -40,11 +43,16 @@ export function MoveToGroupDialog({ target, candidates, onOpenChange }: MoveToGr
     e.preventDefault()
     if (!target || !groupId) return
     const memberId = target.principal.principalId
-    if (target.fromGroupId) {
-      await removeMember.mutateAsync({ groupId: target.fromGroupId, memberId })
+    try {
+      await addMember.mutateAsync({ groupId, memberId })
+      if (target.fromGroupId) {
+        await removeMember.mutateAsync({ groupId: target.fromGroupId, memberId })
+      }
+      close()
+    } catch {
+      // Already toasted by the global mutation cache handler; swallowing here
+      // only prevents an unhandled rejection. The dialog stays open for retry.
     }
-    await addMember.mutateAsync({ groupId, memberId })
-    close()
   }
 
   return (
