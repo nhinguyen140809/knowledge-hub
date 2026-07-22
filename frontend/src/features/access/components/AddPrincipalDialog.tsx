@@ -44,7 +44,7 @@ export function AddPrincipalDialog() {
 
   return (
     <>
-      <Button size="sm" variant="secondary" onPress={() => setOpen(true)}>
+      <Button size="sm" variant="primary" onPress={() => setOpen(true)}>
         <Plus size={16} />
         Principal
       </Button>
