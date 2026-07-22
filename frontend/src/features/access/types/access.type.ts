@@ -6,6 +6,8 @@ export type Role = 'ADMIN' | 'MEMBER'
 
 /** System-wide fallback when no grant matches: deny everything or allow everything. */
 export type DefaultPolicy = 'DENY' | 'ALLOW'
+export const ALLOW: DefaultPolicy = 'ALLOW'
+export const DENY: DefaultPolicy = 'DENY'
 
 /** JSON view of a principal — mirrors the backend PrincipalResponse. */
 export interface Principal {

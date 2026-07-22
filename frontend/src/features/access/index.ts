@@ -18,7 +18,7 @@ export {
   useIssueCredential,
   useRevokeCredential,
 } from './hooks/useCredentials'
-export { useGrants, useGrantSources, useRevokeSources } from './hooks/useGrants'
+export { useDirectGrants, useGrantSources, useRevokeSources } from './hooks/useGrants'
 export { useDefaultPolicy, useSetDefaultPolicy } from './hooks/useDefaultPolicy'
 export { accessKeys } from './api/access.keys'
 export type {
