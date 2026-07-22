@@ -1,12 +1,37 @@
 import { Skeleton } from '@heroui/react'
-import { type Edge, type Node } from '@xyflow/react'
+import { MarkerType, type Edge, type Node } from '@xyflow/react'
 import { useMemo } from 'react'
-import { GraphView } from '@/shared/components/ui/GraphView'
+import {
+  GraphView,
+  type GraphNodeData,
+  type GraphNodeVariant,
+} from '@/shared/components/ui/GraphView'
+import { ErrorState } from '@/shared/components/ui/ErrorState'
 import { useEffectivePermissions, usePrincipalGraph } from '../hooks/usePrincipals'
+import type { Principal } from '../types/access.type'
 
 interface AccessGraphProps {
   selectedId?: string | null
   onSelect?: (principalId: string) => void
+}
+
+// Which variant a node *kind* gets — GraphView owns what each variant looks
+// like, this only picks one per kind.
+const PRINCIPAL_NODE_VARIANT: Record<Principal['type'], GraphNodeVariant> = {
+  GROUP: 'accent',
+  SUBJECT: 'neutral',
+}
+const SOURCE_NODE_VARIANT: GraphNodeVariant = 'success'
+
+// Membership (structural, "belongs to") and grants (access, "can read") are
+// the two kinds of edge in this graph — distinct color and marker size make
+// that difference legible at a glance instead of only in the hover label.
+const MEMBER_EDGE_COLOR = 'var(--muted)'
+const GRANT_EDGE_COLOR = 'var(--success)'
+const EDGE_MARKER_SIZE = 14
+
+function edgeMarker(color: string) {
+  return { type: MarkerType.Arrow, color, width: EDGE_MARKER_SIZE, height: EDGE_MARKER_SIZE }
 }
 
 /**
@@ -20,7 +45,7 @@ export function AccessGraph({ selectedId, onSelect }: AccessGraphProps) {
   const permissions = useEffectivePermissions(selectedId ?? undefined)
 
   const { nodes, edges } = useMemo(() => {
-    const nodes: Node[] = []
+    const nodes: Node<GraphNodeData>[] = []
     const edges: Edge[] = []
     if (!graph.data) return { nodes, edges }
 
@@ -30,15 +55,11 @@ export function AccessGraph({ selectedId, onSelect }: AccessGraphProps) {
       nodes.push({
         id: principal.principalId,
         position: { x: 0, y: 0 },
-        data: { label: `${principal.principalId}${isGroup ? ' (group)' : ''}` },
-        style: {
-          borderRadius: 10,
-          borderWidth: isSelected ? 2 : 1,
-          borderStyle: isGroup ? 'solid' : 'dashed',
-          fontSize: 12,
-          padding: 6,
+        data: {
+          label: `${principal.principalId}${isGroup ? ' (group)' : ''}`,
+          variant: PRINCIPAL_NODE_VARIANT[principal.type],
+          isSelected,
         },
-        className: isSelected ? 'text-accent' : undefined,
       })
     }
 
@@ -49,7 +70,8 @@ export function AccessGraph({ selectedId, onSelect }: AccessGraphProps) {
           source: groupId,
           target: memberId,
           label: 'member',
-          style: { strokeDasharray: '4 2' },
+          style: { strokeDasharray: '4 2', stroke: MEMBER_EDGE_COLOR, strokeWidth: 2 },
+          markerEnd: edgeMarker(MEMBER_EDGE_COLOR),
         })
       }
     }
@@ -61,8 +83,7 @@ export function AccessGraph({ selectedId, onSelect }: AccessGraphProps) {
         nodes.push({
           id: `source:${sourceId}`,
           position: { x: 0, y: 0 },
-          data: { label: sourceId },
-          style: { borderRadius: 10, fontSize: 12, padding: 6 },
+          data: { label: sourceId, variant: SOURCE_NODE_VARIANT },
         })
         for (const via of viaPrincipals) {
           edges.push({
@@ -71,6 +92,8 @@ export function AccessGraph({ selectedId, onSelect }: AccessGraphProps) {
             target: `source:${sourceId}`,
             label: 'grants',
             animated: true,
+            style: { stroke: GRANT_EDGE_COLOR, strokeWidth: 2.5 },
+            markerEnd: edgeMarker(GRANT_EDGE_COLOR),
           })
         }
       }
@@ -80,7 +103,7 @@ export function AccessGraph({ selectedId, onSelect }: AccessGraphProps) {
   }, [graph.data, permissions.data, selectedId])
 
   if (graph.isPending) return <Skeleton className="h-[420px] w-full rounded-xl" />
-  if (graph.isError) return <p className="text-danger text-sm">{(graph.error as Error).message}</p>
+  if (graph.isError) return <ErrorState description={(graph.error as Error).message} />
 
   return (
     <GraphView
