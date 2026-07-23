@@ -1,6 +1,7 @@
 import { Button } from '@heroui/react'
 import { UserMinus } from 'lucide-react'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
+import { useRemoveMember } from '../../hooks/usePrincipalMutations'
 import type { Principal } from '../../types/access.type'
 
 export interface RemoveMemberTarget {
@@ -11,16 +12,18 @@ export interface RemoveMemberTarget {
 interface RemoveMemberDialogProps {
   target: RemoveMemberTarget | null
   onOpenChange: (isOpen: boolean) => void
-  isPending: boolean
-  onConfirm: () => void
 }
 
-export function RemoveMemberDialog({
-  target,
-  onOpenChange,
-  isPending,
-  onConfirm,
-}: RemoveMemberDialogProps) {
+/** Owns its mutation like the other tree dialogs do; ConfirmDialog itself
+ *  stays a dumb shell, so this wrapper is where mutation becomes props. */
+export function RemoveMemberDialog({ target, onOpenChange }: RemoveMemberDialogProps) {
+  const removeMember = useRemoveMember()
+
+  function onConfirm() {
+    if (!target) return
+    removeMember.mutate({ groupId: target.groupId, memberId: target.member.principalId })
+  }
+
   return (
     <ConfirmDialog
       isOpen={target !== null}
@@ -35,7 +38,12 @@ export function RemoveMemberDialog({
         </p>
       }
       confirmButton={
-        <Button slot="close" variant="danger" isPending={isPending} onPress={onConfirm}>
+        <Button
+          slot="close"
+          variant="danger"
+          isPending={removeMember.isPending}
+          onPress={onConfirm}
+        >
           Remove
         </Button>
       }

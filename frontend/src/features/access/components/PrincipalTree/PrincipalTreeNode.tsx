@@ -1,13 +1,24 @@
 import { Chip } from '@heroui/react'
-import { RotateCcw, User, Users } from 'lucide-react'
+import { FolderClosed, RotateCcw, User, type LucideIcon } from 'lucide-react'
 import { Tree } from '@/shared/components/ui/Tree'
+import { canDelete, canHaveMembers, canJoinGroup } from '../../lib/principal.rules'
 import { PrincipalContextMenu } from './PrincipalContextMenu'
-import type { MoveToGroupTarget } from './MoveToGroupDialog'
-import type { RemoveMemberTarget } from './RemoveMemberDialog'
-import type { Principal } from '../../types/access.type'
+import { usePrincipalTreeContext } from './PrincipalTreeContext'
+import type { Principal, PrincipalType } from '../../types/access.type'
 
-const icon = (principal: Principal) =>
-  principal.type === 'GROUP' ? <Users size={15} /> : <User size={15} />
+/** Row icon per principal type — shape *and* color, because two same-size
+ *  person glyphs in the same tone read as identical at 15px. Groups take the
+ *  accent color the graph also gives them, so both views speak the same
+ *  visual language. Swap an entry here to restyle every row at once. */
+const PRINCIPAL_TYPE_CONFIG: Record<PrincipalType, { icon: LucideIcon; className: string }> = {
+  GROUP: { icon: FolderClosed, className: 'text-accent' },
+  SUBJECT: { icon: User, className: 'text-muted' },
+}
+
+const icon = (principal: Principal) => {
+  const config = PRINCIPAL_TYPE_CONFIG[principal.type]
+  return <config.icon size={15} className={config.className} />
+}
 
 const roleChip = (principal: Principal) =>
   principal.role === 'ADMIN' ? (
@@ -19,56 +30,63 @@ const roleChip = (principal: Principal) =>
 interface PrincipalTreeNodeProps {
   principal: Principal
   path: string[]
-  byId: Map<string, Principal>
-  membership: Record<string, string[]>
   /** The group this row is nested under in *this* render — undefined at the
    *  top level, where there's nothing to remove membership from. */
   parentGroupId?: string
-  selectedId?: string | null
-  onSelect?: (principalId: string) => void
-  onDeleteRequest: (principal: Principal) => void
-  onAddMemberRequest: (group: Principal) => void
-  onMoveToGroupRequest: (target: MoveToGroupTarget) => void
-  onRemoveMemberRequest: (target: RemoveMemberTarget) => void
 }
 
 /** One principal row, recursing into its members. Keyed by path rather than
  *  id — membership is a graph, not a tree, so the same principal may
  *  legitimately render under several parents — and recursion stops when a
  *  principal repeats on the current path so a cycle can't render forever. */
-export function PrincipalTreeNode({
-  principal,
-  path,
-  byId,
-  membership,
-  parentGroupId,
-  selectedId,
-  onSelect,
-  onDeleteRequest,
-  onAddMemberRequest,
-  onMoveToGroupRequest,
-  onRemoveMemberRequest,
-}: PrincipalTreeNodeProps) {
+export function PrincipalTreeNode({ principal, path, parentGroupId }: PrincipalTreeNodeProps) {
+  const {
+    byId,
+    membership,
+    adminCount,
+    selectedId,
+    onSelect,
+    requestDelete,
+    requestAddMember,
+    requestAddToGroup,
+    requestMoveToGroup,
+    requestRemoveMember,
+  } = usePrincipalTreeContext()
+
   const key = path.join('/')
   const childIds = membership[principal.principalId] ?? []
+  // Each menu action is gated by its rule; Delete is the only unconditional
+  // one, so when even it is disallowed (the last admin) nothing would remain
+  // and the menu is not rendered at all. Selecting the row still works, and
+  // credentials live in the side panel.
+  const contextMenu = !canDelete(principal, adminCount) ? undefined : (
+    <PrincipalContextMenu
+      onDelete={() => requestDelete(principal)}
+
+      onAddMember={canHaveMembers(principal) ? () => requestAddMember(principal) : undefined}
+
+      onAddToGroup={canJoinGroup(principal) ? () => requestAddToGroup(principal) : undefined}
+
+      onMoveToGroup={
+        canJoinGroup(principal)
+          ? () => requestMoveToGroup({ principal, fromGroupId: parentGroupId })
+          : undefined
+      }
+
+      onRemoveMember={
+        parentGroupId
+          ? () => requestRemoveMember({ groupId: parentGroupId, member: principal })
+          : undefined
+      }
+    />
+  )
   const row = {
     label: principal.principalId,
     icon: icon(principal),
     trailing: roleChip(principal),
     isSelected: selectedId === principal.principalId,
     onSelect: () => onSelect?.(principal.principalId),
-    contextMenu: (
-      <PrincipalContextMenu
-        onDelete={() => onDeleteRequest(principal)}
-        onAddMember={principal.type === 'GROUP' ? () => onAddMemberRequest(principal) : undefined}
-        onMoveToGroup={() => onMoveToGroupRequest({ principal, fromGroupId: parentGroupId })}
-        onRemoveMember={
-          parentGroupId
-            ? () => onRemoveMemberRequest({ groupId: parentGroupId, member: principal })
-            : undefined
-        }
-      />
-    ),
+    contextMenu,
   }
 
   if (childIds.length === 0) return <Tree.Item key={key} {...row} />
@@ -98,15 +116,7 @@ export function PrincipalTreeNode({
             key={`${key}/${childId}`}
             principal={child}
             path={[...path, childId]}
-            byId={byId}
-            membership={membership}
             parentGroupId={principal.principalId}
-            selectedId={selectedId}
-            onSelect={onSelect}
-            onDeleteRequest={onDeleteRequest}
-            onAddMemberRequest={onAddMemberRequest}
-            onMoveToGroupRequest={onMoveToGroupRequest}
-            onRemoveMemberRequest={onRemoveMemberRequest}
           />
         )
       })}

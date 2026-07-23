@@ -1,21 +1,32 @@
 import { Button } from '@heroui/react'
 import { Trash2 } from 'lucide-react'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
+import { useDeletePrincipal } from '../../hooks/usePrincipalMutations'
 import type { Principal } from '../../types/access.type'
 
 interface DeletePrincipalDialogProps {
   target: Principal | null
   onOpenChange: (isOpen: boolean) => void
-  isPending: boolean
-  onConfirm: () => void
+  /** Fires after the delete succeeds — the owner of the selection needs it to
+   *  drop a selection that now points at nothing. */
+  onDeleted?: (principalId: string) => void
 }
 
 export function DeletePrincipalDialog({
   target,
   onOpenChange,
-  isPending,
-  onConfirm,
+  onDeleted,
 }: DeletePrincipalDialogProps) {
+  const deletePrincipal = useDeletePrincipal()
+
+  function onConfirm() {
+    if (!target) return
+    // Captured before mutating: the dialog closes (clearing target) while the
+    // request is still in flight.
+    const id = target.principalId
+    deletePrincipal.mutate(id, { onSuccess: () => onDeleted?.(id) })
+  }
+
   return (
     <ConfirmDialog
       isOpen={target !== null}
@@ -30,7 +41,12 @@ export function DeletePrincipalDialog({
         </p>
       }
       confirmButton={
-        <Button slot="close" variant="danger" isPending={isPending} onPress={onConfirm}>
+        <Button
+          slot="close"
+          variant="danger"
+          isPending={deletePrincipal.isPending}
+          onPress={onConfirm}
+        >
           Delete
         </Button>
       }

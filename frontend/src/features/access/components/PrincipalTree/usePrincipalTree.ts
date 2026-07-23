@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { usePrincipalGraph } from '../../hooks/usePrincipals'
+import { canHaveMembers, countAdmins } from '../../lib/principal.rules'
 import type { Principal } from '../../types/access.type'
 import type { MoveToGroupTarget } from './MoveToGroupDialog'
 import type { RemoveMemberTarget } from './RemoveMemberDialog'
@@ -7,8 +8,8 @@ import type { RemoveMemberTarget } from './RemoveMemberDialog'
 /** Everything transitively contained in `rootId` (not including it). Making
  *  any of these — or `rootId` itself — a parent of `rootId` closes a
  *  membership cycle, so the move and add-to-group dialogs keep them out of
- *  their target lists. The backend enforces the same rule authoritatively;
- *  this filter is UX, sparing the round trip. */
+ *  their target lists. The same rule is re-checked on submit; this filter is
+ *  UX, sparing the round trip. */
 function descendantsOf(rootId: string, membership: Record<string, string[]>): Set<string> {
   const seen = new Set<string>()
   const queue = [rootId]
@@ -53,7 +54,7 @@ export function usePrincipalTree() {
   const membership = data?.membership ?? {}
 
   const byId = new Map(principals.map((p) => [p.principalId, p]))
-  const adminCount = principals.filter((p) => p.role === 'ADMIN').length
+  const adminCount = countAdmins(principals)
   const hasParent = new Set(Object.values(membership).flat())
   const roots = principals.filter((p) => !hasParent.has(p.principalId))
 
@@ -75,7 +76,7 @@ export function usePrincipalTree() {
     : new Set<string>()
   const addToGroupCandidates = principals.filter(
     (p) =>
-      p.type === 'GROUP' &&
+      canHaveMembers(p) &&
       p.principalId !== addToGroupTarget?.principalId &&
       !addToGroupParents.has(p.principalId) &&
       !addToGroupBlocked.has(p.principalId),
@@ -94,7 +95,7 @@ export function usePrincipalTree() {
     : new Set<string>()
   const moveCandidates = principals.filter(
     (p) =>
-      p.type === 'GROUP' &&
+      canHaveMembers(p) &&
       p.principalId !== moveTarget?.principal.principalId &&
       !moveParents.has(p.principalId) &&
       !moveBlocked.has(p.principalId),

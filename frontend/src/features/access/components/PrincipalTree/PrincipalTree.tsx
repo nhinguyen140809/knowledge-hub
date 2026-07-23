@@ -1,17 +1,16 @@
 import { Skeleton } from '@heroui/react'
 import { Users } from 'lucide-react'
-import { useState } from 'react'
 import { EmptyState } from '@/shared/components/ui/EmptyState'
 import { ErrorState } from '@/shared/components/ui/ErrorState'
 import { Tree } from '@/shared/components/ui/Tree'
 import { AddMemberDialog } from './AddMemberDialog'
+import { AddToGroupDialog } from './AddToGroupDialog'
 import { DeletePrincipalDialog } from './DeletePrincipalDialog'
-import { MoveToGroupDialog, type MoveToGroupTarget } from './MoveToGroupDialog'
+import { MoveToGroupDialog } from './MoveToGroupDialog'
+import { PrincipalTreeContext } from './PrincipalTreeContext'
 import { PrincipalTreeNode } from './PrincipalTreeNode'
-import { RemoveMemberDialog, type RemoveMemberTarget } from './RemoveMemberDialog'
-import { useDeletePrincipal, useRemoveMember } from '../../hooks/usePrincipalMutations'
-import { usePrincipalGraph } from '../../hooks/usePrincipals'
-import type { Principal } from '../../types/access.type'
+import { RemoveMemberDialog } from './RemoveMemberDialog'
+import { usePrincipalTree } from './usePrincipalTree'
 
 interface PrincipalTreeProps {
   selectedId?: string | null
@@ -23,19 +22,13 @@ interface PrincipalTreeProps {
 
 /**
  * The principal hierarchy. Membership is a directed graph, not a tree: groups
- * nest, a principal can belong to several groups, and the backend does not
- * reject cycles.
+ * nest, a principal can belong to several groups. All derivation lives in {@link usePrincipalTree}; this
+ * component only maps each state to pixels.
  */
 export function PrincipalTree({ selectedId, onSelect, onDeleted }: PrincipalTreeProps) {
-  const { data, isPending, isError, error } = usePrincipalGraph()
-  const [deleteTarget, setDeleteTarget] = useState<Principal | null>(null)
-  const [addMemberTarget, setAddMemberTarget] = useState<Principal | null>(null)
-  const [moveTarget, setMoveTarget] = useState<MoveToGroupTarget | null>(null)
-  const [removeMemberTarget, setRemoveMemberTarget] = useState<RemoveMemberTarget | null>(null)
-  const deletePrincipal = useDeletePrincipal()
-  const removeMember = useRemoveMember()
+  const tree = usePrincipalTree()
 
-  if (isPending) {
+  if (tree.isPending) {
     return (
       <div className="flex flex-col gap-2">
         {Array.from({ length: 5 }).map((_, i) => (
@@ -45,95 +38,61 @@ export function PrincipalTree({ selectedId, onSelect, onDeleted }: PrincipalTree
     )
   }
 
-  if (isError) return <ErrorState description={(error as Error).message} />
+  if (tree.isError) return <ErrorState description={(tree.error as Error).message} />
 
-  if (data.principals.length === 0) {
+  if (tree.isEmpty) {
     return <EmptyState icon={<Users size={28} />} description="No principals yet." />
   }
 
-  const byId = new Map(data.principals.map((p) => [p.principalId, p]))
-  const membership = data.membership
-  const hasParent = new Set(Object.values(membership).flat())
-  const roots = data.principals.filter((p) => !hasParent.has(p.principalId))
-
-  // A graph where every principal has a parent (a cycle with no entry point)
-  // would leave no roots; show everything rather than an empty panel.
-  const topLevel = roots.length > 0 ? roots : data.principals
-
-  // Candidates for "add member": every principal except the group itself and
-  // whoever is already a direct member of it.
-  const currentMembers = new Set(
-    addMemberTarget ? (membership[addMemberTarget.principalId] ?? []) : [],
-  )
-  const addMemberCandidates = data.principals.filter(
-    (p) => p.principalId !== addMemberTarget?.principalId && !currentMembers.has(p.principalId),
-  )
-
-  // Candidates for "move to group": every GROUP principal except the one
-  // being moved (can't be its own parent) and its current parent (a no-op).
-  const moveCandidates = data.principals.filter(
-    (p) =>
-      p.type === 'GROUP' &&
-      p.principalId !== moveTarget?.principal.principalId &&
-      p.principalId !== moveTarget?.fromGroupId,
-  )
-
   return (
     <>
-      <Tree>
-        {topLevel.map((p) => (
-          <PrincipalTreeNode
-            key={p.principalId}
-            principal={p}
-            path={[p.principalId]}
-            byId={byId}
-            membership={membership}
-            selectedId={selectedId}
-            onSelect={onSelect}
-            onDeleteRequest={setDeleteTarget}
-            onAddMemberRequest={setAddMemberTarget}
-            onMoveToGroupRequest={setMoveTarget}
-            onRemoveMemberRequest={setRemoveMemberTarget}
-          />
-        ))}
-      </Tree>
+      <PrincipalTreeContext.Provider
+        value={{
+          byId: tree.byId,
+          membership: tree.membership,
+          adminCount: tree.adminCount,
+          selectedId,
+          onSelect,
+          requestDelete: tree.setDeleteTarget,
+          requestAddMember: tree.setAddMemberTarget,
+          requestAddToGroup: tree.setAddToGroupTarget,
+          requestMoveToGroup: tree.setMoveTarget,
+          requestRemoveMember: tree.setRemoveMemberTarget,
+        }}
+      >
+        <Tree>
+          {tree.topLevel.map((p) => (
+            <PrincipalTreeNode key={p.principalId} principal={p} path={[p.principalId]} />
+          ))}
+        </Tree>
+      </PrincipalTreeContext.Provider>
 
       <DeletePrincipalDialog
-        target={deleteTarget}
-        onOpenChange={(isOpen) => !isOpen && setDeleteTarget(null)}
-        isPending={deletePrincipal.isPending}
-        onConfirm={() => {
-          if (!deleteTarget) return
-          // Captured before mutating: the dialog closes (clearing deleteTarget)
-          // while the request is still in flight.
-          const id = deleteTarget.principalId
-          deletePrincipal.mutate(id, { onSuccess: () => onDeleted?.(id) })
-        }}
+        target={tree.deleteTarget}
+        onOpenChange={(isOpen) => !isOpen && tree.setDeleteTarget(null)}
+        onDeleted={onDeleted}
       />
 
       <AddMemberDialog
-        group={addMemberTarget}
-        candidates={addMemberCandidates}
-        onOpenChange={(isOpen) => !isOpen && setAddMemberTarget(null)}
+        group={tree.addMemberTarget}
+        onOpenChange={(isOpen) => !isOpen && tree.setAddMemberTarget(null)}
+      />
+
+      <AddToGroupDialog
+        target={tree.addToGroupTarget}
+        candidates={tree.addToGroupCandidates}
+        onOpenChange={(isOpen) => !isOpen && tree.setAddToGroupTarget(null)}
       />
 
       <MoveToGroupDialog
-        target={moveTarget}
-        candidates={moveCandidates}
-        onOpenChange={(isOpen) => !isOpen && setMoveTarget(null)}
+        target={tree.moveTarget}
+        candidates={tree.moveCandidates}
+        onOpenChange={(isOpen) => !isOpen && tree.setMoveTarget(null)}
       />
 
       <RemoveMemberDialog
-        target={removeMemberTarget}
-        onOpenChange={(isOpen) => !isOpen && setRemoveMemberTarget(null)}
-        isPending={removeMember.isPending}
-        onConfirm={() => {
-          if (!removeMemberTarget) return
-          removeMember.mutate({
-            groupId: removeMemberTarget.groupId,
-            memberId: removeMemberTarget.member.principalId,
-          })
-        }}
+        target={tree.removeMemberTarget}
+        onOpenChange={(isOpen) => !isOpen && tree.setRemoveMemberTarget(null)}
       />
     </>
   )
