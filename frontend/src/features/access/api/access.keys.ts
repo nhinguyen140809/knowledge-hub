@@ -25,11 +25,11 @@ export const accessKeys = {
   credentials: (connectionId: string | undefined, principalId: string) =>
     [...accessKeys.all, 'credentials', connectionId, principalId] as const,
 
-  grants: (connectionId: string | undefined, principalId: string) =>
-    [...accessKeys.all, 'grants', connectionId, principalId] as const,
-
   effectivePermissions: (connectionId: string | undefined, principalId: string) =>
     [...accessKeys.all, 'effective-permissions', connectionId, principalId] as const,
+
+  accessGraph: (connectionId: string | undefined, principalId: string) =>
+    [...accessKeys.all, 'access-graph', connectionId, principalId] as const,
 
   defaultPolicy: (connectionId: string | undefined) =>
     [...accessKeys.all, 'default-policy', connectionId] as const,

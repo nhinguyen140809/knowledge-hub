@@ -5,13 +5,15 @@ import type {
   CreatePrincipalInput,
   EffectivePermissions,
   Principal,
+  PrincipalAccessGraph,
   PrincipalGraph,
 } from '../types/access.type'
 import {
-  mockEffectivePermissions,
   mockMembers,
   mockPrincipalGraph,
   mockPrincipals,
+  mockResolveAccessGraph,
+  mockResolveEffectivePermissions,
 } from './access.mock'
 
 const PRINCIPALS = '/admin/principals'
@@ -78,9 +80,30 @@ export function removeMember(groupId: string, memberId: string): Promise<void> {
   })
 }
 
+/** POST /admin/principals/{memberId}/move — 204. Atomic move between groups;
+ *  `fromGroupId` null when the principal has no current parent (plain add). */
+export function movePrincipal(
+  memberId: string,
+  fromGroupId: string | null,
+  toGroupId: string,
+): Promise<void> {
+  if (isMock) return mockResolve(undefined)
+  return apiFetch<void>(`${PRINCIPALS}/${enc(memberId)}/move`, {
+    method: 'POST',
+    data: { fromGroupId, toGroupId },
+  })
+}
+
 /** GET /admin/principals/{id}/effective-permissions — grants resolved through
  *  group membership and the default policy. */
 export function fetchEffectivePermissions(principalId: string): Promise<EffectivePermissions> {
-  if (isMock) return mockResolve({ ...mockEffectivePermissions, principalId })
+  if (isMock) return mockResolve(mockResolveEffectivePermissions(principalId))
   return apiFetch<EffectivePermissions>(`${PRINCIPALS}/${enc(principalId)}/effective-permissions`)
+}
+
+/** GET /admin/principals/{id}/access-graph — the scoped subgraph explaining
+ *  this principal's access. */
+export function fetchAccessGraph(principalId: string): Promise<PrincipalAccessGraph> {
+  if (isMock) return mockResolve(mockResolveAccessGraph(principalId))
+  return apiFetch<PrincipalAccessGraph>(`${PRINCIPALS}/${enc(principalId)}/access-graph`)
 }

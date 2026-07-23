@@ -43,16 +43,27 @@ export interface IssuedCredential {
   secret: string
 }
 
+/** Where a readable source's access comes from, precedence in this order when
+ *  several apply — a direct grant is the only one revocable from the
+ *  principal's own panel. */
+export type GrantOrigin = 'DIRECT' | 'INHERITED' | 'POLICY'
+
+/** One readable source with its provenance. `via` lists every principal (self
+ *  or group) whose grant reaches it; empty for POLICY. */
+export interface EffectiveSource {
+  sourceId: string
+  origin: GrantOrigin
+  via: string[]
+}
+
 /**
- * A principal's resolved read access. `readableSources` is exactly what the
- * retrieval pre-filter applies; `grantedVia` maps a source id to the principals
- * (self or groups) that grant it.
+ * A principal's resolved read access, one entry per readable source. Mirrors
+ * the effective-permissions response.
  */
 export interface EffectivePermissions {
   principalId: string
   defaultPolicy: DefaultPolicy
-  readableSources: string[]
-  grantedVia: Record<string, string[]>
+  sources: EffectiveSource[]
 }
 
 /** Body of POST /admin/grants and POST /admin/grants/revoke. */
@@ -70,4 +81,30 @@ export interface GrantInput {
 export interface PrincipalGraph {
   principals: Principal[]
   membership: Record<string, string[]>
+}
+
+export type AccessGraphNodeKind = PrincipalType | 'SOURCE'
+
+export interface AccessGraphNode {
+  id: string
+  kind: AccessGraphNodeKind
+}
+
+/** MEMBER runs group → member, GRANT runs principal → source. */
+export interface AccessGraphEdge {
+  from: string
+  to: string
+  kind: 'MEMBER' | 'GRANT'
+}
+
+/**
+ * The subgraph explaining one principal's access, render-ready: the focus
+ * principal, its transitive groups, the sources they reach, and the edges
+ * between them. Mirrors GET /admin/principals/{id}/access-graph. No
+ * positions — layout belongs to the client.
+ */
+export interface PrincipalAccessGraph {
+  focus: string
+  nodes: AccessGraphNode[]
+  edges: AccessGraphEdge[]
 }
