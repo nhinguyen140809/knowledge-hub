@@ -2,8 +2,8 @@ import axios, { type AxiosError, type AxiosRequestConfig } from 'axios'
 import type { ProblemDetail } from '@/shared/types/response.type'
 import { getActiveConnection, useConnectionStore } from '../store/connections.store'
 
-/** Every backend serves its REST API under this prefix (see WebConfig on the
- *  server). Centralised here so callers pass resource paths like '/sources'. */
+/** Every backend serves its REST API under this prefix. Centralised here so
+ *  callers pass resource paths like '/sources'. */
 const API_PREFIX = '/api/v1'
 
 /** A non-2xx response from a backend. `status` is 0 for client-side failures

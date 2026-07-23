@@ -19,8 +19,8 @@ import { useCreateSource } from '../hooks/useSourceMutations'
 import type { SourceType } from '../types/source.type'
 
 /** Lowercase letters, digits and single hyphens between them — the id ends up
- *  in URL paths, and the backend only requires non-blank, so this is enforced
- *  client-side. */
+ *  in URL paths, and nothing beyond non-blank is required elsewhere, so this
+ *  is enforced client-side. */
 const ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
 
 function validateId(value: string): string | null {

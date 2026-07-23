@@ -17,7 +17,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 function Result({ result }: { result: SyncResult }) {
   return (
-    <div className="text-sm font-bold flex gap-4">
+    <div className="flex gap-4 text-sm font-bold">
       <span className="text-success">{result.indexed} indexed</span>
       <span className="text-warning">{result.reindexed} re-indexed</span>
       <span className="text-danger">{result.evicted} evicted</span>

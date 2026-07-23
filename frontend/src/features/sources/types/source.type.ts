@@ -1,7 +1,7 @@
 /** A configured source: a Git repository or a filesystem folder. */
 export type SourceType = 'GIT' | 'FS'
 
-/** Response view of a configured source — mirrors the backend SourceResponse. */
+/** Response view of a configured source. */
 export interface Source {
   id: string
   type: SourceType
