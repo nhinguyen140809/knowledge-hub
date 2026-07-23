@@ -15,7 +15,9 @@ export function AppLayout() {
         <AppSidebar />
         <div className="flex min-w-0 flex-1 flex-col">
           <AppHeader title={findActiveLabel(NAV_ITEMS, pathname) || 'Knowledge Hub'} />
-          <main className="flex-1 overflow-y-auto p-6">
+          {/* Stable gutter: the width never jumps when the scrollbar appears,
+              so overflow-measuring children (tab lists) don't flicker. */}
+          <main className="flex-1 scrollbar-gutter-stable overflow-y-auto p-6">
             {/* Keyed by path so a broken page doesn't stay broken after
                 navigating away — a fresh key remounts with a clean state. */}
             <ErrorBoundary key={pathname}>
