@@ -1,6 +1,6 @@
-import { Button, Input, Label, Modal, TextField } from '@heroui/react'
+import { Button, FieldError, Form, Input, Label, Modal, TextField } from '@heroui/react'
 import { Check, Copy, Plus, TriangleAlert } from 'lucide-react'
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useEffect, useState } from 'react'
 import { useIssueCredential } from '../hooks/useCredentials'
 import type { IssuedCredential } from '../types/access.type'
 
@@ -20,11 +20,12 @@ function IssueForm({ isPending, onSubmit, onCancel }: IssueFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <Form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
       <Modal.Body>
-        <TextField value={name} onChange={setName} isRequired>
+        <TextField value={name} onChange={setName} isRequired variant="secondary">
           <Label>Name</Label>
           <Input placeholder="laptop, ci-pipeline" />
+          <FieldError />
         </TextField>
       </Modal.Body>
       <Modal.Footer>
@@ -35,7 +36,7 @@ function IssueForm({ isPending, onSubmit, onCancel }: IssueFormProps) {
           Issue
         </Button>
       </Modal.Footer>
-    </form>
+    </Form>
   )
 }
 
@@ -44,10 +45,19 @@ interface RevealSecretProps {
   onDone: () => void
 }
 
-/** The "just issued" state: the raw secret, shown exactly once — the backend
- *  never stores it, so this is the only chance to copy it. */
+/** How long the button reads "Copied" before offering to copy again. */
+const COPIED_RESET_MS = 2000
+
+/** The "just issued" state: the raw secret, shown exactly once — it is never
+ *  stored anywhere, so this is the only chance to copy it. */
 function RevealSecret({ credential, onDone }: RevealSecretProps) {
   const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    if (!copied) return
+    const timer = setTimeout(() => setCopied(false), COPIED_RESET_MS)
+    return () => clearTimeout(timer)
+  }, [copied])
 
   async function copySecret() {
     await navigator.clipboard.writeText(credential.secret)
@@ -67,9 +77,7 @@ function RevealSecret({ credential, onDone }: RevealSecretProps) {
         <code className="bg-surface-secondary text-foreground block rounded-lg p-3 text-sm break-all">
           {credential.secret}
         </code>
-        <p className="text-muted text-xs">
-          {credential.name} · {credential.credentialId}
-        </p>
+        <p className="text-muted text-xs">{credential.name}</p>
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onPress={copySecret}>
@@ -83,8 +91,8 @@ function RevealSecret({ credential, onDone }: RevealSecretProps) {
 }
 
 /**
- * Issues a credential. The backend returns the raw secret exactly once and never
- * stores it, so the dialog switches to a "copy it now" state instead of closing
+ * Issues a credential. The raw secret is returned exactly once and never
+ * stored, so the dialog switches to a "copy it now" state instead of closing
  * on success — closing early would lose the only copy that will ever exist.
  */
 export function IssueCredentialDialog({ principalId }: { principalId: string | null }) {
@@ -105,7 +113,7 @@ export function IssueCredentialDialog({ principalId }: { principalId: string | n
 
       <Modal.Backdrop isOpen={isOpen} onOpenChange={(open) => (open ? setOpen(true) : close())}>
         <Modal.Container>
-          <Modal.Dialog className="sm:max-w-[460px]">
+          <Modal.Dialog className="sm:max-w-115">
             <Modal.CloseTrigger />
             <Modal.Header>
               <Modal.Heading className="mb-2">

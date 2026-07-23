@@ -13,6 +13,7 @@ import { Plus } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import { useFormReducer } from '@/shared/hooks/useFormReducer'
 import { useCreatePrincipal } from '../hooks/usePrincipalMutations'
+import { canBeAdmin } from '../lib/principal.rules'
 import type { PrincipalType, Role } from '../types/access.type'
 
 interface FormState {
@@ -49,12 +50,12 @@ export function AddPrincipalDialog() {
         Principal
       </Button>
 
-      <Modal.Backdrop isOpen={isOpen} onOpenChange={setOpen}>
+      <Modal.Backdrop isOpen={isOpen} onOpenChange={(open) => (open ? setOpen(true) : close())}>
         <Modal.Container>
           <Modal.Dialog className="sm:max-w-105">
             <Modal.CloseTrigger />
             <Modal.Header>
-              <Modal.Heading>Add a principal</Modal.Heading>
+              <Modal.Heading className="mb-2">Add a principal</Modal.Heading>
             </Modal.Header>
             <Form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
               <Modal.Body className="flex flex-col gap-4">
@@ -72,7 +73,12 @@ export function AddPrincipalDialog() {
                 <Select
                   placeholder="Select a type"
                   selectedKey={form.type}
-                  onSelectionChange={(key) => setField('type')(key as PrincipalType)}
+                  onSelectionChange={(key) => {
+                    const type = key as PrincipalType
+                    setField('type')(type)
+                    // Pin the role back so the form can't submit a dead combo.
+                    if (!canBeAdmin(type)) setField('role')('MEMBER')
+                  }}
                   variant="secondary"
                 >
                   <Label>Type</Label>
@@ -111,7 +117,11 @@ export function AddPrincipalDialog() {
                         Member
                         <ListBox.ItemIndicator />
                       </ListBox.Item>
-                      <ListBox.Item id="ADMIN" textValue="Admin">
+                      <ListBox.Item
+                        id="ADMIN"
+                        textValue="Admin"
+                        isDisabled={!canBeAdmin(form.type)}
+                      >
                         Admin
                         <ListBox.ItemIndicator />
                       </ListBox.Item>

@@ -79,38 +79,42 @@ function CredentialRow({ credential }: { credential: Credential }) {
 export function PrincipalCredentialsPanel({ principalId }: { principalId: string | null }) {
   const { data, isPending, isError, error } = useCredentials(principalId ?? undefined)
 
+  function content() {
+    if (!principalId) {
+      return (
+        <EmptyState
+          icon={<MousePointerClick size={28} />}
+          description="Select a principal to see its keys"
+        />
+      )
+    }
+    if (isPending) {
+      return (
+        <>
+          <Skeleton className="h-10 w-full rounded" />
+          <Skeleton className="h-10 w-full rounded" />
+        </>
+      )
+    }
+
+    if (isError) return <ErrorState description={(error as Error).message} />
+
+    if (!data || data.length === 0) {
+      return <EmptyState icon={<KeyRound size={28} />} description="No credentials issued" />
+    }
+
+    return data.map((credential) => (
+      <CredentialRow key={credential.credentialId} credential={credential} />
+    ))
+  }
+
   return (
     <Card className="px-6">
       <Card.Header className="flex-row items-center justify-between">
         <Card.Title className="text-accent text-lg font-bold">Credentials</Card.Title>
         <IssueCredentialDialog principalId={principalId} />
       </Card.Header>
-      <Card.Content className="flex flex-col gap-3">
-        {!principalId && (
-          <EmptyState
-            icon={<MousePointerClick size={28} />}
-            description="Select a principal to see its keys"
-          />
-        )}
-
-        {principalId && isPending && (
-          <>
-            <Skeleton className="h-10 w-full rounded" />
-            <Skeleton className="h-10 w-full rounded" />
-          </>
-        )}
-
-        {principalId && isError && <ErrorState description={(error as Error).message} />}
-
-        {principalId && data && data.length === 0 && (
-          <EmptyState icon={<KeyRound size={28} />} description="No credentials issued" />
-        )}
-
-        {principalId &&
-          data?.map((credential) => (
-            <CredentialRow key={credential.credentialId} credential={credential} />
-          ))}
-      </Card.Content>
+      <Card.Content className="flex flex-col gap-3">{content()}</Card.Content>
     </Card>
   )
 }

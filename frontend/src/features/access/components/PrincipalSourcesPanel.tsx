@@ -1,46 +1,28 @@
 import { Button, Card, Chip, Skeleton } from '@heroui/react'
-import { Database, MousePointerClick, X } from 'lucide-react'
+import { Database, MousePointerClick, CircleMinus } from 'lucide-react'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { EmptyState } from '@/shared/components/ui/EmptyState'
 import { ErrorState } from '@/shared/components/ui/ErrorState'
 import { useEffectivePermissions } from '../hooks/usePrincipals'
-import { useDirectGrants, useRevokeSources } from '../hooks/useGrants'
+import { useRevokeSources } from '../hooks/useGrants'
+import type { GrantOrigin } from '../types/access.type'
 import { GrantSourceDialog } from './GrantSourceDialog'
 
-/** A readable source got that way through exactly one of these: a grant to the
- *  principal itself, a grant to a group it belongs to, or the system-wide
- *  default policy being ALLOW. Only the first is revocable from this panel. */
-const GRANT_ORIGIN_CONFIG = {
-  direct: { color: 'default', label: 'direct' },
-  inherited: { color: 'accent', label: 'inherited' },
-  policy: { color: 'warning', label: 'policy' },
-} as const
-
-type GrantOrigin = keyof typeof GRANT_ORIGIN_CONFIG
-
-/** Classifies where a readable source's access comes from. `directSet` holds
- *  the principal's own grants; `grantedVia` maps a source id to the principals
- *  (self or groups) whose grant makes it readable — a source readable only
- *  because of the ALLOW default policy appears in neither. */
-function grantOrigin(
-  sourceId: string,
-  directSet: Set<string>,
-  grantedVia: Record<string, string[]>,
-): GrantOrigin {
-  if (directSet.has(sourceId)) {
-    return 'direct'
-  }
-  if (grantedVia[sourceId]?.length) {
-    return 'inherited'
-  }
-
-  return 'policy'
+/** Each source arrives already tagged with its origin; this only maps the tag
+ *  to a look. Only DIRECT is revocable from this panel. */
+const GRANT_ORIGIN_CONFIG: Record<
+  GrantOrigin,
+  { color: 'default' | 'accent' | 'warning' | 'danger'; label: string }
+> = {
+  DIRECT: { color: 'default', label: 'direct' },
+  INHERITED: { color: 'accent', label: 'inherited' },
+  ADMIN: { color: 'danger', label: 'admin' },
+  POLICY: { color: 'warning', label: 'policy' },
 }
 
-function accessSummary(readableCount: number, inherited: number, defaultPolicy: string): string {
+function accessSummary(readableCount: number, inherited: number): string {
   const parts = [`${readableCount} readable in total`]
   if (inherited > 0) parts.push(`· ${inherited} inherited via groups`)
-  parts.push(`· default policy ${defaultPolicy}`)
   return parts.join(' ')
 }
 
@@ -53,10 +35,10 @@ function RevokeGrantButton({ principalId, sourceId }: { principalId: string; sou
     <ConfirmDialog
       trigger={
         <Button isIconOnly size="sm" variant="ghost" aria-label={`Revoke access to ${sourceId}`}>
-          <X size={14} />
+          <CircleMinus size={14} />
         </Button>
       }
-      icon={<X className="size-5" />}
+      icon={<CircleMinus className="size-5" />}
       heading="Revoke this grant?"
       message={
         <p>
@@ -95,7 +77,7 @@ function GrantRow({
         <Chip size="sm" variant="soft" color={config.color}>
           {config.label}
         </Chip>
-        {origin === 'direct' && <RevokeGrantButton principalId={principalId} sourceId={sourceId} />}
+        {origin === 'DIRECT' && <RevokeGrantButton principalId={principalId} sourceId={sourceId} />}
       </div>
     </div>
   )
@@ -108,20 +90,41 @@ function GrantRow({
  * grant is revoked or the principal leaves the group).
  */
 export function PrincipalSourcesPanel({ principalId }: { principalId: string | null }) {
-  const grants = useDirectGrants(principalId ?? undefined)
-  const permissions = useEffectivePermissions(principalId ?? undefined)
+  const { data, isPending, isError, error } = useEffectivePermissions(principalId ?? undefined)
 
-  const isLoading = grants.isPending || permissions.isPending
-  // Origins depend on both queries; if either failed the chips would be
-  // guesses, so the whole list yields to the error state instead.
-  const isError = grants.isError || permissions.isError
-  const error = grants.error ?? permissions.error
-  const directSet = new Set(grants.data ?? [])
-  const grantedVia = permissions.data?.grantedVia ?? {}
-  const readable = permissions.data?.readableSources ?? []
-  const inherited = readable.filter(
-    (id) => grantOrigin(id, directSet, grantedVia) === 'inherited',
-  ).length
+  const sources = data?.sources ?? []
+  const inherited = sources.filter((s) => s.origin === 'INHERITED').length
+
+  function content() {
+    if (!principalId) {
+      return (
+        <EmptyState
+          icon={<MousePointerClick size={28} />}
+          description="Select a principal to see its access."
+        />
+      )
+    }
+    if (isPending) return <Skeleton className="h-5 w-2/3 rounded" />
+
+    if (isError) return <ErrorState description={(error as Error).message} />
+
+    if (sources.length === 0) {
+      return <EmptyState icon={<Database size={28} />} description="No readable sources." />
+    }
+    return (
+      <>
+        {sources.map((source) => (
+          <GrantRow
+            key={source.sourceId}
+            principalId={principalId}
+            sourceId={source.sourceId}
+            origin={source.origin}
+          />
+        ))}
+        <p className="text-muted mt-1 text-xs">{accessSummary(sources.length, inherited)}</p>
+      </>
+    )
+  }
 
   return (
     <Card className="px-6">
@@ -129,42 +132,7 @@ export function PrincipalSourcesPanel({ principalId }: { principalId: string | n
         <Card.Title className="text-accent text-lg font-bold">Sources</Card.Title>
         <GrantSourceDialog principalId={principalId} />
       </Card.Header>
-      <Card.Content className="flex flex-col gap-2">
-        {!principalId && (
-          <EmptyState
-            icon={<MousePointerClick size={28} />}
-            description="Select a principal to see its access."
-          />
-        )}
-
-        {principalId && isLoading && <Skeleton className="h-5 w-2/3 rounded" />}
-
-        {principalId && !isLoading && isError && (
-          <ErrorState description={(error as Error).message} />
-        )}
-
-        {principalId && !isLoading && !isError && readable.length === 0 && (
-          <EmptyState icon={<Database size={28} />} description="No readable sources." />
-        )}
-
-        {principalId &&
-          !isLoading &&
-          !isError &&
-          readable.map((sourceId) => (
-            <GrantRow
-              key={sourceId}
-              principalId={principalId}
-              sourceId={sourceId}
-              origin={grantOrigin(sourceId, directSet, grantedVia)}
-            />
-          ))}
-
-        {principalId && !isError && permissions.data && (
-          <p className="text-muted mt-1 text-xs">
-            {accessSummary(readable.length, inherited, permissions.data.defaultPolicy)}
-          </p>
-        )}
-      </Card.Content>
+      <Card.Content className="flex flex-col gap-2">{content()}</Card.Content>
     </Card>
   )
 }
