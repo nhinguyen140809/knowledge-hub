@@ -12,6 +12,6 @@ describe('NotFoundPage', () => {
     )
 
     expect(screen.getByText('404')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /trang chủ/i })).toHaveAttribute('href', '/')
+    expect(screen.getByRole('link', { name: /dashboard/i })).toHaveAttribute('href', '/')
   })
 })

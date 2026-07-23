@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { PrincipalGraph } from '@/features/access/types/access.type'
@@ -12,9 +13,17 @@ vi.mock('@/features/access/hooks/usePrincipals', () => ({
 
 const { PrincipalTree } = await import('@/features/access/components/PrincipalTree')
 
+// The tree mounts its action dialogs, which own their mutations (hence a
+// query client); none of these tests open one, but they must be able to
+// render. The data hook itself is stubbed above, so nothing hits the network.
 function renderGraph(graph: PrincipalGraph) {
   graphResult.current = { data: graph, isPending: false, isError: false, error: null }
-  return render(<PrincipalTree />)
+  const queryClient = new QueryClient()
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <PrincipalTree />
+    </QueryClientProvider>,
+  )
 }
 
 describe('PrincipalTree', () => {
