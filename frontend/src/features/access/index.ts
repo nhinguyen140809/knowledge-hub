@@ -1,5 +1,6 @@
 export { AccessPage } from './pages/AccessPage'
 export {
+  useAccessGraph,
   useEffectivePermissions,
   useMembers,
   usePrincipal,
@@ -10,6 +11,7 @@ export {
   useAddMember,
   useCreatePrincipal,
   useDeletePrincipal,
+  useMovePrincipal,
   useRemoveMember,
 } from './hooks/usePrincipalMutations'
 export {
@@ -18,17 +20,23 @@ export {
   useIssueCredential,
   useRevokeCredential,
 } from './hooks/useCredentials'
-export { useDirectGrants, useGrantSources, useRevokeSources } from './hooks/useGrants'
+export { useGrantSources, useRevokeSources } from './hooks/useGrants'
 export { useDefaultPolicy, useSetDefaultPolicy } from './hooks/useDefaultPolicy'
 export { accessKeys } from './api/access.keys'
 export type {
+  AccessGraphEdge,
+  AccessGraphNode,
+  AccessGraphNodeKind,
   CreatePrincipalInput,
   Credential,
   DefaultPolicy,
   EffectivePermissions,
+  EffectiveSource,
   GrantInput,
+  GrantOrigin,
   IssuedCredential,
   Principal,
+  PrincipalAccessGraph,
   PrincipalGraph,
   PrincipalType,
   Role,

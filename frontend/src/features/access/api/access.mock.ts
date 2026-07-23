@@ -1,9 +1,11 @@
+import { mockSources } from '@/features/sources/api/sources.mock'
 import {
   DENY,
   type AccessGraphEdge,
   type AccessGraphNode,
   type Credential,
   type EffectivePermissions,
+  type EffectiveSource,
   type IssuedCredential,
   type Principal,
   type PrincipalAccessGraph,
@@ -93,8 +95,9 @@ function membershipClosure(principalId: string): Set<string> {
   return via
 }
 
-/** Resolves effective permissions the way the backend does: own grants plus
- *  grants of every group reachable through membership, transitively. */
+/** Resolves effective permissions: own grants plus grants of every group
+ *  reachable through membership, transitively — and for an ADMIN, every
+ *  source regardless of grants (role bypasses them). */
 export function mockResolveEffectivePermissions(principalId: string): EffectivePermissions {
   const via = membershipClosure(principalId)
 
@@ -105,17 +108,29 @@ export function mockResolveEffectivePermissions(principalId: string): EffectiveP
     }
   }
 
-  return {
-    principalId,
-    defaultPolicy: DENY,
-    sources: Object.entries(grantedVia).map(([sourceId, viaPrincipals]) => ({
+  const sources: EffectiveSource[] = Object.entries(grantedVia).map(
+    ([sourceId, viaPrincipals]) => ({
       sourceId,
       // POLICY never occurs here: the mock default policy is DENY, so
-      // everything readable got that way through some grant.
-      origin: viaPrincipals.includes(principalId) ? ('DIRECT' as const) : ('INHERITED' as const),
+      // everything readable got that way through some grant (or the ADMIN
+      // rows added below).
+      origin: viaPrincipals.includes(principalId) ? 'DIRECT' : 'INHERITED',
       via: viaPrincipals,
-    })),
+    }),
+  )
+
+  // An admin reads everything; sources it reaches only through its role get
+  // the ADMIN origin, while its real grants above keep theirs (still real,
+  // revocable edges). Mock-to-mock import: both files exist only in mock
+  // mode, and duplicating the source list here would just let them drift.
+  const isAdmin = mockPrincipals.some((p) => p.principalId === principalId && p.role === 'ADMIN')
+  if (isAdmin) {
+    for (const source of mockSources) {
+      if (!grantedVia[source.id]) sources.push({ sourceId: source.id, origin: 'ADMIN', via: [] })
+    }
   }
+
+  return { principalId, defaultPolicy: DENY, sources }
 }
 
 /** The scoped subgraph GET .../access-graph returns: the focus principal, its

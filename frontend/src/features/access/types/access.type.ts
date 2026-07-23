@@ -9,18 +9,22 @@ export type DefaultPolicy = 'DENY' | 'ALLOW'
 export const ALLOW: DefaultPolicy = 'ALLOW'
 export const DENY: DefaultPolicy = 'DENY'
 
-/** JSON view of a principal — mirrors the backend PrincipalResponse. */
+/** JSON view of a principal. */
 export interface Principal {
   principalId: string
   type: PrincipalType
   role: Role
 }
 
-/** Body of POST /admin/principals. */
+/** Body of POST /admin/principals. When `parentGroupId` is set, the principal
+ *  is created directly inside that group in one atomic step — creating and
+ *  linking never half-succeed. Incompatible with role ADMIN (admins stay out
+ *  of the membership graph). */
 export interface CreatePrincipalInput {
   principalId: string
   type: PrincipalType
   role: Role
+  parentGroupId?: string
 }
 
 /** Credential metadata for management/audit. Never carries the secret or hash;
@@ -45,8 +49,10 @@ export interface IssuedCredential {
 
 /** Where a readable source's access comes from, precedence in this order when
  *  several apply — a direct grant is the only one revocable from the
- *  principal's own panel. */
-export type GrantOrigin = 'DIRECT' | 'INHERITED' | 'POLICY'
+ *  principal's own panel. ADMIN marks sources readable purely because the
+ *  principal's role bypasses grants; grant-based origins still win for an
+ *  admin's own grants, since those remain real, revocable edges. */
+export type GrantOrigin = 'DIRECT' | 'INHERITED' | 'ADMIN' | 'POLICY'
 
 /** One readable source with its provenance. `via` lists every principal (self
  *  or group) whose grant reaches it; empty for POLICY. */

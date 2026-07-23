@@ -43,7 +43,8 @@ export function fetchPrincipal(id: string): Promise<Principal> {
   return apiFetch<Principal>(`${PRINCIPALS}/${enc(id)}`)
 }
 
-/** POST /admin/principals — returns the created principal (201). */
+/** POST /admin/principals — returns the created principal (201). With
+ *  `parentGroupId` the principal is created inside that group atomically. */
 export function createPrincipal(input: CreatePrincipalInput): Promise<Principal> {
   if (isMock) return mockResolve(input)
   return apiFetch<Principal>(PRINCIPALS, { method: 'POST', data: input })
@@ -63,7 +64,8 @@ export function fetchMembers(groupId: string): Promise<string[]> {
   return apiFetch<string[]>(`${PRINCIPALS}/${enc(groupId)}/members`)
 }
 
-/** POST /admin/principals/{id}/members — 204. */
+/** POST /admin/principals/{id}/members — 204. Adds one more membership edge;
+ *  the member's other memberships stay (membership is a DAG). */
 export function addMember(groupId: string, memberId: string): Promise<void> {
   if (isMock) return mockResolve(undefined)
   return apiFetch<void>(`${PRINCIPALS}/${enc(groupId)}/members`, {
