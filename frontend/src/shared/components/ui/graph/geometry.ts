@@ -23,30 +23,44 @@ export function getBoundaryIntersection(node: InternalGraphNode, other: Internal
   return { x: w * (a * xx1 + a * yy1) + x2, y: h * (-a * xx1 + a * yy1) + y2 }
 }
 
-/** A quadratic curve bowed a fixed fraction of its own length, always to the
- *  same side of travel — not React Flow's `getBezierPath`, whose control
- *  points are locked to whichever cardinal side (Top/Right/Bottom/Left) the
- *  endpoint is classified as. That lock is what breaks "arrow follows the
- *  body": it forces the curve to enter axis-aligned at the very end no
- *  matter how diagonal the line looks overall, and the arrowhead (correctly)
- *  follows that locked tangent, not the visible line. A curve with no
- *  cardinal lock has no such mismatch — the endpoint tangent stays close to
- *  the straight source→target direction, by an amount `bow` controls. */
+/** How far (px) the S-curve's control points swing off the straight line.
+ *  Grows with edge length but capped, so short edges flex gently and long
+ *  edges don't turn into wild loops. */
+const MAX_BOW = 24
+const BOW_RATIO = 0.18
+
+/** An S-shaped cubic bezier — the same silhouette React Flow's default
+ *  bezier had, minus its flaw. `getBezierPath` locks each control point to
+ *  whichever cardinal side (Top/Right/Bottom/Left) the endpoint is
+ *  classified as, forcing the curve to enter axis-aligned at the very end no
+ *  matter how diagonal the line is overall — and the arrowhead (correctly)
+ *  follows that locked tangent, not the visible line. Here the two control
+ *  points sit at 1/3 and 2/3 of the *actual* source→target line, pushed to
+ *  opposite perpendicular sides: opposite sides are what make the S, and
+ *  because they're anchored to the real line the endpoint tangents deviate
+ *  from it only as far as the bow itself — so the arrowhead always follows
+ *  the body it's drawn on. */
 export function getCurvedPath(sourceX: number, sourceY: number, targetX: number, targetY: number) {
-  const bow = 0.15
   const dx = targetX - sourceX
   const dy = targetY - sourceY
-  // Rotating (dx, dy) by 90° gives (-dy, dx) — a perpendicular offset scaled
-  // to `bow` fraction of the line's own length. A fixed rotation direction
-  // keeps every edge bowing the same way rather than flipping unpredictably
-  // from edge to edge.
-  const controlX = (sourceX + targetX) / 2 - dy * bow
-  const controlY = (sourceY + targetY) / 2 + dx * bow
+  const length = Math.hypot(dx, dy) || 1
+  // Unit perpendicular: rotating the direction (dx, dy) by 90° gives
+  // (-dy, dx). One fixed rotation keeps every edge swinging the same way.
+  const perpX = -dy / length
+  const perpY = dx / length
+  const bow = Math.min(length * BOW_RATIO, MAX_BOW)
+
+  const c1x = sourceX + dx / 3 + perpX * bow
+  const c1y = sourceY + dy / 3 + perpY * bow
+  const c2x = sourceX + (2 * dx) / 3 - perpX * bow
+  const c2y = sourceY + (2 * dy) / 3 - perpY * bow
 
   return {
-    path: `M${sourceX},${sourceY} Q${controlX},${controlY} ${targetX},${targetY}`,
-    // Quadratic bezier position at t=0.5.
-    labelX: 0.25 * sourceX + 0.5 * controlX + 0.25 * targetX,
-    labelY: 0.25 * sourceY + 0.5 * controlY + 0.25 * targetY,
+    path: `M${sourceX},${sourceY} C${c1x},${c1y} ${c2x},${c2y} ${targetX},${targetY}`,
+    // Cubic bezier at t=0.5: (start + 3·c1 + 3·c2 + end) / 8. The opposite
+    // perpendicular offsets cancel there, which parks the label exactly on
+    // the straight midpoint — the calmest spot on an S-curve.
+    labelX: (sourceX + 3 * c1x + 3 * c2x + targetX) / 8,
+    labelY: (sourceY + 3 * c1y + 3 * c2y + targetY) / 8,
   }
 }

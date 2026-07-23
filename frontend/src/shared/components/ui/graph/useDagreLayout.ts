@@ -1,6 +1,7 @@
 import dagre from '@dagrejs/dagre'
-import { Position, type Edge, type Node } from '@xyflow/react'
+import { type Edge, type Node } from '@xyflow/react'
 import { useMemo } from 'react'
+import { handlePositions } from './layout'
 import { VARIANT_NODE_TYPE } from './registry'
 
 /** Assigns every node a position via dagre, plus the node type and
@@ -38,8 +39,7 @@ export function useDagreLayout(
         type: VARIANT_NODE_TYPE,
         // dagre returns the node's centre; React Flow wants its top-left corner.
         position: { x: x - nodeWidth / 2, y: y - nodeHeight / 2 },
-        sourcePosition: direction === 'LR' ? Position.Right : Position.Bottom,
-        targetPosition: direction === 'LR' ? Position.Left : Position.Top,
+        ...handlePositions(direction),
       }
     })
   }, [nodes, edges, direction, nodeWidth, nodeHeight])

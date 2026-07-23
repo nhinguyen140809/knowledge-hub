@@ -1,11 +1,18 @@
 import ELK, { type ElkNode } from 'elkjs/lib/elk.bundled.js'
-import { Position, type Edge, type Node } from '@xyflow/react'
+import { type Edge, type Node } from '@xyflow/react'
 import { useEffect, useState } from 'react'
+import { handlePositions } from './layout'
 import { VARIANT_NODE_TYPE } from './registry'
 
 // A single shared instance — elk.layout() takes an input graph per call, it
 // doesn't need to be recreated per layout pass.
 const elk = new ELK()
+
+/** `layered` ranks nodes into rows/columns along a direction; `force` is a
+ *  physical simulation with no direction at all — connected nodes attract,
+ *  everything else repels, and the graph settles into whatever shape its
+ *  connectivity implies. */
+export type ElkAlgorithm = 'layered' | 'force'
 
 /** Same contract as the old dagre-based layout (nodes in without positions,
  *  positioned nodes out), but elk's `layout()` is asynchronous — it runs off
@@ -19,21 +26,32 @@ export function useElkLayout(
   direction: 'TB' | 'LR',
   nodeWidth: number,
   nodeHeight: number,
+  algorithm: ElkAlgorithm = 'layered',
 ): Node[] {
   const [positioned, setPositioned] = useState<Node[]>([])
 
   useEffect(() => {
     let cancelled = false
 
+    const layoutOptions: Record<string, string> =
+      algorithm === 'force'
+        ? {
+            'elk.algorithm': 'force',
+            // Force treats nodes as points, so the spacing has to account for
+            // the box drawn around each point or boxes overlap.
+            'elk.spacing.nodeNode': '80',
+          }
+        : {
+            'elk.algorithm': 'layered',
+            'elk.direction': direction === 'LR' ? 'RIGHT' : 'DOWN',
+            'elk.spacing.nodeNode': '24',
+            'elk.layered.spacing.nodeNodeBetweenLayers': '56',
+          }
+
     elk
       .layout({
         id: 'root',
-        layoutOptions: {
-          'elk.algorithm': 'layered',
-          'elk.direction': direction === 'LR' ? 'RIGHT' : 'DOWN',
-          'elk.spacing.nodeNode': '24',
-          'elk.layered.spacing.nodeNodeBetweenLayers': '56',
-        },
+        layoutOptions,
         children: nodes.map((node) => ({ id: node.id, width: nodeWidth, height: nodeHeight })),
         edges: edges.map((edge) => ({
           id: edge.id,
@@ -52,8 +70,7 @@ export function useElkLayout(
               ...node,
               type: VARIANT_NODE_TYPE,
               position: { x: placed?.x ?? 0, y: placed?.y ?? 0 },
-              sourcePosition: direction === 'LR' ? Position.Right : Position.Bottom,
-              targetPosition: direction === 'LR' ? Position.Left : Position.Top,
+              ...handlePositions(direction),
             }
           }),
         )
@@ -62,7 +79,7 @@ export function useElkLayout(
     return () => {
       cancelled = true
     }
-  }, [nodes, edges, direction, nodeWidth, nodeHeight])
+  }, [nodes, edges, direction, nodeWidth, nodeHeight, algorithm])
 
   return positioned
 }
