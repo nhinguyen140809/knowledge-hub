@@ -1,5 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { addMember, createPrincipal, deletePrincipal, removeMember } from '../api/principal.api'
+import {
+  addMember,
+  createPrincipal,
+  deletePrincipal,
+  movePrincipal,
+  removeMember,
+} from '../api/principal.api'
 import { accessKeys } from '../api/access.keys'
 import type { CreatePrincipalInput } from '../types/access.type'
 
@@ -40,6 +46,22 @@ export function useRemoveMember() {
   return useMutation({
     mutationFn: ({ groupId, memberId }: { groupId: string; memberId: string }) =>
       removeMember(groupId, memberId),
+    onSuccess: invalidate,
+  })
+}
+
+export function useMovePrincipal() {
+  const invalidate = useInvalidateAccess()
+  return useMutation({
+    mutationFn: ({
+      memberId,
+      fromGroupId,
+      toGroupId,
+    }: {
+      memberId: string
+      fromGroupId: string | null
+      toGroupId: string
+    }) => movePrincipal(memberId, fromGroupId, toGroupId),
     onSuccess: invalidate,
   })
 }
