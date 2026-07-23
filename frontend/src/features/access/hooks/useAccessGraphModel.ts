@@ -39,7 +39,7 @@ function memberEdge(from: string, to: string): Edge {
     target: to,
     // Reads in the arrow's direction: group → "has member" → principal.
     label: 'has member',
-    style: { strokeDasharray: '4 2', stroke: MEMBER_EDGE_COLOR, strokeWidth: 2 },
+    style: { stroke: MEMBER_EDGE_COLOR, strokeWidth: 2 },
     markerEnd: edgeMarker(MEMBER_EDGE_COLOR),
   }
 }
@@ -79,8 +79,8 @@ function sourceNode(id: string): Node {
 /**
  * Nodes and edges for the access graph's hybrid view: with nothing selected,
  * the whole membership graph as an overview; with a principal selected, the
- * backend's scoped access-graph. The backend decides what belongs in the
- * subgraph; this hook only translates its structure into styled elements.
+ * scoped access-graph. The response decides what belongs in the subgraph;
+ * this hook only translates its structure into styled elements.
  */
 export function useAccessGraphModel(selectedId: string | null | undefined) {
   const overview = usePrincipalGraph()
