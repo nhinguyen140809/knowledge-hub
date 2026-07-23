@@ -1,0 +1,51 @@
+import type { Principal, PrincipalType, Role } from '../types/access.type'
+
+/**
+ * The principal business rules in one place. Each export answers one "is this
+ * action allowed?" question; components consume these instead of re-deriving
+ * role logic inline, so a rule change lands in exactly one file. Every rule
+ * is re-validated on submit anyway — these gates only spare a round trip and
+ * keep the UI from offering actions that would be rejected.
+ */
+
+/** Role ADMIN is SUBJECT-only: roles don't inherit through membership, so a
+ *  GROUP with role ADMIN would confer admin on nobody. */
+export function canBeAdmin(type: PrincipalType): boolean {
+  return type === 'SUBJECT'
+}
+
+/** Admins stay out of the membership graph — their access is already total by
+ *  role, so membership edges would only draw misleading "inherited" access.
+ *  Gates add-to-group and move-to-group. */
+export function canJoinGroup(principal: Principal): boolean {
+  return principal.role !== 'ADMIN'
+}
+
+/** Only groups hold members. Gates the "Add member" action and makes every
+ *  dialog's target-group list. */
+export function canHaveMembers(principal: Principal): boolean {
+  return principal.type === 'GROUP'
+}
+
+/** The only legal role for a principal born inside a group: ADMIN can't live
+ *  in a group, and a GROUP can't be ADMIN — the intersection leaves MEMBER. */
+export const ROLE_IN_GROUP: Role = 'MEMBER'
+
+/** A new grant to an admin is dead config (its role already reads every
+ *  source); pre-existing grants stay listed and revocable. Gates the
+ *  "+ Source" button. */
+export function canReceiveGrants(principal: Principal): boolean {
+  return principal.role !== 'ADMIN'
+}
+
+/** Deleting the last admin locks administration out — the bootstrap seeder
+ *  only re-creates one on restart. */
+export function canDelete(principal: Principal, adminCount: number): boolean {
+  return principal.role !== 'ADMIN' || adminCount > 1
+}
+
+/** {@link canDelete}'s other input: the LAST_ADMIN rule is about the
+ *  population, not the row, so the count lives next to the rule it feeds. */
+export function countAdmins(principals: Principal[]): number {
+  return principals.filter((p) => p.role === 'ADMIN').length
+}
