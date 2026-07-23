@@ -1,34 +1,59 @@
-import { Button, Form, Label, ListBox, Modal, Select } from '@heroui/react'
+import {
+  Button,
+  FieldError,
+  Form,
+  Input,
+  Label,
+  ListBox,
+  Modal,
+  Select,
+  TextField,
+} from '@heroui/react'
 import { UserPlus } from 'lucide-react'
-import { type FormEvent, useState } from 'react'
-import { useAddMember } from '../../hooks/usePrincipalMutations'
-import type { Principal } from '../../types/access.type'
+import { type FormEvent } from 'react'
+import { useFormReducer } from '@/shared/hooks/useFormReducer'
+import { useCreatePrincipal } from '../../hooks/usePrincipalMutations'
+import { ROLE_IN_GROUP } from '../../lib/principal.rules'
+import type { Principal, PrincipalType } from '../../types/access.type'
 
 interface AddMemberDialogProps {
   group: Principal | null
-  /** Principals eligible to join — the group itself and its current direct
-   *  members are already excluded by the caller. */
-  candidates: Principal[]
   onOpenChange: (isOpen: boolean) => void
 }
 
-/** Adding a member links two principals that already exist — it never creates
- *  one. That's the other half of "add principal": creating a principal and
- *  putting it in a group are deliberately separate actions. */
-export function AddMemberDialog({ group, candidates, onOpenChange }: AddMemberDialogProps) {
-  const [memberId, setMemberId] = useState<string | null>(null)
-  const addMember = useAddMember()
+interface FormState {
+  principalId: string
+  type: PrincipalType
+}
+
+const EMPTY: FormState = { principalId: '', type: 'SUBJECT' }
+
+/** Creates a brand-new principal born directly inside the group, in one atomic
+ *  step. Putting an *existing* principal into a group is Move-to-group's job.
+ *  No role field: admins stay out of the membership graph, so a principal
+ *  created inside a group is always a MEMBER. */
+export function AddMemberDialog({ group, onOpenChange }: AddMemberDialogProps) {
+  const [form, setField, replace] = useFormReducer(EMPTY)
+  const create = useCreatePrincipal()
 
   function close() {
     onOpenChange(false)
-    setMemberId(null)
-    addMember.reset()
+    replace(EMPTY)
+    create.reset()
   }
 
   function onSubmit(e: FormEvent) {
     e.preventDefault()
-    if (!group || !memberId) return
-    addMember.mutate({ groupId: group.principalId, memberId }, { onSuccess: close })
+    if (!group) return
+    create.mutate(
+      {
+        parentGroupId: group.principalId,
+        principalId: form.principalId.trim(),
+        type: form.type,
+        role: ROLE_IN_GROUP,
+      },
+      { onSuccess: close },
+    )
   }
 
   return (
@@ -40,33 +65,39 @@ export function AddMemberDialog({ group, candidates, onOpenChange }: AddMemberDi
             <Modal.Heading>Add a member to {group?.principalId}</Modal.Heading>
           </Modal.Header>
           <Form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
-            <Modal.Body>
-              <Select
-                placeholder={
-                  candidates.length === 0 ? 'No eligible principals' : 'Select a principal'
-                }
-                selectedKey={memberId}
-                onSelectionChange={(key) => setMemberId(key as string | null)}
-                isDisabled={candidates.length === 0}
+            <Modal.Body className="flex flex-col gap-4">
+              <TextField
+                value={form.principalId}
+                onChange={setField('principalId')}
+                isRequired
                 variant="secondary"
               >
-                <Label>Principal</Label>
+                <Label>Principal id</Label>
+                <Input placeholder="dave, qa-team" />
+                <FieldError />
+              </TextField>
+
+              <Select
+                placeholder="Select a type"
+                selectedKey={form.type}
+                onSelectionChange={(key) => setField('type')(key as PrincipalType)}
+                variant="secondary"
+              >
+                <Label>Type</Label>
                 <Select.Trigger>
                   <Select.Value />
                   <Select.Indicator />
                 </Select.Trigger>
                 <Select.Popover>
                   <ListBox>
-                    {candidates.map((p) => (
-                      <ListBox.Item
-                        key={p.principalId}
-                        id={p.principalId}
-                        textValue={p.principalId}
-                      >
-                        {p.principalId}
-                        <ListBox.ItemIndicator />
-                      </ListBox.Item>
-                    ))}
+                    <ListBox.Item id="SUBJECT" textValue="Subject">
+                      Subject
+                      <ListBox.ItemIndicator />
+                    </ListBox.Item>
+                    <ListBox.Item id="GROUP" textValue="Group">
+                      Group
+                      <ListBox.ItemIndicator />
+                    </ListBox.Item>
                   </ListBox>
                 </Select.Popover>
               </Select>
@@ -75,7 +106,7 @@ export function AddMemberDialog({ group, candidates, onOpenChange }: AddMemberDi
               <Button variant="tertiary" onPress={close}>
                 Cancel
               </Button>
-              <Button type="submit" isPending={addMember.isPending} isDisabled={!memberId}>
+              <Button type="submit" isPending={create.isPending}>
                 <UserPlus size={16} />
                 Add
               </Button>
