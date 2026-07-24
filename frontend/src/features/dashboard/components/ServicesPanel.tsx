@@ -22,14 +22,14 @@ export function ServicesPanel() {
     if (isError) return <ErrorState description={(error as Error).message} />
 
     return data.map((dep) => (
-      <Chip key={dep.name} size="sm" variant="soft" color={STATE_COLOR[dep.status]}>
+      <Chip key={dep.name} size="md" variant="soft" color={STATE_COLOR[dep.status]}>
         {dep.name} {dep.status}
       </Chip>
     ))
   }
 
   return (
-    <Card className="px-6">
+    <Card className="px-6" variant="transparent">
       <Card.Header>
         <Card.Title className="text-accent text-lg font-bold">Services</Card.Title>
       </Card.Header>

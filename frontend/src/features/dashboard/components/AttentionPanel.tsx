@@ -58,7 +58,7 @@ export function AttentionPanel() {
   }
 
   return (
-    <Card>
+    <Card className="px-6">
       <Card.Header>
         <Card.Title className="text-accent text-lg font-bold">Attention</Card.Title>
       </Card.Header>

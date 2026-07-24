@@ -44,11 +44,11 @@ export function SystemInfoPanel() {
   }
 
   return (
-    <Card>
+    <Card className="px-6" variant="transparent">
       <Card.Header className="flex-row items-center justify-between">
-        <Card.Title>Runtime</Card.Title>
+        <Card.Title className="text-accent text-lg font-bold">Runtime</Card.Title>
         {health && (
-          <Chip color={health.tone} variant="soft" size="sm">
+          <Chip color={health.tone} variant="soft" size="md">
             {health.label}
           </Chip>
         )}

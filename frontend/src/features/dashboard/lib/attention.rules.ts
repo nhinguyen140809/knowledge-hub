@@ -40,7 +40,7 @@ const dependencyDown: AttentionRule = ({ dependencies }) => {
     tone: 'danger',
     message:
       down.length === 1
-        ? `${names} is unreachable`
+        ? `${names} service is unreachable`
         : `${down.length} services are unreachable (${names})`,
   }
 }
