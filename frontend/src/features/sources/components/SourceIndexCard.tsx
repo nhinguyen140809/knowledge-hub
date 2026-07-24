@@ -17,12 +17,21 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 function Result({ result }: { result: SyncResult }) {
   return (
-    <div className="flex gap-4 text-sm font-bold">
-      <span className="text-success">{result.indexed} indexed</span>
-      <span className="text-warning">{result.reindexed} re-indexed</span>
-      <span className="text-danger">{result.evicted} evicted</span>
-      <span className="text-muted">{result.skipped} skipped</span>
-      <span className="text-success">{result.durationMs}ms</span>
+    <div className="flex flex-col gap-1">
+      <div className="flex flex-wrap gap-4 text-sm font-bold">
+        <span className="text-success">{result.indexed} indexed</span>
+        <span className="text-warning">{result.reindexed} re-indexed</span>
+        <span className="text-danger">{result.evicted} evicted</span>
+        <span className="text-muted">{result.skipped} skipped</span>
+        {/* Commit fields only apply to a git source; toCommit is null for FS. */}
+        {result.toCommit && <span className="text-accent">{result.commitsIndexed} commits</span>}
+        <span className="text-muted">{result.durationMs}ms</span>
+      </div>
+      {result.toCommit && (
+        <span className="text-muted text-xs font-normal">
+          synced to {result.toCommit.slice(0, 10)}
+        </span>
+      )}
     </div>
   )
 }
@@ -37,7 +46,7 @@ export function SourceIndexCard({ sourceId }: { sourceId: string }) {
     if (isPending) return <Skeleton className="h-4 w-2/3 rounded" />
 
     if (!data) return null
-    
+
     if (!data.indexed) return <p className="text-muted text-sm">Never synced</p>
     return (
       <>
