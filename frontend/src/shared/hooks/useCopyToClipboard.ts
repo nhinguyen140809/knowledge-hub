@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 
+/** The bare clipboard write, for the fire-and-forget case with no UI feedback
+ *  (a menu action that closes on click). Callers that want a "Copied" flash
+ *  should use {@link useCopyToClipboard} instead. */
+export function copyText(text: string): Promise<void> {
+  return navigator.clipboard.writeText(text)
+}
+
 /** How long `copied` stays true after a successful write before reverting, so a
  *  button can flash "Copied" and then offer to copy again on its own. */
 const COPIED_RESET_MS = 1500
@@ -20,7 +27,7 @@ export function useCopyToClipboard() {
   }, [copied])
 
   const copy = useCallback(async (text: string) => {
-    await navigator.clipboard.writeText(text)
+    await copyText(text)
     setCopied(true)
   }, [])
 

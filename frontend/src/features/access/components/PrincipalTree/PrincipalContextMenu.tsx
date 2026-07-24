@@ -1,7 +1,8 @@
 import { Dropdown, Label } from '@heroui/react'
-import { FolderInput, FolderPlus, Trash2, UserMinus, UserPlus } from 'lucide-react'
+import { ClipboardCopy, FolderInput, FolderPlus, Trash2, UserMinus, UserPlus } from 'lucide-react'
 
 interface PrincipalContextMenuProps {
+  onCopyId?: () => void
   onDelete?: () => void
   onAddMember?: () => void
   onAddToGroup?: () => void
@@ -16,6 +17,7 @@ interface PrincipalContextMenuProps {
  *  groups can both be members; admins stay out of groups since their access
  *  is total by role). All are omitted rather than shown and left to fail. */
 export function PrincipalContextMenu({
+  onCopyId,
   onDelete,
   onAddMember,
   onAddToGroup,
@@ -25,6 +27,7 @@ export function PrincipalContextMenu({
   return (
     <Dropdown.Menu
       onAction={(key) => {
+        if (key === 'copy-id') onCopyId?.()
         if (key === 'delete') onDelete?.()
         if (key === 'add-member') onAddMember?.()
         if (key === 'add-to-group') onAddToGroup?.()
@@ -32,6 +35,12 @@ export function PrincipalContextMenu({
         if (key === 'remove-member') onRemoveMember?.()
       }}
     >
+      {onCopyId && (
+        <Dropdown.Item id="copy-id" textValue="Copy ID">
+          <ClipboardCopy size={14} />
+          <Label>Copy ID</Label>
+        </Dropdown.Item>
+      )}
       {onAddMember && (
         <Dropdown.Item id="add-member" textValue="Add member">
           <UserPlus size={14} />

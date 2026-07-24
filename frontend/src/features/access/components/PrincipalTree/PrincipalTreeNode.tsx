@@ -1,6 +1,7 @@
 import { Chip } from '@heroui/react'
 import { FolderClosed, RotateCcw, User, type LucideIcon } from 'lucide-react'
 import { Tree } from '@/shared/components/ui/Tree'
+import { copyText } from '@/shared/hooks/useCopyToClipboard'
 import { canDelete, canHaveMembers, canJoinGroup } from '../../lib/principal.rules'
 import { PrincipalContextMenu } from './PrincipalContextMenu'
 import { usePrincipalTreeContext } from './PrincipalTreeContext'
@@ -55,13 +56,14 @@ export function PrincipalTreeNode({ principal, path, parentGroupId }: PrincipalT
 
   const key = path.join('/')
   const childIds = membership[principal.principalId] ?? []
-  // Each menu action is gated by its rule; Delete is the only unconditional
-  // one, so when even it is disallowed (the last admin) nothing would remain
-  // and the menu is not rendered at all. Selecting the row still works, and
-  // credentials live in the side panel.
-  const contextMenu = !canDelete(principal, adminCount) ? undefined : (
+  // Each menu action is gated by its own rule. Copy id always applies, so the
+  // menu always renders — even the last admin, whose every mutating action is
+  // disallowed, can still copy its id.
+  const contextMenu = (
     <PrincipalContextMenu
-      onDelete={() => requestDelete(principal)}
+      onCopyId={() => void copyText(principal.principalId)}
+
+      onDelete={canDelete(principal, adminCount) ? () => requestDelete(principal) : undefined}
 
       onAddMember={canHaveMembers(principal) ? () => requestAddMember(principal) : undefined}
 
