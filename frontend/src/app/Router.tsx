@@ -4,8 +4,8 @@ import { AccessPage } from '../features/access'
 import { DashboardPage } from '../features/dashboard'
 import { QueryPage } from '../features/query'
 import { SourceDetailPage, SourcesPage } from '../features/sources'
-import { AppLayout } from '../shared/components/layout/AppLayout'
 import { NotFoundPage } from '../shared/components/NotFoundPage'
+import { AuthenticatedApp } from './AuthenticatedApp'
 
 const router = createBrowserRouter([
   // Public: reachable without an active backend connection.
@@ -14,7 +14,7 @@ const router = createBrowserRouter([
   {
     element: (
       <PrivateRoute>
-        <AppLayout />
+        <AuthenticatedApp />
       </PrivateRoute>
     ),
     children: [
