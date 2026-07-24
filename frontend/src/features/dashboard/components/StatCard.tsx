@@ -21,7 +21,7 @@ export function StatCard({ label, value, icon, isLoading = false }: StatCardProp
             {icon}
           </div>
         )}
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
           {isLoading ? (
             <Skeleton className="h-7 w-10 rounded" />
           ) : (
