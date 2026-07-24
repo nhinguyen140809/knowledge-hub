@@ -42,7 +42,7 @@ export function SystemInfoPanel() {
         {isError && <ErrorState description={(error as Error).message} />}
         {data && (
           <>
-            <Row label="Product">{data.application}</Row>
+            <Row label="Product">{data.productName}</Row>
             <Row label="Version">{data.version}</Row>
             <Row label="Profiles">{data.activeProfiles.join(', ') || NO_VALUE}</Row>
             <Row label="Last update">{formatTimestamp(dataUpdatedAt)}</Row>

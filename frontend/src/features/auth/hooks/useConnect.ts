@@ -12,7 +12,7 @@ export interface ConnectInput {
 /**
  * Connecting is the app's login: validate the credentials against the backend,
  * and only store them once the backend has accepted them. The label falls back
- * to the application name the backend reports, so an unnamed connection still
+ * to the product name the backend reports, so an unnamed connection still
  * reads sensibly in the switcher.
  */
 export function useConnect() {
@@ -24,7 +24,7 @@ export function useConnect() {
       validateConnection(baseUrl.trim(), apiKey.trim()),
     onSuccess: (info, { label, baseUrl, apiKey }) => {
       addConnection({
-        label: label.trim() || info.application,
+        label: label.trim() || info.productName,
         baseUrl: baseUrl.trim(),
         apiKey: apiKey.trim(),
       })
