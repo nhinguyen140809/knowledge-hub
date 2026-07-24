@@ -13,7 +13,9 @@ export interface HealthStatus {
  * "healthy" means is a product policy with several defensible answers, so it
  * lives in one hook rather than being scattered through the UI.
  */
-const NON_PROD_PROFILES = ['dev', 'test', 'local', 'staging']
+/** Spring profiles that mean "not the real deployment" — shared with the
+ *  attention rules so the two can't drift apart. */
+export const NON_PROD_PROFILES = ['dev', 'test', 'local', 'staging']
 
 export function deriveHealthStatus(info: SystemInfo): HealthStatus {
   // Reachability is already proven (only called with data), so these are the
