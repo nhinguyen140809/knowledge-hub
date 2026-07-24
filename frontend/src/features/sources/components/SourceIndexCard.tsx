@@ -33,6 +33,25 @@ export function SourceIndexCard({ sourceId }: { sourceId: string }) {
   const { data, isPending } = useSourceStatus(sourceId)
   const [result, setResult] = useState<SyncResult | null>(null)
 
+  function statusContent() {
+    if (isPending) return <Skeleton className="h-4 w-2/3 rounded" />
+
+    if (!data) return null
+    
+    if (!data.indexed) return <p className="text-muted text-sm">Never synced</p>
+    return (
+      <>
+        <Row label="Last update">{formatTimestamp(new Date(data.indexedAt!))}</Row>
+        <Row label="Ref">
+          <span>{data.ref ?? NO_VALUE}</span>
+        </Row>
+        <Row label="Commit">
+          <span>{data.commitSha?.slice(0, 10) ?? NO_VALUE}</span>
+        </Row>
+      </>
+    )
+  }
+
   return (
     <Card className="p-6">
       <Card.Header className="flex-row items-start justify-between">
@@ -40,23 +59,7 @@ export function SourceIndexCard({ sourceId }: { sourceId: string }) {
         <SyncSourceButton sourceId={sourceId} onSynced={setResult} />
       </Card.Header>
       <Card.Content className="flex flex-col gap-3">
-        {isPending && <Skeleton className="h-4 w-2/3 rounded" />}
-
-        {data && !data.indexed && <p className="text-muted text-sm">Never synced</p>}
-
-        {data?.indexed && (
-          <>
-            <Row label="Last update">{formatTimestamp(new Date(data.indexedAt!))}</Row>
-
-            <Row label="Ref">
-              <span>{data.ref ?? NO_VALUE}</span>
-            </Row>
-
-            <Row label="Commit">
-              <span>{data.commitSha?.slice(0, 10) ?? NO_VALUE}</span>
-            </Row>
-          </>
-        )}
+        {statusContent()}
 
         {result && (
           <div className="flex flex-wrap items-center gap-2 border-t pt-3">

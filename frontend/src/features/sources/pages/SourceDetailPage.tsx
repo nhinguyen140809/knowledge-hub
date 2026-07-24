@@ -18,6 +18,23 @@ export function SourceDetailPage() {
   const navigate = useNavigate()
   const { data, isPending, isError, error } = useSource(id)
 
+  function content() {
+    if (isPending) return <Skeleton className="h-40 w-full rounded-2xl" />
+
+    if (isError) return <ErrorState description={(error as Error).message} />
+    
+    if (!data) return null
+    return (
+      <div className="flex flex-col gap-4">
+        <SourceSummaryCard source={data} />
+        <div className="grid gap-4 lg:grid-cols-2">
+          {id && <SourceIndexCard key={id} sourceId={id} />}
+          <SourceGlobsCard source={data} />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-4">
@@ -37,19 +54,7 @@ export function SourceDetailPage() {
         )}
       </div>
 
-      {isPending && <Skeleton className="h-40 w-full rounded-2xl" />}
-
-      {isError && <ErrorState description={(error as Error).message} />}
-
-      {data && (
-        <div className="flex flex-col gap-4">
-          <SourceSummaryCard source={data} />
-          <div className="grid gap-4 lg:grid-cols-2">
-            {id && <SourceIndexCard key={id} sourceId={id} />}
-            <SourceGlobsCard source={data} />
-          </div>
-        </div>
-      )}
+      {content()}
     </div>
   )
 }
