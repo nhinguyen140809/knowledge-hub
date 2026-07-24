@@ -22,7 +22,7 @@ export function SourceDetailPage() {
     if (isPending) return <Skeleton className="h-40 w-full rounded-2xl" />
 
     if (isError) return <ErrorState description={(error as Error).message} />
-    
+
     if (!data) return null
     return (
       <div className="flex flex-col gap-4">

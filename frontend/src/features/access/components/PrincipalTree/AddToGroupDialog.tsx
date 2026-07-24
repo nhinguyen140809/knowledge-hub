@@ -42,7 +42,7 @@ export function AddToGroupDialog({ target, candidates, onOpenChange }: AddToGrou
           </Modal.Header>
           <Form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
             <Modal.Body className="flex flex-col gap-3">
-              <p className="text-muted text-xs">Its current memberships are kept.</p>
+              <p className="text-muted text-xs">Its current memberships are kept</p>
               <Select
                 placeholder={candidates.length === 0 ? 'No eligible groups' : 'Select a group'}
                 selectedKey={groupId}

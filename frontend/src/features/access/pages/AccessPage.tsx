@@ -57,7 +57,6 @@ export function AccessPage() {
         <Card.Header className="flex-row items-start justify-between">
           <div>
             <Card.Title className="text-accent text-lg font-bold">Principals</Card.Title>
-            <Card.Description>{principalsCaption}</Card.Description>
           </div>
           <AddPrincipalDialog />
         </Card.Header>
@@ -72,6 +71,7 @@ export function AccessPage() {
               onDeleted={(id) => id === selectedId && setSelectedId(null)}
             />
           </ScrollShadow>
+          <p className="text-muted text-xs">{principalsCaption}</p>
         </Card.Content>
       </Card>
 

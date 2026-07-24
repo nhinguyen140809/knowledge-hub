@@ -45,7 +45,7 @@ export function SourcesPage() {
         </div>
       </div>
 
-      {summary && <p className="text-muted -mt-4 shrink-0 text-sm">{summary}</p>}
+      {summary && <p className="text-muted -mt-2 shrink-0 text-xs">{summary}</p>}
 
       {/* offset absorbs the subpixel gap between scrollTop and scrollHeight on
           scaled displays, otherwise the bottom shadow never clears at the end. */}

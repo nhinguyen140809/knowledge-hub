@@ -101,7 +101,7 @@ export function PrincipalSourcesPanel({ principalId }: { principalId: string | n
       return (
         <EmptyState
           icon={<MousePointerClick size={28} />}
-          description="Select a principal to see its access."
+          description="Select a principal to see its access"
         />
       )
     }
@@ -110,7 +110,7 @@ export function PrincipalSourcesPanel({ principalId }: { principalId: string | n
     if (isError) return <ErrorState description={(error as Error).message} />
 
     if (sources.length === 0) {
-      return <EmptyState icon={<Database size={28} />} description="No readable sources." />
+      return <EmptyState icon={<Database size={28} />} description="No readable sources" />
     }
     return (
       <>
