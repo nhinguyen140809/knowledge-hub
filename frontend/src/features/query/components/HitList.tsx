@@ -2,6 +2,7 @@ import { Card, Chip, Skeleton } from '@heroui/react'
 import { ChevronRight, Search, SearchX } from 'lucide-react'
 import { Fragment } from 'react'
 import { EmptyState } from '@/shared/components/ui/EmptyState'
+import { SUMMARY_SEP } from '@/shared/constants'
 import { formatTimestamp } from '@/shared/lib/datetime.utils'
 import type { Hit } from '../types/query.type'
 
@@ -13,11 +14,12 @@ function lineRange(hit: Hit): string | null {
 
 function hitDescription(hit: Hit): string {
   const { sourceId, ref, commitSha, indexedAt } = hit.metadata
-  const parts = [sourceId]
-  if (ref) parts.push(`@ ${ref}`)
-  if (commitSha) parts.push(`· ${commitSha.slice(0, 8)}`)
-  if (indexedAt) parts.push(`· indexed ${formatTimestamp(new Date(indexedAt))}`)
-  return parts.join(' ')
+  // sourceId and its ref read as one unit ("repo @ main"); the commit and
+  // index time are separate facets
+  const parts = [ref ? `${sourceId} @ ${ref}` : sourceId]
+  if (commitSha) parts.push(commitSha.slice(0, 8))
+  if (indexedAt) parts.push(`indexed ${formatTimestamp(new Date(indexedAt))}`)
+  return parts.join(SUMMARY_SEP)
 }
 
 /** The graph traversal that reached this hit, as a breadcrumb trail — null

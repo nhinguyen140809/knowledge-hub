@@ -3,6 +3,7 @@ import { Ban, KeyRound, MousePointerClick } from 'lucide-react'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { EmptyState } from '@/shared/components/ui/EmptyState'
 import { ErrorState } from '@/shared/components/ui/ErrorState'
+import { SUMMARY_SEP } from '@/shared/constants'
 import { formatTimestamp } from '@/shared/lib/datetime.utils'
 import { useCredentials, useRevokeCredential } from '../hooks/useCredentials'
 import type { Credential } from '../types/access.type'
@@ -18,7 +19,7 @@ function credentialSummary(credential: Credential): string {
   const lastUsed = credential.lastUsedAt
     ? `last used ${formatTimestamp(new Date(credential.lastUsedAt))}`
     : 'never used'
-  return `${created} · ${lastUsed}`
+  return `${created}${SUMMARY_SEP}${lastUsed}`
 }
 
 /** Revoking is a soft-delete that immediately breaks whatever is using the key,

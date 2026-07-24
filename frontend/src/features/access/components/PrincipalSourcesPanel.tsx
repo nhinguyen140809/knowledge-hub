@@ -3,6 +3,7 @@ import { Database, MousePointerClick, CircleMinus } from 'lucide-react'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { EmptyState } from '@/shared/components/ui/EmptyState'
 import { ErrorState } from '@/shared/components/ui/ErrorState'
+import { SUMMARY_SEP } from '@/shared/constants'
 import { useEffectivePermissions } from '../hooks/usePrincipals'
 import { useRevokeSources } from '../hooks/useGrants'
 import type { GrantOrigin } from '../types/access.type'
@@ -22,8 +23,8 @@ const GRANT_ORIGIN_CONFIG: Record<
 
 function accessSummary(readableCount: number, inherited: number): string {
   const parts = [`${readableCount} readable in total`]
-  if (inherited > 0) parts.push(`· ${inherited} inherited via groups`)
-  return parts.join(' ')
+  if (inherited > 0) parts.push(`${inherited} inherited via groups`)
+  return parts.join(SUMMARY_SEP)
 }
 
 /** Revoking a direct grant removes read access immediately, so it goes
