@@ -49,3 +49,19 @@ export function canDelete(principal: Principal, adminCount: number): boolean {
 export function countAdmins(principals: Principal[]): number {
   return principals.filter((p) => p.role === 'ADMIN').length
 }
+
+/** Headline breakdown of the principal population for the section summary.
+ *  `groups` and `admins` are overlapping subsets of `total` (a group can't be
+ *  an admin, but both are counted against the whole), chosen because neither
+ *  is obvious from scanning the tree the way the total is. */
+export function summarizePrincipals(principals: Principal[]): {
+  total: number
+  groups: number
+  admins: number
+} {
+  return {
+    total: principals.length,
+    groups: principals.filter(canHaveMembers).length,
+    admins: countAdmins(principals),
+  }
+}

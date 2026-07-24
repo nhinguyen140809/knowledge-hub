@@ -1,11 +1,14 @@
 import { Card, ScrollShadow, Skeleton, Tabs } from '@heroui/react'
 import { lazy, Suspense, useState } from 'react'
 import { useSetHeaderActions } from '@/lib/store/header.store'
+import { SUMMARY_SEP } from '@/shared/constants'
 import { AddPrincipalDialog } from '../components/AddPrincipalDialog'
 import { DefaultPolicyToggle } from '../components/DefaultPolicyToggle'
 import { PrincipalCredentialsPanel } from '../components/PrincipalCredentialsPanel'
 import { PrincipalSourcesPanel } from '../components/PrincipalSourcesPanel'
 import { PrincipalTree } from '../components/PrincipalTree'
+import { usePrincipalGraph } from '../hooks/usePrincipals'
+import { summarizePrincipals } from '../lib/principal.rules'
 
 // React Flow and its layout engine are the heaviest thing the app pulls in, and
 // this tab is closed by default — load them the first time it is opened.
@@ -31,6 +34,17 @@ export function AccessPage() {
   // the app header next to the title while this page is mounted.
   useSetHeaderActions(<DefaultPolicyToggle />)
 
+  // Cached — the tree renders from this same query, so reading it here is free.
+  // A live breakdown replaces the static "Groups and subjects" caption once
+  // data lands; the counts (groups, admins) aren't obvious from the tree alone.
+  const graph = usePrincipalGraph()
+  const summary = graph.data ? summarizePrincipals(graph.data.principals) : null
+  const principalsCaption = summary
+    ? [`${summary.total} principals`, `${summary.groups} groups`, `${summary.admins} admins`].join(
+        SUMMARY_SEP,
+      )
+    : 'Groups and subjects'
+
   // From lg up the page fills the main area and each pane scrolls on its own
   // (tree, details, graph) — the graph takes all remaining height instead of
   // a fixed box. Below lg everything stacks and the page scrolls as one.
@@ -43,7 +57,7 @@ export function AccessPage() {
         <Card.Header className="flex-row items-start justify-between">
           <div>
             <Card.Title className="text-accent text-lg font-bold">Principals</Card.Title>
-            <Card.Description>Groups and subjects</Card.Description>
+            <Card.Description>{principalsCaption}</Card.Description>
           </div>
           <AddPrincipalDialog />
         </Card.Header>
