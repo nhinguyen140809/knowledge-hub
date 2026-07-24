@@ -29,8 +29,6 @@ export function QueryPage() {
         )}
       </div>
 
-      {/* offset absorbs the subpixel gap between scrollTop and scrollHeight on
-          scaled displays, otherwise the bottom shadow never clears at the end. */}
       <ScrollShadow className="min-h-0 flex-1" offset={2}>
         <HitList hits={data?.hits} isPending={!!submitted && isPending} hasSearched={!!submitted} />
       </ScrollShadow>
