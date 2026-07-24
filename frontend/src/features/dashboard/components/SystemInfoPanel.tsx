@@ -21,6 +21,28 @@ export function SystemInfoPanel() {
   const { data, isPending, isError, error, dataUpdatedAt } = useSystemInfo()
   const health = data ? deriveHealthStatus(data) : null
 
+  function content() {
+    if (isPending) {
+      return (
+        <div className="flex flex-col gap-3">
+          <Skeleton className="h-4 w-2/3 rounded" />
+          <Skeleton className="h-4 w-1/2 rounded" />
+          <Skeleton className="h-4 w-3/5 rounded" />
+        </div>
+      )
+    }
+    if (isError) return <ErrorState description={(error as Error).message} />
+    if (!data) return null
+    return (
+      <>
+        <Row label="Product">{data.productName}</Row>
+        <Row label="Version">{data.version}</Row>
+        <Row label="Profiles">{data.activeProfiles.join(', ') || NO_VALUE}</Row>
+        <Row label="Last update">{formatTimestamp(dataUpdatedAt)}</Row>
+      </>
+    )
+  }
+
   return (
     <Card>
       <Card.Header className="flex-row items-center justify-between">
@@ -31,24 +53,7 @@ export function SystemInfoPanel() {
           </Chip>
         )}
       </Card.Header>
-      <Card.Content className="flex flex-col gap-3">
-        {isPending && (
-          <div className="flex flex-col gap-3">
-            <Skeleton className="h-4 w-2/3 rounded" />
-            <Skeleton className="h-4 w-1/2 rounded" />
-            <Skeleton className="h-4 w-3/5 rounded" />
-          </div>
-        )}
-        {isError && <ErrorState description={(error as Error).message} />}
-        {data && (
-          <>
-            <Row label="Product">{data.productName}</Row>
-            <Row label="Version">{data.version}</Row>
-            <Row label="Profiles">{data.activeProfiles.join(', ') || NO_VALUE}</Row>
-            <Row label="Last update">{formatTimestamp(dataUpdatedAt)}</Row>
-          </>
-        )}
-      </Card.Content>
+      <Card.Content className="flex flex-col gap-3">{content()}</Card.Content>
     </Card>
   )
 }
