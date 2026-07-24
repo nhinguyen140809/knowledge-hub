@@ -4,6 +4,7 @@ import type { SystemInfo } from '@/shared/types/system.type'
 
 const info = (over: Partial<SystemInfo> = {}): SystemInfo => ({
   application: 'knowledge-hub',
+  productName: 'Knowledge Hub',
   version: '1.0.0',
   activeProfiles: ['prod'],
   ...over,
