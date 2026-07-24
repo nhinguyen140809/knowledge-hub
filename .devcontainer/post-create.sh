@@ -16,6 +16,9 @@ if ! command -v claude >/dev/null 2>&1; then
   npm install -g @anthropic-ai/claude-code
 fi
 
+echo "==> Enabling pnpm (package manager for frontend/) via corepack"
+corepack enable pnpm 2>/dev/null || npm install -g pnpm
+
 echo "==> Installing d2 (diagram renderer) (if missing)"
 if ! command -v d2 >/dev/null 2>&1; then
   curl -fsSL https://d2lang.com/install.sh | sh -s --
@@ -55,5 +58,29 @@ fi
 
 echo "==> Warming the Maven dependency cache (offline resolve)"
 ./mvnw -B -q -DskipTests dependency:go-offline || true
+
+# --- Frontend deps: install once so a fresh Codespace is ready to `pnpm dev` ---
+if [ -f frontend/package.json ]; then
+  echo "==> Installing frontend dependencies (pnpm)"
+  (cd frontend && pnpm install --frozen-lockfile) \
+    || (cd frontend && pnpm install)
+else
+  echo "==> No frontend/ yet — skipping pnpm install"
+fi
+
+# --- Headless browser for driving the frontend (screenshots, smoke checks) ---
+# The Chromium binary alone is not enough: it links against system libraries the
+# slim image does not ship, and fails with "libdbus-1.so.3: cannot open shared
+# object file" long before any page loads.
+if [ -f frontend/package.json ]; then
+  echo "==> Installing Chromium system libraries"
+  sudo apt-get update -qq && sudo apt-get install -y -qq \
+    libdbus-1-3 libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
+    libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
+    libgbm1 libasound2 libpango-1.0-0 libcairo2 || true
+
+  echo "==> Downloading the Chromium build playwright-core expects"
+  (cd frontend && npx playwright-core install chromium) || true
+fi
 
 echo "==> Done. Run 'just up' to start the stack, or 'just dev' for the app only."
