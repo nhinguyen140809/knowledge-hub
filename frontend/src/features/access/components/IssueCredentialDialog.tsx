@@ -1,6 +1,7 @@
 import { Button, FieldError, Form, Input, Label, Modal, TextField } from '@heroui/react'
 import { Check, Copy, Plus, TriangleAlert } from 'lucide-react'
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useState } from 'react'
+import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard'
 import { useIssueCredential } from '../hooks/useCredentials'
 import type { IssuedCredential } from '../types/access.type'
 
@@ -45,24 +46,10 @@ interface RevealSecretProps {
   onDone: () => void
 }
 
-/** How long the button reads "Copied" before offering to copy again. */
-const COPIED_RESET_MS = 2000
-
 /** The "just issued" state: the raw secret, shown exactly once — it is never
  *  stored anywhere, so this is the only chance to copy it. */
 function RevealSecret({ credential, onDone }: RevealSecretProps) {
-  const [copied, setCopied] = useState(false)
-
-  useEffect(() => {
-    if (!copied) return
-    const timer = setTimeout(() => setCopied(false), COPIED_RESET_MS)
-    return () => clearTimeout(timer)
-  }, [copied])
-
-  async function copySecret() {
-    await navigator.clipboard.writeText(credential.secret)
-    setCopied(true)
-  }
+  const { copied, copy } = useCopyToClipboard()
 
   return (
     <>
@@ -80,7 +67,7 @@ function RevealSecret({ credential, onDone }: RevealSecretProps) {
         <p className="text-muted text-xs">{credential.name}</p>
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onPress={copySecret}>
+        <Button variant="secondary" onPress={() => copy(credential.secret)}>
           {copied ? <Check size={16} /> : <Copy size={16} />}
           {copied ? 'Copied' : 'Copy secret'}
         </Button>

@@ -1,5 +1,6 @@
 import { Card, Chip, Skeleton } from '@heroui/react'
 import { useState } from 'react'
+import { CopyButton } from '@/shared/components/ui/CopyButton'
 import { formatTimestamp } from '@/shared/lib/datetime.utils'
 import { useSourceStatus } from '../hooks/useSources'
 import type { SyncResult } from '../types/source.type'
@@ -55,7 +56,14 @@ export function SourceIndexCard({ sourceId }: { sourceId: string }) {
           <span>{data.ref ?? NO_VALUE}</span>
         </Row>
         <Row label="Commit">
-          <span>{data.commitSha?.slice(0, 10) ?? NO_VALUE}</span>
+          {data.commitSha ? (
+            <span className="inline-flex items-center gap-1">
+              {data.commitSha.slice(0, 10)}
+              <CopyButton value={data.commitSha} label="commit hash" />
+            </span>
+          ) : (
+            <span>{NO_VALUE}</span>
+          )}
         </Row>
       </>
     )

@@ -1,6 +1,7 @@
 import { Button, Disclosure, Surface, type ButtonProps } from '@heroui/react'
 import { PanelLeft } from 'lucide-react'
 import { Activity, useMemo, useState, type ReactNode } from 'react'
+import { IconButton } from './IconButton'
 import { SidebarContext, useSidebar } from './useSidebar'
 
 /**
@@ -59,15 +60,14 @@ export function SidebarFooter({ children }: { children: ReactNode }) {
 export function SidebarTrigger() {
   const { isOpen, toggle } = useSidebar()
   return (
-    <Button
-      isIconOnly
+    <IconButton
+      tooltip={isOpen ? 'Close sidebar' : 'Open sidebar'}
       size="sm"
       variant="ghost"
-      aria-label={isOpen ? 'Close sidebar' : 'Open sidebar'}
       onPress={toggle}
     >
       <PanelLeft size={18} />
-    </Button>
+    </IconButton>
   )
 }
 

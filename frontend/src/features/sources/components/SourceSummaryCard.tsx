@@ -1,4 +1,5 @@
 import { Card, Chip } from '@heroui/react'
+import { CopyButton } from '@/shared/components/ui/CopyButton'
 import {
   SOURCE_TYPE_COLOR,
   SOURCE_TYPE_LABEL,
@@ -31,7 +32,10 @@ export function SourceSummaryCard({ source }: { source: Source }) {
             {SOURCE_TYPE_LABEL[source.type]}
           </Chip>
         </div>
-        <Card.Description className="text-sm">{source.id}</Card.Description>
+        <div className="flex items-center gap-1">
+          <Card.Description className="text-sm">{source.id}</Card.Description>
+          <CopyButton value={source.id} label="source ID" />
+        </div>
       </Card.Header>
       <Card.Content className="flex flex-col gap-3">
         {source.description && <p className="text-muted text-sm">{source.description}</p>}

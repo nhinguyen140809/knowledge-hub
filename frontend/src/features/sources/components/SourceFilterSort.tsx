@@ -1,5 +1,6 @@
-import { Button, Label, ListBox, Select } from '@heroui/react'
+import { Label, ListBox, Select } from '@heroui/react'
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, type LucideIcon } from 'lucide-react'
+import { IconButton } from '@/shared/components/ui/IconButton'
 import { SOURCE_TYPE_LABEL } from '../constants/source.config'
 import type {
   SourceFilterSortState,
@@ -95,19 +96,13 @@ export function SourceFilterSort({ value, onChange }: SourceFilterSortProps) {
         </Select.Popover>
       </Select>
 
-      <Button
-        isIconOnly
-        size="sm"
-        variant="secondary"
-        aria-label={direction.label}
-        onPress={toggleDirection}
-      >
+      <IconButton tooltip={direction.label} size="sm" variant="secondary" onPress={toggleDirection}>
         <DirectionIcon
           key={value.sortDirection}
           size={16}
           className="animate-in fade-in-0 duration-200"
         />
-      </Button>
+      </IconButton>
     </div>
   )
 }

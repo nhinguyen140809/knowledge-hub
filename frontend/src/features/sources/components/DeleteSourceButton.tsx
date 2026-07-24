@@ -1,6 +1,7 @@
 import { Button } from '@heroui/react'
 import { Trash2 } from 'lucide-react'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
+import { IconButton } from '@/shared/components/ui/IconButton'
 import { useDeleteSource } from '../hooks/useSourceMutations'
 
 interface DeleteSourceButtonProps {
@@ -19,9 +20,9 @@ export function DeleteSourceButton({ sourceId, label, onDeleted }: DeleteSourceB
   return (
     <ConfirmDialog
       trigger={
-        <Button isIconOnly size="sm" variant="danger-soft" aria-label={`Delete ${name}`}>
+        <IconButton tooltip={`Delete source`} size="sm" variant="danger-soft">
           <Trash2 size={16} />
-        </Button>
+        </IconButton>
       }
       icon={<Trash2 className="size-5" />}
       heading="Delete this source?"

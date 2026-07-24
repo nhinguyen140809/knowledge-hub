@@ -13,7 +13,6 @@ interface PolicyLook {
 // state (nothing is readable without a grant); ALLOW is the permissive one
 // that opens every ungranted source, so it should read as the louder of the
 // two — the chip is the only always-visible cue for a system-wide setting.
-// TODO(human): fill both entries.
 const POLICY_LOOK: Record<DefaultPolicy, PolicyLook> = {
   DENY: { color: 'success', label: 'Deny', icon: ShieldCheck },
   ALLOW: { color: 'danger', label: 'Allow', icon: ShieldAlert },

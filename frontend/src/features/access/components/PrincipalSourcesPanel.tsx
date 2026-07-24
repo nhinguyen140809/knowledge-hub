@@ -3,6 +3,7 @@ import { Database, MousePointerClick, CircleMinus } from 'lucide-react'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { EmptyState } from '@/shared/components/ui/EmptyState'
 import { ErrorState } from '@/shared/components/ui/ErrorState'
+import { IconButton } from '@/shared/components/ui/IconButton'
 import { SUMMARY_SEP } from '@/shared/constants'
 import { useEffectivePermissions } from '../hooks/usePrincipals'
 import { useRevokeSources } from '../hooks/useGrants'
@@ -35,9 +36,9 @@ function RevokeGrantButton({ principalId, sourceId }: { principalId: string; sou
   return (
     <ConfirmDialog
       trigger={
-        <Button isIconOnly size="sm" variant="ghost" aria-label={`Revoke access to ${sourceId}`}>
+        <IconButton tooltip={`Revoke access`} size="sm" variant="ghost">
           <CircleMinus size={14} />
-        </Button>
+        </IconButton>
       }
       icon={<CircleMinus className="size-5" />}
       heading="Revoke this grant?"

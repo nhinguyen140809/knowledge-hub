@@ -3,6 +3,7 @@ import { Ban, KeyRound, MousePointerClick } from 'lucide-react'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { EmptyState } from '@/shared/components/ui/EmptyState'
 import { ErrorState } from '@/shared/components/ui/ErrorState'
+import { IconButton } from '@/shared/components/ui/IconButton'
 import { SUMMARY_SEP } from '@/shared/constants'
 import { formatTimestamp } from '@/shared/lib/datetime.utils'
 import { useCredentials, useRevokeCredential } from '../hooks/useCredentials'
@@ -29,9 +30,9 @@ function RevokeButton({ credentialId, name }: { credentialId: string; name: stri
   return (
     <ConfirmDialog
       trigger={
-        <Button isIconOnly size="sm" variant="ghost" aria-label={`Revoke ${name}`}>
+        <IconButton tooltip={`Revoke credential`} size="sm" variant="ghost">
           <Ban size={15} />
-        </Button>
+        </IconButton>
       }
       icon={<Ban className="size-5" />}
       heading="Revoke this credential?"
