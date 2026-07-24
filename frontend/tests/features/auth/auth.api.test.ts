@@ -12,7 +12,7 @@ describe('auth api in mock mode', () => {
 
     const info = await validateConnection('http://anything', 'anykey')
 
-    expect(info.application).toContain('mock')
+    expect(info.productName.toLowerCase()).toContain('mock')
     expect(info.activeProfiles).toContain('mock')
   })
 })
