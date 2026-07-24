@@ -1,11 +1,16 @@
 import { Skeleton } from '@heroui/react'
 import { GraphView } from '@/shared/components/ui/GraphView'
 import { ErrorState } from '@/shared/components/ui/ErrorState'
-import { isSourceNodeId, useAccessGraphModel } from '../hooks/useAccessGraphModel'
+import { useAccessGraphModel } from '../hooks/useAccessGraphModel'
+import { isSourceNodeId } from '../lib/sourceNode'
 
 interface AccessGraphProps {
   selectedId?: string | null
   onSelect?: (principalId: string) => void
+  /** Source whose access path to light up — set when the user asks "why can it
+   *  read this" from the details side, null otherwise. The path (nodes and
+   *  edges) is derived by the model from the scoped graph. */
+  traceSourceId?: string | null
 }
 
 /**
@@ -16,8 +21,11 @@ interface AccessGraphProps {
  * picks what each state renders as. Source nodes are display-only — clicking
  * one selects nothing.
  */
-export function AccessGraph({ selectedId, onSelect }: AccessGraphProps) {
-  const { nodes, edges, isPending, isError, error } = useAccessGraphModel(selectedId)
+export function AccessGraph({ selectedId, onSelect, traceSourceId }: AccessGraphProps) {
+  const { nodes, edges, highlightNodeIds, isPending, isError, error } = useAccessGraphModel(
+    selectedId,
+    traceSourceId,
+  )
 
   if (isPending) return <Skeleton className="h-105 w-full rounded-xl lg:h-full" />
 
@@ -30,6 +38,7 @@ export function AccessGraph({ selectedId, onSelect }: AccessGraphProps) {
       direction="auto"
       layoutEngine="dagre"
       className="h-105 lg:h-full"
+      highlightNodeIds={highlightNodeIds ?? undefined}
       onNodeClick={(id) => !isSourceNodeId(id) && onSelect?.(id)}
     />
   )

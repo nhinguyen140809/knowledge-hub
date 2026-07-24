@@ -41,6 +41,10 @@ export interface GraphViewProps {
   nodeHeight?: number
   className?: string
   onNodeClick?: (id: string) => void
+  /** Node ids to render ringed regardless of selection — lets a caller trace a
+   *  path (its endpoints and waypoints) from outside the graph. Merges with the
+   *  ring a clicked edge already puts on its two ends. */
+  highlightNodeIds?: ReadonlySet<string>
   /** @default 'elk' — elk's layered algorithm breaks cycles on its own and
    *  tends to route fewer overlaps; dagre stays available to compare against
    *  since it's synchronous (no layout-settling frame) and lighter-weight. */
@@ -53,8 +57,9 @@ export function GraphView({
   direction = 'TB',
   nodeWidth = 172,
   nodeHeight = 44,
-  className = 'h-[420px]',
+  className = 'h-105',
   onNodeClick,
+  highlightNodeIds,
   layoutEngine = 'elk',
 }: GraphViewProps) {
   const { resolvedTheme } = useTheme()
@@ -83,16 +88,20 @@ export function GraphView({
   useEffect(() => setRfNodes(positioned), [positioned, setRfNodes])
   useEffect(() => setRfEdges(edges), [edges, setRfEdges])
 
-  // A selected edge lights up the two nodes it runs between — an edge is a
-  // relationship, and a relationship is meaningless without its ends. With
-  // multi-select disabled below, React Flow itself guarantees the "one edge
-  // OR one node at a time" rule, so this never overlaps a node selection.
-  const highlightedNodeIds = useMemo(() => {
+  // Two highlight sources merge here: a caller-supplied set (a traced path) and
+  // the two ends of a selected edge — an edge is a relationship, and a
+  // relationship is meaningless without its ends. With multi-select disabled
+  // below, React Flow guarantees the "one edge OR one node at a time" rule, so
+  // the edge part never overlaps a node selection.
+  const highlightedNodeIds = useMemo<ReadonlySet<string>>(() => {
+    const ids = new Set<string>(highlightNodeIds)
     const selectedEdge = rfEdges.find((edge) => edge.selected)
-    return selectedEdge
-      ? new Set([selectedEdge.source, selectedEdge.target])
-      : (new Set<string>() as ReadonlySet<string>)
-  }, [rfEdges])
+    if (selectedEdge) {
+      ids.add(selectedEdge.source)
+      ids.add(selectedEdge.target)
+    }
+    return ids
+  }, [rfEdges, highlightNodeIds])
 
   return (
     <GraphDimensionsContext.Provider value={{ nodeWidth, nodeHeight }}>

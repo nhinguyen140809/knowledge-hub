@@ -1,4 +1,4 @@
-import { Button, Card, Chip, Skeleton } from '@heroui/react'
+import { Button, Card, Chip, Skeleton, Tooltip } from '@heroui/react'
 import { Database, MousePointerClick, CircleMinus } from 'lucide-react'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { EmptyState } from '@/shared/components/ui/EmptyState'
@@ -7,7 +7,8 @@ import { IconButton } from '@/shared/components/ui/IconButton'
 import { SUMMARY_SEP } from '@/shared/constants'
 import { useEffectivePermissions } from '../hooks/usePrincipals'
 import { useRevokeSources } from '../hooks/useGrants'
-import type { GrantOrigin } from '../types/access.type'
+import { isRevocableGrant, isTraceableOrigin } from '../lib/principal.rules'
+import type { EffectiveSource, GrantOrigin } from '../types/access.type'
 import { GrantSourceDialog } from './GrantSourceDialog'
 
 /** Each source arrives already tagged with its origin; this only maps the tag
@@ -64,22 +65,38 @@ function RevokeGrantButton({ principalId, sourceId }: { principalId: string; sou
 
 function GrantRow({
   principalId,
-  sourceId,
-  origin,
+  source,
+  onTrace,
 }: {
   principalId: string
-  sourceId: string
-  origin: GrantOrigin
+  source: EffectiveSource
+  onTrace?: (source: EffectiveSource) => void
 }) {
-  const config = GRANT_ORIGIN_CONFIG[origin]
+  const config = GRANT_ORIGIN_CONFIG[source.origin]
+  const canTrace = onTrace && isTraceableOrigin(source.origin)
   return (
     <div className="flex items-center justify-between gap-2">
-      <span className="truncate text-sm">{sourceId}</span>
+      {canTrace ? (
+        <Tooltip delay={300}>
+          <Button
+            variant="ghost"
+            onPress={() => onTrace(source)}
+            className="hover:text-accent h-auto min-w-0 justify-start bg-transparent p-0 font-normal hover:bg-transparent"
+          >
+            <span className="truncate text-sm">{source.sourceId}</span>
+          </Button>
+          <Tooltip.Content>Show this access in the graph</Tooltip.Content>
+        </Tooltip>
+      ) : (
+        <span className="truncate text-sm">{source.sourceId}</span>
+      )}
       <div className="flex shrink-0 items-center gap-1">
         <Chip size="sm" variant="soft" color={config.color}>
           {config.label}
         </Chip>
-        {origin === 'DIRECT' && <RevokeGrantButton principalId={principalId} sourceId={sourceId} />}
+        {isRevocableGrant(source.origin) && (
+          <RevokeGrantButton principalId={principalId} sourceId={source.sourceId} />
+        )}
       </div>
     </div>
   )
@@ -91,7 +108,15 @@ function GrantRow({
  * (which can't be revoked from this list; it goes away only if the group
  * grant is revoked or the principal leaves the group).
  */
-export function PrincipalSourcesPanel({ principalId }: { principalId: string | null }) {
+export function PrincipalSourcesPanel({
+  principalId,
+  onTrace,
+}: {
+  principalId: string | null
+  /** Called when a grant is clicked to trace its path in the graph. Absent when
+   *  there is no graph to trace into. */
+  onTrace?: (source: EffectiveSource) => void
+}) {
   const { data, isPending, isError, error } = useEffectivePermissions(principalId ?? undefined)
 
   const sources = data?.sources ?? []
@@ -119,8 +144,8 @@ export function PrincipalSourcesPanel({ principalId }: { principalId: string | n
           <GrantRow
             key={source.sourceId}
             principalId={principalId}
-            sourceId={source.sourceId}
-            origin={source.origin}
+            source={source}
+            onTrace={onTrace}
           />
         ))}
         <p className="text-muted mt-1 text-xs">{accessSummary(sources.length, inherited)}</p>
