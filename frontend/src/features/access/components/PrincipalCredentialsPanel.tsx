@@ -7,6 +7,7 @@ import { IconButton } from '@/shared/components/ui/IconButton'
 import { SUMMARY_SEP } from '@/shared/constants'
 import { formatTimestamp } from '@/shared/lib/datetime.utils'
 import { useCredentials, useRevokeCredential } from '../hooks/useCredentials'
+import { canRevokeCredential } from '../lib/principal.rules'
 import type { Credential } from '../types/access.type'
 import { IssueCredentialDialog } from './IssueCredentialDialog'
 
@@ -68,7 +69,7 @@ function CredentialRow({ credential }: { credential: Credential }) {
         <Chip size="sm" variant="soft" color={status.color}>
           {status.label}
         </Chip>
-        {!credential.revoked && (
+        {canRevokeCredential(credential) && (
           <RevokeButton credentialId={credential.credentialId} name={credential.name} />
         )}
       </div>

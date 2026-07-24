@@ -8,6 +8,7 @@ import { SourceList } from '../components/SourceList'
 import { useInvalidateSources } from '../hooks/useSourceMutations'
 import { useSources } from '../hooks/useSources'
 import { applySourceFilterSort, DEFAULT_SOURCE_FILTER_SORT } from '../lib/sourceFilterSort'
+import { summarizeSources } from '../lib/source.rules'
 
 /** Sources management screen: toolbar (filter/sort, add, refresh) over the
  *  source list. */
@@ -22,14 +23,12 @@ export function SourcesPage() {
   )
 
   // Describes the whole collection, not the filtered view — a caption for what
-  // exists, independent of the current filter. Git/FS is the one split not
-  // obvious from a glance at the list.
-  const summary = data
-    ? [
-        `${data.length} sources`,
-        `${data.filter((s) => s.type === 'GIT').length} Git`,
-        `${data.filter((s) => s.type === 'FS').length} filesystem`,
-      ].join(SUMMARY_SEP)
+  // exists, independent of the current filter.
+  const counts = data ? summarizeSources(data) : null
+  const summary = counts
+    ? [`${counts.total} sources`, `${counts.git} Git`, `${counts.filesystem} filesystem`].join(
+        SUMMARY_SEP,
+      )
     : null
 
   return (
@@ -47,8 +46,6 @@ export function SourcesPage() {
 
       {summary && <p className="text-muted -mt-2 shrink-0 text-xs">{summary}</p>}
 
-      {/* offset absorbs the subpixel gap between scrollTop and scrollHeight on
-          scaled displays, otherwise the bottom shadow never clears at the end. */}
       <ScrollShadow className="min-h-0 flex-1" offset={2}>
         <SourceList
           sources={sources}

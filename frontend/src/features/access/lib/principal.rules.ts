@@ -1,11 +1,11 @@
-import type { Principal, PrincipalType, Role } from '../types/access.type'
+import type { Credential, GrantOrigin, Principal, PrincipalType, Role } from '../types/access.type'
 
 /**
- * The principal business rules in one place. Each export answers one "is this
- * action allowed?" question; components consume these instead of re-deriving
- * role logic inline, so a rule change lands in exactly one file. Every rule
- * is re-validated on submit anyway — these gates only spare a round trip and
- * keep the UI from offering actions that would be rejected.
+ * The access-control business rules in one place. Each export answers one "is
+ * this action allowed?" question; components consume these instead of
+ * re-deriving domain logic inline, so a rule change lands in exactly one file.
+ * Every rule is re-validated on submit anyway — these gates only spare a round
+ * trip and keep the UI from offering actions that would be rejected.
  */
 
 /** Role ADMIN is SUBJECT-only: roles don't inherit through membership, so a
@@ -36,6 +36,29 @@ export const ROLE_IN_GROUP: Role = 'MEMBER'
  *  "+ Source" button. */
 export function canReceiveGrants(principal: Principal): boolean {
   return principal.role !== 'ADMIN'
+}
+
+/** A source's access can be traced in the graph only when it arrives through a
+ *  grant edge. POLICY (default-allow) and ADMIN (role bypass) reach a source
+ *  with no edge to follow, so there is nothing to point at. Gates whether a
+ *  grant row is clickable-to-trace. */
+export function isTraceableOrigin(origin: GrantOrigin): boolean {
+  return origin === 'DIRECT' || origin === 'INHERITED'
+}
+
+/** Only a principal's own DIRECT grant is revocable from its Sources panel;
+ *  inherited/admin/policy access has no edge to remove here — it goes away only
+ *  by revoking the group grant or changing the policy. Gates the revoke button
+ *  on a grant row. */
+export function isRevocableGrant(origin: GrantOrigin): boolean {
+  return origin === 'DIRECT'
+}
+
+/** An already-revoked credential can't be revoked again — revoke is a
+ *  soft-delete, so revoked ones stay listed but inert. Gates the revoke button
+ *  on a credential row. */
+export function canRevokeCredential(credential: Credential): boolean {
+  return !credential.revoked
 }
 
 /** Deleting the last admin locks administration out — the bootstrap seeder
