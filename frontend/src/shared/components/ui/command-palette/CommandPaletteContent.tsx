@@ -1,9 +1,13 @@
-import { Kbd, ScrollShadow, SearchField, Separator } from '@heroui/react'
-import { type KeyboardEvent, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Kbd, SearchField, Separator } from '@heroui/react'
+import { SearchX } from 'lucide-react'
+import { type KeyboardEvent, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { EmptyState } from '@/shared/components/ui/EmptyState'
 import { matchesQuery } from './matchesQuery'
 import { ResultRow } from './ResultRow'
 import type { CommandItem } from './types'
+
+/** Tallest the results box grows before it scrolls internally (px, matches h-80). */
+const MAX_LIST_HEIGHT = 320
 
 interface CommandPaletteContentProps {
   /** Supplies the items. Called here (not by the shell) so the items — and any
@@ -13,10 +17,9 @@ interface CommandPaletteContentProps {
 }
 
 /** What fills the open palette: a search box over a filtered, keyboard-navigable
- *  list. Selecting a row navigates to its route and closes. Rendered only while
- *  the palette is open, so its data hooks stay idle until then. */
+ *  list. Selecting a row runs its action and closes. Rendered only while the
+ *  palette is open, so its data hooks stay idle until then. */
 export function CommandPaletteContent({ useItems, onClose }: CommandPaletteContentProps) {
-  const navigate = useNavigate()
   const items = useItems()
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
@@ -36,13 +39,22 @@ export function CommandPaletteContent({ useItems, onClose }: CommandPaletteConte
     setActive(0)
   }
 
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [listHeight, setListHeight] = useState<number>()
+  useLayoutEffect(() => {
+    const el = contentRef.current
+    if (el) setListHeight(Math.min(el.offsetHeight, MAX_LIST_HEIGHT))
+  }, [results])
+
   function run(item: CommandItem | undefined) {
     if (!item) return
-    navigate(item.to)
+    item.action()
     onClose()
   }
 
-  // Arrow keys move the highlight; Enter is handled by SearchField's onSubmit.
+  // Keyboard nav lives on the input itself: React Aria (under SearchField) stops
+  // keydown from bubbling, so a handler on an ancestor never sees the arrows.
+  // Enter runs the active row; the arrows move the highlight.
   function onKeyDown(e: KeyboardEvent) {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
@@ -50,31 +62,39 @@ export function CommandPaletteContent({ useItems, onClose }: CommandPaletteConte
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setActive((i) => Math.max(0, i - 1))
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      run(results[active])
     }
   }
 
   return (
-    <div onKeyDown={onKeyDown} className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <SearchField
         aria-label="Search"
         value={query}
         onChange={setQuery}
-        onSubmit={() => run(results[active])}
         autoFocus
         variant="secondary"
         fullWidth
       >
         <SearchField.Group>
           <SearchField.SearchIcon />
-          <SearchField.Input placeholder="Jump to..." />
+          <SearchField.Input placeholder="Jump to..." onKeyDown={onKeyDown} />
           <SearchField.ClearButton />
         </SearchField.Group>
       </SearchField>
 
-      <ScrollShadow className="max-h-80" offset={2}>
-        <div>
+      <div
+        style={{ height: listHeight }}
+        className="scrollbar-thin overflow-y-auto transition-[height] duration-200 ease-out"
+      >
+        <div ref={contentRef}>
           {results.length === 0 ? (
-            <p className="text-muted p-6 text-center text-sm">No matches</p>
+            <EmptyState
+              icon={<SearchX size={28} />}
+              description="No matches. Try a different search."
+            />
           ) : (
             results.map((item, i) => (
               <ResultRow
@@ -87,7 +107,7 @@ export function CommandPaletteContent({ useItems, onClose }: CommandPaletteConte
             ))
           )}
         </div>
-      </ScrollShadow>
+      </div>
 
       <Separator orientation="horizontal" />
 

@@ -1,5 +1,5 @@
 import { Button } from '@heroui/react'
-import { Files, Waypoints, RefreshCw, ScatterChart, Spline } from 'lucide-react'
+import { Files, Waypoints, RotateCw, ScatterChart, Spline } from 'lucide-react'
 import { useInvalidateAllQueries } from '@/shared/hooks/useInvalidateAllQueries'
 import { NO_VALUE } from '@/shared/constants'
 import { AttentionPanel } from '../components/AttentionPanel'
@@ -24,8 +24,8 @@ export function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex justify-end">
-        <Button size="sm" variant="secondary" onPress={refreshAll}>
-          <RefreshCw size={16} className={knowledge.isFetching ? 'animate-spin' : ''} />
+        <Button size="sm" variant="primary" onPress={refreshAll}>
+          <RotateCw size={16} className={knowledge.isFetching ? 'animate-spin' : ''} />
           Refresh
         </Button>
       </div>

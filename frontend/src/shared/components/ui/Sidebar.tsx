@@ -49,7 +49,7 @@ export function SidebarHeader({ children }: { children: ReactNode }) {
 }
 
 export function SidebarContent({ children }: { children: ReactNode }) {
-  return <div className="min-h-0 flex-1 overflow-y-auto p-3">{children}</div>
+  return <div className="min-h-0 flex-1 scrollbar-thin overflow-y-auto p-3">{children}</div>
 }
 
 export function SidebarFooter({ children }: { children: ReactNode }) {

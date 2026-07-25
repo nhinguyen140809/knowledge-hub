@@ -31,7 +31,10 @@ export function CommandPalette({ useItems }: CommandPaletteProps) {
 
   return (
     <Modal.Backdrop isOpen={isOpen} onOpenChange={setOpen}>
-      <Modal.Container>
+      {/* Top-anchored (not vertically centred) so the search box keeps its place
+          while only the results below grow and shrink. Horizontal centring is
+          left to the container's own placement styles. */}
+      <Modal.Container placement="top" className="pt-[8vh]">
         <Modal.Dialog className="sm:max-w-150">
           {isOpen && <CommandPaletteContent useItems={useItems} onClose={() => setOpen(false)} />}
         </Modal.Dialog>
