@@ -1,12 +1,15 @@
 package com.knowledgehub.knowledge.ingestion.infrastructure.web;
 
 import com.knowledgehub.knowledge.ingestion.application.SourceService;
+import com.knowledgehub.knowledge.ingestion.application.port.SourceFreshness;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -29,9 +32,11 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 public class SourceController {
 
   private final SourceService sourceService;
+  private final SourceFreshness sourceFreshness;
 
-  public SourceController(SourceService sourceService) {
+  public SourceController(SourceService sourceService, SourceFreshness sourceFreshness) {
     this.sourceService = sourceService;
+    this.sourceFreshness = sourceFreshness;
   }
 
   @PostMapping
@@ -43,19 +48,25 @@ public class SourceController {
             .path("/{id}")
             .buildAndExpand(created.sourceId())
             .toUri();
-    return ResponseEntity.created(location).body(SourceResponse.from(created));
+    // A freshly registered source has never been synced, so its updatedAt is null.
+    return ResponseEntity.created(location).body(SourceResponse.from(created, null));
   }
 
   @GetMapping
   @Operation(summary = "List all configured sources")
   public List<SourceResponse> list() {
-    return sourceService.list().stream().map(SourceResponse::from).toList();
+    List<Source> sources = sourceService.list();
+    Map<String, Instant> updatedAt =
+        sourceFreshness.lastIndexedAt(sources.stream().map(Source::sourceId).toList());
+    return sources.stream()
+        .map(source -> SourceResponse.from(source, updatedAt.get(source.sourceId())))
+        .toList();
   }
 
   @GetMapping("/{id}")
   @Operation(summary = "Get a source by id")
   public SourceResponse get(@PathVariable String id) {
-    return SourceResponse.from(sourceService.get(id));
+    return SourceResponse.from(sourceService.get(id), updatedAtOf(id));
   }
 
   @PatchMapping("/{id}")
@@ -78,7 +89,12 @@ public class SourceController {
             request.ignore(),
             request.name(),
             request.description());
-    return SourceResponse.from(updated);
+    return SourceResponse.from(updated, updatedAtOf(id));
+  }
+
+  /** The single source's last-sync instant, or {@code null} when it has never been synced. */
+  private Instant updatedAtOf(String sourceId) {
+    return sourceFreshness.lastIndexedAt(List.of(sourceId)).get(sourceId);
   }
 
   @DeleteMapping("/{id}")

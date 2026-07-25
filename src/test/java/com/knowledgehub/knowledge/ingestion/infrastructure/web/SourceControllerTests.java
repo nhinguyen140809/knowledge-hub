@@ -17,10 +17,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.knowledgehub.knowledge.ingestion.application.SourceNotFoundException;
 import com.knowledgehub.knowledge.ingestion.application.SourceService;
 import com.knowledgehub.knowledge.ingestion.application.SourceSpec;
+import com.knowledgehub.knowledge.ingestion.application.port.SourceFreshness;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
 import com.knowledgehub.knowledge.ingestion.domain.SourceType;
 import com.knowledgehub.knowledge.ingestion.domain.exception.DuplicateSourceException;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +40,8 @@ class SourceControllerTests {
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private SourceService sourceService;
+
+  @MockitoBean private SourceFreshness sourceFreshness;
 
   private static Source gitSource() {
     return new Source(
@@ -198,6 +203,18 @@ class SourceControllerTests {
         .perform(get("/api/v1/admin/sources"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].id").value("s1"));
+  }
+
+  @Test
+  void listEmbedsUpdatedAtFromFreshness() throws Exception {
+    when(sourceService.list()).thenReturn(List.of(gitSource()));
+    when(sourceFreshness.lastIndexedAt(any()))
+        .thenReturn(Map.of("s1", Instant.parse("2026-07-23T09:15:00Z")));
+
+    mockMvc
+        .perform(get("/api/v1/admin/sources"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].updatedAt").value("2026-07-23T09:15:00Z"));
   }
 
   @Test
