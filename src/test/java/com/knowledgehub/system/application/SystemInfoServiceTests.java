@@ -5,6 +5,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.knowledgehub.system.domain.SystemInfo;
+import com.knowledgehub.system.domain.port.SystemSettings;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.info.BuildProperties;
@@ -12,22 +14,65 @@ import org.springframework.mock.env.MockEnvironment;
 
 class SystemInfoServiceTests {
 
+  @SuppressWarnings("unchecked")
+  private static ObjectProvider<BuildProperties> noBuildInfo() {
+    ObjectProvider<BuildProperties> provider = mock(ObjectProvider.class);
+    when(provider.getIfAvailable()).thenReturn(null);
+    return provider;
+  }
+
   @Test
   void reportsConfiguredValuesAndDefaultsVersionWhenNoBuildInfo() {
     MockEnvironment environment = new MockEnvironment();
     environment.setProperty("spring.application.name", "knowledge-hub");
     environment.setActiveProfiles("dev");
+    SystemSettings settings = mock(SystemSettings.class);
+    when(settings.productName()).thenReturn(Optional.empty());
 
-    @SuppressWarnings("unchecked")
-    ObjectProvider<BuildProperties> noBuildInfo = mock(ObjectProvider.class);
-    when(noBuildInfo.getIfAvailable()).thenReturn(null);
-
-    SystemInfoService service = new SystemInfoService(environment, noBuildInfo);
+    SystemInfoService service = new SystemInfoService(environment, noBuildInfo(), settings);
 
     SystemInfo info = service.currentInfo();
 
     assertThat(info.application()).isEqualTo("knowledge-hub");
     assertThat(info.activeProfiles()).containsExactly("dev");
     assertThat(info.version()).isEqualTo("unknown");
+  }
+
+  @Test
+  void productNameFallsBackToApplicationWhenNeitherStoredNorConfigured() {
+    MockEnvironment environment = new MockEnvironment();
+    environment.setProperty("spring.application.name", "knowledge-hub");
+    SystemSettings settings = mock(SystemSettings.class);
+    when(settings.productName()).thenReturn(Optional.empty());
+
+    SystemInfoService service = new SystemInfoService(environment, noBuildInfo(), settings);
+
+    assertThat(service.currentInfo().productName()).isEqualTo("knowledge-hub");
+  }
+
+  @Test
+  void productNameUsesConfiguredValueOverApplication() {
+    MockEnvironment environment = new MockEnvironment();
+    environment.setProperty("spring.application.name", "knowledge-hub");
+    environment.setProperty("app.product-name", "Knowledge Hub");
+    SystemSettings settings = mock(SystemSettings.class);
+    when(settings.productName()).thenReturn(Optional.empty());
+
+    SystemInfoService service = new SystemInfoService(environment, noBuildInfo(), settings);
+
+    assertThat(service.currentInfo().productName()).isEqualTo("Knowledge Hub");
+  }
+
+  @Test
+  void storedProductNameOverrideWinsOverConfig() {
+    MockEnvironment environment = new MockEnvironment();
+    environment.setProperty("spring.application.name", "knowledge-hub");
+    environment.setProperty("app.product-name", "Configured Name");
+    SystemSettings settings = mock(SystemSettings.class);
+    when(settings.productName()).thenReturn(Optional.of("Operator Override"));
+
+    SystemInfoService service = new SystemInfoService(environment, noBuildInfo(), settings);
+
+    assertThat(service.currentInfo().productName()).isEqualTo("Operator Override");
   }
 }
