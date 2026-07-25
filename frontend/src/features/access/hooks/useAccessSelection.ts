@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import type { EffectiveSource } from '../types/access.type'
 
 /** The right side is two views of the selected principal; a click may need to
@@ -26,8 +26,8 @@ export interface AccessSelection {
 /**
  * All of the Access page's interaction state in one place: which principal is
  * selected, which view (details/graph) is showing, and any access path being
- * traced. Also honours a `?principal=<id>` deep link (e.g. from the command
- * palette), selecting that principal when the URL names one.
+ * traced. Also honours a selection carried in navigation state (e.g. from the
+ * command palette), selecting that principal on arrival.
  */
 export function useAccessSelection(): AccessSelection {
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -36,17 +36,20 @@ export function useAccessSelection(): AccessSelection {
   // selection changes.
   const [tracedSourceId, setTracedSourceId] = useState<string | null>(null)
 
-  // Deep link: selecting the principal named by ?principal=<id>. Compared in
-  // render against the previous value (not in an effect) so a param change
-  // applies before the next paint without an extra render pass. Read-only —
-  // in-page selection never writes the param back.
-  const [searchParams] = useSearchParams()
-  const linkedPrincipal = searchParams.get('principal')
-  const [prevLinked, setPrevLinked] = useState<string | null>(null)
-  if (linkedPrincipal && linkedPrincipal !== prevLinked) {
-    setPrevLinked(linkedPrincipal)
-    setSelectedId(linkedPrincipal)
-    setTracedSourceId(null)
+  // Selecting from elsewhere arrives as navigation state, not a URL param, so
+  // opening the same principal twice still re-selects it: every navigation gets
+  // a fresh location.key even when the target is identical. Handled in render
+  // (not an effect) by comparing the previous key — when the entry changes and
+  // names a principal, select it.
+  const location = useLocation()
+  const requested = (location.state as { selectPrincipal?: string } | null)?.selectPrincipal ?? null
+  const [prevKey, setPrevKey] = useState<string | null>(null)
+  if (location.key !== prevKey) {
+    setPrevKey(location.key)
+    if (requested) {
+      setSelectedId(requested)
+      setTracedSourceId(null)
+    }
   }
 
   const toggleSelect = (id: string) => {
@@ -55,7 +58,10 @@ export function useAccessSelection(): AccessSelection {
   }
 
   const clearIfSelected = (id: string) => {
-    if (id === selectedId) setSelectedId(null)
+    if (id === selectedId) {
+      setSelectedId(null)
+      setTracedSourceId(null)
+    }
   }
 
   const traceAccess = (source: EffectiveSource) => {
