@@ -1,6 +1,6 @@
 package com.knowledgehub.knowledge.infrastructure.persistence;
 
-import com.knowledgehub.shared.config.AppProperties;
+import com.knowledgehub.shared.config.EmbeddingProperties;
 import io.qdrant.client.QdrantClient;
 import io.qdrant.client.grpc.Collections.Distance;
 import io.qdrant.client.grpc.Collections.PayloadSchemaType;
@@ -85,11 +85,11 @@ public class SchemaInitializer implements ApplicationRunner {
       QdrantClient qdrantClient,
       @Value("${spring.ai.vectorstore.qdrant.collection-name:knowledge-embeddings}")
           String collectionName,
-      AppProperties properties) {
+      EmbeddingProperties properties) {
     this.neo4jClient = neo4jClient;
     this.qdrantClient = qdrantClient;
     this.collectionName = collectionName;
-    this.embeddingDimension = properties.embedding().dimension();
+    this.embeddingDimension = properties.dimension();
   }
 
   @Override

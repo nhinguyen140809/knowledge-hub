@@ -2,8 +2,8 @@ package com.knowledgehub.retrieval.application;
 
 import com.knowledgehub.retrieval.domain.RankedList;
 import com.knowledgehub.retrieval.domain.port.FusionStrategy;
-import com.knowledgehub.shared.config.AppProperties;
-import com.knowledgehub.shared.config.AppProperties.Retrieval.HybridWeights;
+import com.knowledgehub.shared.config.RetrievalProperties;
+import com.knowledgehub.shared.config.RetrievalProperties.HybridWeights;
 import com.knowledgehub.shared.pipeline.Stage;
 import java.util.List;
 import org.springframework.stereotype.Component;
@@ -20,10 +20,10 @@ class RrfFusionStage implements Stage<RetrievalContext> {
   private final HybridWeights weights;
   private final int rrfK;
 
-  RrfFusionStage(FusionStrategy fusion, AppProperties properties) {
+  RrfFusionStage(FusionStrategy fusion, RetrievalProperties properties) {
     this.fusion = fusion;
-    this.weights = properties.retrieval().weights();
-    this.rrfK = properties.retrieval().rrfK();
+    this.weights = properties.weights();
+    this.rrfK = properties.rrfK();
   }
 
   @Override

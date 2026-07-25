@@ -18,7 +18,7 @@ import com.knowledgehub.knowledge.graph.domain.port.RelationshipRepository;
 import com.knowledgehub.knowledge.ingestion.domain.FsProvenance;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
 import com.knowledgehub.knowledge.ingestion.infrastructure.MediaTypes;
-import com.knowledgehub.shared.config.AppProperties;
+import com.knowledgehub.shared.config.LinkingProperties;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
@@ -41,11 +41,7 @@ class LinkingServiceTests {
           .withText("x");
 
   private LinkingService service() {
-    return new LinkingService(
-        resolver,
-        List.of(linker),
-        repository,
-        new AppProperties(null, null, null, null, null, null));
+    return new LinkingService(resolver, List.of(linker), repository, new LinkingProperties(null));
   }
 
   @Test

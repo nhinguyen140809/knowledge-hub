@@ -2,7 +2,7 @@ package com.knowledgehub.retrieval.application;
 
 import com.knowledgehub.knowledge.domain.ScoredId;
 import com.knowledgehub.retrieval.domain.port.GraphTraversalPort;
-import com.knowledgehub.shared.config.AppProperties;
+import com.knowledgehub.shared.config.RetrievalProperties;
 import com.knowledgehub.shared.pipeline.Stage;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -23,9 +23,9 @@ class GraphTraversalStage implements Stage<RetrievalContext> {
   private final GraphTraversalPort graphTraversal;
   private final int candidateK;
 
-  GraphTraversalStage(GraphTraversalPort graphTraversal, AppProperties properties) {
+  GraphTraversalStage(GraphTraversalPort graphTraversal, RetrievalProperties properties) {
     this.graphTraversal = graphTraversal;
-    this.candidateK = properties.retrieval().candidateK();
+    this.candidateK = properties.candidateK();
   }
 
   @Override
