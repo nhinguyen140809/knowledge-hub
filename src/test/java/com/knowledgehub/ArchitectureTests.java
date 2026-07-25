@@ -1,6 +1,7 @@
 package com.knowledgehub;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
 
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
@@ -47,4 +48,14 @@ class ArchitectureTests {
           .resideInAnyPackage("..infrastructure..")
           .because(
               "application is the middle layer; it must not know who stores or presents it (infrastructure)");
+
+  @ArchTest
+  static final ArchRule knowledgeContextsAreFreeOfCycles =
+      slices()
+          .matching("com.knowledgehub.knowledge.(*)..")
+          .should()
+          .beFreeOfCycles()
+          .because(
+              "the knowledge bounded contexts (ingestion, sync, indexing, graph) must depend one"
+                  + " way only, so e.g. ingestion never cycles back into sync");
 }
