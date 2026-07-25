@@ -19,8 +19,7 @@ import com.knowledgehub.knowledge.ingestion.domain.CommitRecord;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
 import com.knowledgehub.knowledge.ingestion.domain.SourceType;
 import com.knowledgehub.knowledge.ingestion.domain.port.CommitHistoryPort;
-import com.knowledgehub.shared.config.AppProperties;
-import com.knowledgehub.shared.config.AppProperties.Commits;
+import com.knowledgehub.shared.config.CommitsProperties;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -39,11 +38,7 @@ class CommitIndexingServiceTests {
 
   private CommitIndexingService service(Integer depth) {
     return new CommitIndexingService(
-        List.of(historyPort),
-        commits,
-        embedding,
-        vectorStore,
-        new AppProperties(null, null, new Commits(depth), null, null, null));
+        List.of(historyPort), commits, embedding, vectorStore, new CommitsProperties(depth));
   }
 
   private static CommitRecord record(String sha, String message) {

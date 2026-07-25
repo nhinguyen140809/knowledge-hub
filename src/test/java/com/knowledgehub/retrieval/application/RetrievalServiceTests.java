@@ -23,7 +23,7 @@ import com.knowledgehub.retrieval.domain.port.KeywordSearchPort;
 import com.knowledgehub.retrieval.domain.port.RetrievalReadPort;
 import com.knowledgehub.retrieval.infrastructure.cache.RetrievalCache;
 import com.knowledgehub.retrieval.infrastructure.fusion.RrfFusion;
-import com.knowledgehub.shared.config.AppProperties;
+import com.knowledgehub.shared.config.RetrievalProperties;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,7 +46,7 @@ class RetrievalServiceTests {
 
   @BeforeEach
   void setUp() {
-    AppProperties properties = new AppProperties(null, null, null, null, null, null);
+    RetrievalProperties properties = new RetrievalProperties(null, null, null, null, null, null);
     service =
         new RetrievalService(
             new PrepareQueryStage(),

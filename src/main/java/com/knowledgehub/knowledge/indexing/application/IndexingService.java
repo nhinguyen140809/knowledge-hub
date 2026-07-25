@@ -4,7 +4,7 @@ import com.knowledgehub.knowledge.analysis.domain.Chunk;
 import com.knowledgehub.knowledge.analysis.domain.ChunkConfig;
 import com.knowledgehub.knowledge.ingestion.application.IngestionService;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
-import com.knowledgehub.shared.config.AppProperties;
+import com.knowledgehub.shared.config.ChunkProperties;
 import com.knowledgehub.shared.pipeline.Pipeline;
 import java.util.HashMap;
 import java.util.List;
@@ -30,12 +30,12 @@ public class IndexingService {
   private static final Logger log = LoggerFactory.getLogger(IndexingService.class);
 
   private final IngestionService ingestion;
-  private final AppProperties properties;
+  private final ChunkProperties properties;
   private final Pipeline<IndexingContext> pipeline;
 
   public IndexingService(
       IngestionService ingestion,
-      AppProperties properties,
+      ChunkProperties properties,
       AnalyzeStage chunkStage,
       DedupStage dedupStage,
       EmbedStage embedStage,
@@ -78,8 +78,7 @@ public class IndexingService {
 
   private IndexResult run(
       String sourceId, Predicate<String> accept, Map<String, List<String>> chunkIdsByPath) {
-    ChunkConfig config =
-        new ChunkConfig(properties.chunk().maxTokens(), properties.chunk().overlap());
+    ChunkConfig config = new ChunkConfig(properties.maxTokens(), properties.overlap());
     AtomicInteger filesRead = new AtomicInteger();
     AtomicInteger filesSkipped = new AtomicInteger();
     AtomicInteger chunksIndexed = new AtomicInteger();

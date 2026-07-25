@@ -6,7 +6,7 @@ import com.knowledgehub.retrieval.domain.QueryParams;
 import com.knowledgehub.retrieval.domain.RankedResult;
 import com.knowledgehub.retrieval.domain.port.ResultCachePort;
 import com.knowledgehub.retrieval.domain.port.RetrievalReadPort;
-import com.knowledgehub.shared.config.AppProperties;
+import com.knowledgehub.shared.config.RetrievalProperties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -53,7 +53,7 @@ public class RetrievalService {
       AclFilterStage aclFilterStage,
       RetrievalReadPort reader,
       ResultCachePort cache,
-      AppProperties properties,
+      RetrievalProperties properties,
       @Qualifier("retrievalExecutor") Executor executor) {
     this.prepareStage = prepareStage;
     this.semanticStage = semanticStage;
@@ -65,7 +65,7 @@ public class RetrievalService {
     this.reader = reader;
     this.cache = cache;
     this.executor = executor;
-    this.defaultTopK = properties.retrieval().topK();
+    this.defaultTopK = properties.topK();
   }
 
   /**

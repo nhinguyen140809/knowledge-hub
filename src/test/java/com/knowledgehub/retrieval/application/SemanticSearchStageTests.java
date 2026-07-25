@@ -12,7 +12,7 @@ import com.knowledgehub.knowledge.domain.ScoredId;
 import com.knowledgehub.knowledge.domain.port.EmbeddingPort;
 import com.knowledgehub.knowledge.domain.port.VectorStorePort;
 import com.knowledgehub.retrieval.domain.Query;
-import com.knowledgehub.shared.config.AppProperties;
+import com.knowledgehub.shared.config.RetrievalProperties;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +22,7 @@ class SemanticSearchStageTests {
   private final EmbeddingPort embeddingPort = mock(EmbeddingPort.class);
   private final SemanticSearchStage stage =
       new SemanticSearchStage(
-          vectorStore, embeddingPort, new AppProperties(null, null, null, null, null, null));
+          vectorStore, embeddingPort, new RetrievalProperties(null, null, null, null, null, null));
 
   @Test
   void embedsTheQueryHereThenSearchesTheVectorStore() {

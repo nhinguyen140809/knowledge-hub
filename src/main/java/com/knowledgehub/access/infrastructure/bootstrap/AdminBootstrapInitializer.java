@@ -6,7 +6,7 @@ import com.knowledgehub.access.domain.PrincipalType;
 import com.knowledgehub.access.domain.Role;
 import com.knowledgehub.access.domain.port.CredentialRepository;
 import com.knowledgehub.access.domain.port.PrincipalRepository;
-import com.knowledgehub.shared.config.AppProperties;
+import com.knowledgehub.shared.config.SecurityProperties;
 import java.time.Instant;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -34,10 +34,12 @@ class AdminBootstrapInitializer implements ApplicationRunner {
 
   private final PrincipalRepository principals;
   private final CredentialRepository credentials;
-  private final AppProperties properties;
+  private final SecurityProperties properties;
 
   AdminBootstrapInitializer(
-      PrincipalRepository principals, CredentialRepository credentials, AppProperties properties) {
+      PrincipalRepository principals,
+      CredentialRepository credentials,
+      SecurityProperties properties) {
     this.principals = principals;
     this.credentials = credentials;
     this.properties = properties;
@@ -45,7 +47,7 @@ class AdminBootstrapInitializer implements ApplicationRunner {
 
   @Override
   public void run(ApplicationArguments args) {
-    String apiKey = properties.security().apiKey();
+    String apiKey = properties.apiKey();
     if (apiKey == null || apiKey.isBlank()) {
       log.info("No bootstrap API key configured; skipping admin seeding");
       return;
