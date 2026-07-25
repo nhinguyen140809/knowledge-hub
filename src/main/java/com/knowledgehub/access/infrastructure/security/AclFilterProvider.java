@@ -5,7 +5,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Ticker;
 import com.knowledgehub.access.domain.AuthenticatedPrincipal;
 import com.knowledgehub.access.domain.port.Authorizer;
-import com.knowledgehub.shared.config.AppProperties;
+import com.knowledgehub.shared.config.SecurityProperties;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -30,18 +30,15 @@ public class AclFilterProvider {
   private final Cache<String, Set<String>> readableSourcesCache;
 
   @Autowired
-  public AclFilterProvider(Authorizer authorizer, AppProperties properties) {
+  public AclFilterProvider(Authorizer authorizer, SecurityProperties properties) {
     this(authorizer, properties, Ticker.systemTicker());
   }
 
   // Visible for testing: a custom ticker lets a test drive TTL expiry deterministically.
-  AclFilterProvider(Authorizer authorizer, AppProperties properties, Ticker ticker) {
+  AclFilterProvider(Authorizer authorizer, SecurityProperties properties, Ticker ticker) {
     this.authorizer = authorizer;
     this.readableSourcesCache =
-        Caffeine.newBuilder()
-            .expireAfterWrite(properties.security().aclCacheTtl())
-            .ticker(ticker)
-            .build();
+        Caffeine.newBuilder().expireAfterWrite(properties.aclCacheTtl()).ticker(ticker).build();
   }
 
   /**

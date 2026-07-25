@@ -9,7 +9,7 @@ import com.knowledgehub.knowledge.graph.domain.port.CrossArtifactLinker;
 import com.knowledgehub.knowledge.graph.domain.port.EntityResolver;
 import com.knowledgehub.knowledge.graph.domain.port.RelationshipRepository;
 import com.knowledgehub.knowledge.ingestion.domain.RawArtifact;
-import com.knowledgehub.shared.config.AppProperties;
+import com.knowledgehub.shared.config.LinkingProperties;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -47,11 +47,11 @@ public class LinkingService {
       EntityResolver resolver,
       List<CrossArtifactLinker> crossArtifactLinkers,
       RelationshipRepository relationships,
-      AppProperties properties) {
+      LinkingProperties properties) {
     this.resolver = resolver;
     this.crossArtifactLinkers = crossArtifactLinkers;
     this.relationships = relationships;
-    this.confidenceThreshold = properties.linking().confidenceThreshold();
+    this.confidenceThreshold = properties.confidenceThreshold();
   }
 
   /**

@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.knowledgehub.access.domain.AuthenticatedPrincipal;
 import com.knowledgehub.access.domain.Role;
 import com.knowledgehub.access.domain.port.Authorizer;
-import com.knowledgehub.shared.config.AppProperties;
+import com.knowledgehub.shared.config.SecurityProperties;
 import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,7 +35,7 @@ class AclFilterProviderTests {
       };
 
   private final AclFilterProvider provider =
-      new AclFilterProvider(counting, new AppProperties(null, null, null, null, null, null));
+      new AclFilterProvider(counting, new SecurityProperties(null, null, null));
 
   @AfterEach
   void clearContext() {
@@ -99,8 +99,7 @@ class AclFilterProviderTests {
     // A hand-driven clock so TTL expiry is deterministic (no sleeps); default aclCacheTtl is 5s.
     AtomicLong clock = new AtomicLong();
     AclFilterProvider ttlProvider =
-        new AclFilterProvider(
-            changing, new AppProperties(null, null, null, null, null, null), clock::get);
+        new AclFilterProvider(changing, new SecurityProperties(null, null, null), clock::get);
     authenticateAs("alice");
 
     assertThat(ttlProvider.currentAllowedSources()).containsExactly("docs");

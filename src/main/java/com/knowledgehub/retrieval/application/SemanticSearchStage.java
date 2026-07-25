@@ -2,7 +2,7 @@ package com.knowledgehub.retrieval.application;
 
 import com.knowledgehub.knowledge.domain.port.EmbeddingPort;
 import com.knowledgehub.knowledge.domain.port.VectorStorePort;
-import com.knowledgehub.shared.config.AppProperties;
+import com.knowledgehub.shared.config.RetrievalProperties;
 import com.knowledgehub.shared.pipeline.Stage;
 import org.springframework.stereotype.Component;
 
@@ -20,10 +20,10 @@ class SemanticSearchStage implements Stage<RetrievalContext> {
   private final int candidateK;
 
   SemanticSearchStage(
-      VectorStorePort vectorStore, EmbeddingPort embeddingPort, AppProperties properties) {
+      VectorStorePort vectorStore, EmbeddingPort embeddingPort, RetrievalProperties properties) {
     this.vectorStore = vectorStore;
     this.embeddingPort = embeddingPort;
-    this.candidateK = properties.retrieval().candidateK();
+    this.candidateK = properties.candidateK();
   }
 
   @Override

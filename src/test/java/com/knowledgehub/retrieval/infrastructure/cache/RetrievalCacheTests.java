@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.knowledgehub.retrieval.domain.Query;
 import com.knowledgehub.retrieval.domain.RankedResult;
-import com.knowledgehub.shared.config.AppProperties;
+import com.knowledgehub.shared.config.RetrievalProperties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 class RetrievalCacheTests {
 
   private final RetrievalCache cache =
-      new RetrievalCache(new AppProperties(null, null, null, null, null, null));
+      new RetrievalCache(new RetrievalProperties(null, null, null, null, null, null));
 
   @Test
   void computesOncePerQueryThenServesFromCache() {
