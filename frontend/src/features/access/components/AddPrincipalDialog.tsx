@@ -12,6 +12,7 @@ import {
 import { Plus } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import { useFormReducer } from '@/shared/hooks/useFormReducer'
+import { validateId } from '@/shared/lib/id.utils'
 import { useCreatePrincipal } from '../hooks/usePrincipalMutations'
 import { canBeAdmin } from '../lib/principal.rules'
 import type { PrincipalType, Role } from '../types/access.type'
@@ -64,6 +65,7 @@ export function AddPrincipalDialog() {
                   onChange={setField('principalId')}
                   isRequired
                   variant="secondary"
+                  validate={(v) => validateId(v, 'eng-team')}
                 >
                   <Label>Principal id</Label>
                   <Input placeholder="alice, eng-team" />
