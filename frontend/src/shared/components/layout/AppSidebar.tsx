@@ -109,7 +109,7 @@ export function AppSidebar() {
       <SidebarFooter>
         <Separator className="mb-2" />
         <ThemeToggle />
-        <SidebarMenuButton>
+        <SidebarMenuButton isActive={isActivePath(pathname, '/help')} render={renderLink('/help')}>
           <CircleHelp size={16} />
           Help
         </SidebarMenuButton>

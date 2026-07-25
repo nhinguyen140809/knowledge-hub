@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { ConnectPage, PrivateRoute } from '../features/auth'
 import { AccessPage } from '../features/access'
 import { DashboardPage } from '../features/dashboard'
+import { HelpPage } from '../features/help'
 import { QueryPage } from '../features/query'
 import { SourceDetailPage, SourcesPage } from '../features/sources'
 import { NotFoundPage } from '../shared/components/NotFoundPage'
@@ -23,6 +24,7 @@ const router = createBrowserRouter([
       { path: '/sources/:id', element: <SourceDetailPage /> },
       { path: '/access', element: <AccessPage /> },
       { path: '/query', element: <QueryPage /> },
+      { path: '/help', element: <HelpPage /> },
     ],
   },
   { path: '*', element: <NotFoundPage /> },
