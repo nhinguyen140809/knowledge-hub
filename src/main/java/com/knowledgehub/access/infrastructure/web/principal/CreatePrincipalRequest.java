@@ -4,6 +4,7 @@ import com.knowledgehub.access.domain.PrincipalType;
 import com.knowledgehub.access.domain.Role;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 /**
  * Request to create a principal.
@@ -13,4 +14,10 @@ import jakarta.validation.constraints.NotNull;
  * @param role admin or member
  */
 public record CreatePrincipalRequest(
-    @NotBlank String principalId, @NotNull PrincipalType type, @NotNull Role role) {}
+    @NotBlank
+        @Pattern(
+            regexp = "^[a-z0-9]+(-[a-z0-9]+)*$",
+            message = "must be lowercase letters, numbers and hyphens only")
+        String principalId,
+    @NotNull PrincipalType type,
+    @NotNull Role role) {}
