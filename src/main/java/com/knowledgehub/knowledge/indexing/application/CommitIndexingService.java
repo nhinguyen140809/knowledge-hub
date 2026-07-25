@@ -7,7 +7,7 @@ import com.knowledgehub.knowledge.indexing.domain.port.CommitRepository;
 import com.knowledgehub.knowledge.ingestion.domain.CommitRecord;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
 import com.knowledgehub.knowledge.ingestion.domain.port.CommitHistoryPort;
-import com.knowledgehub.shared.config.AppProperties;
+import com.knowledgehub.shared.config.CommitsProperties;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,12 +48,12 @@ public class CommitIndexingService {
       CommitRepository commits,
       EmbeddingPort embedding,
       VectorStorePort vectorStore,
-      AppProperties properties) {
+      CommitsProperties properties) {
     this.historyPorts = historyPorts;
     this.commits = commits;
     this.embedding = embedding;
     this.vectorStore = vectorStore;
-    this.historyDepth = properties.commits().historyDepth();
+    this.historyDepth = properties.historyDepth();
   }
 
   /**

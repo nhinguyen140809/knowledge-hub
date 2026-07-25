@@ -1,7 +1,7 @@
 package com.knowledgehub.retrieval.application;
 
 import com.knowledgehub.retrieval.domain.port.KeywordSearchPort;
-import com.knowledgehub.shared.config.AppProperties;
+import com.knowledgehub.shared.config.RetrievalProperties;
 import com.knowledgehub.shared.pipeline.Stage;
 import org.springframework.stereotype.Component;
 
@@ -15,9 +15,9 @@ class KeywordSearchStage implements Stage<RetrievalContext> {
   private final KeywordSearchPort keywordSearch;
   private final int candidateK;
 
-  KeywordSearchStage(KeywordSearchPort keywordSearch, AppProperties properties) {
+  KeywordSearchStage(KeywordSearchPort keywordSearch, RetrievalProperties properties) {
     this.keywordSearch = keywordSearch;
-    this.candidateK = properties.retrieval().candidateK();
+    this.candidateK = properties.candidateK();
   }
 
   @Override

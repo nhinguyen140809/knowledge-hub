@@ -1,7 +1,7 @@
 package com.knowledgehub.access.infrastructure.retention;
 
 import com.knowledgehub.access.domain.port.CredentialRepository;
-import com.knowledgehub.shared.config.AppProperties;
+import com.knowledgehub.shared.config.SecurityProperties;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -21,16 +21,16 @@ class CredentialRetentionJob {
   private static final Logger log = LoggerFactory.getLogger(CredentialRetentionJob.class);
 
   private final CredentialRepository credentials;
-  private final AppProperties properties;
+  private final SecurityProperties properties;
 
-  CredentialRetentionJob(CredentialRepository credentials, AppProperties properties) {
+  CredentialRetentionJob(CredentialRepository credentials, SecurityProperties properties) {
     this.credentials = credentials;
     this.properties = properties;
   }
 
   @Scheduled(cron = "${app.security.retention-cron:0 0 3 * * *}")
   void purgeExpiredRevokedCredentials() {
-    int months = properties.security().credentialRetentionMonths();
+    int months = properties.credentialRetentionMonths();
     Instant cutoff = ZonedDateTime.now(ZoneOffset.UTC).minusMonths(months).toInstant();
     int purged = credentials.purgeRevokedBefore(cutoff);
     if (purged > 0) {
