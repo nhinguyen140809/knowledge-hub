@@ -91,7 +91,10 @@ export function CommandPaletteContent({ useItems, onClose }: CommandPaletteConte
       >
         <div ref={contentRef}>
           {results.length === 0 ? (
-            <EmptyState icon={<SearchX size={28} />} description="No matches. Try a different search." />
+            <EmptyState
+              icon={<SearchX size={28} />}
+              description="No matches. Try a different search."
+            />
           ) : (
             results.map((item, i) => (
               <ResultRow

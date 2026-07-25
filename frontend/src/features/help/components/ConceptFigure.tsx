@@ -91,12 +91,7 @@ function Figure({
 }) {
   return (
     <Surface variant="secondary" className="mt-1 flex flex-col items-center gap-2 rounded-lg p-4">
-      <svg
-        viewBox={viewBox}
-        className="h-auto w-full max-w-75"
-        role="img"
-        aria-label={caption}
-      >
+      <svg viewBox={viewBox} className="h-auto w-full max-w-75" role="img" aria-label={caption}>
         {children}
       </svg>
       <p className="text-muted text-center text-xs">{caption}</p>
