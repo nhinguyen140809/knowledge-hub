@@ -1,5 +1,6 @@
 import { Button } from '@heroui/react'
 import { CornerDownLeft } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 import type { CommandItem } from './types'
 
 interface ResultRowProps {
@@ -15,8 +16,18 @@ interface ResultRowProps {
  *  and focus behaviour. */
 export function ResultRow({ item, isActive, onActivate, onRun }: ResultRowProps) {
   const Icon = item.icon
+  const ref = useRef<HTMLButtonElement>(null)
+
+  // Keep the keyboard-highlighted row in view as the selection moves past the
+  // fold. 'nearest' leaves an already-visible row where it is, so hovering a
+  // visible item doesn't cause a jump.
+  useEffect(() => {
+    if (isActive) ref.current?.scrollIntoView({ block: 'nearest' })
+  }, [isActive])
+
   return (
     <Button
+      ref={ref}
       variant="ghost"
       fullWidth
       onPress={onRun}
