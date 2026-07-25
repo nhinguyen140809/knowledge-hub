@@ -20,6 +20,12 @@ export function fetchSystemInfo(): Promise<SystemInfo> {
   return apiFetch<SystemInfo>('/system/info')
 }
 
+/** PUT /system/product-name - admin-only rename; echoes back the updated system info. */
+export function setProductName(productName: string): Promise<SystemInfo> {
+  if (isMock) return mockResolve({ ...mockSystemInfo, productName })
+  return apiFetch<SystemInfo>('/system/product-name', { method: 'PUT', data: { productName } })
+}
+
 /** GET /system/knowledge-stats — how much is indexed (graph + vectors). */
 export function fetchKnowledgeStats(): Promise<KnowledgeStats> {
   if (isMock) return mockResolve(mockKnowledgeStats)
