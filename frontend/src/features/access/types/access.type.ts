@@ -136,3 +136,15 @@ export interface PrincipalAccessGraph {
   nodes: AccessGraphNode[]
   edges: AccessGraphEdge[]
 }
+
+/**
+ * The subgraph explaining who can read one source: the source, every
+ * principal a grant reaches (directly or through membership), and the edges
+ * between them. Mirrors GET /admin/sources/{id}/access-graph — the inverse of
+ * `PrincipalAccessGraph`, resolved from the source's side.
+ */
+export interface SourceAccessGraph {
+  focus: string
+  nodes: AccessGraphNode[]
+  edges: AccessGraphEdge[]
+}

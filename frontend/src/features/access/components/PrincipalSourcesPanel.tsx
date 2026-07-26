@@ -1,55 +1,19 @@
 import { Button, Card, Skeleton, Tooltip } from '@heroui/react'
-import { Database, MousePointerClick, CircleMinus } from 'lucide-react'
-import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
+import { Database, MousePointerClick } from 'lucide-react'
 import { EmptyState } from '@/shared/components/ui/EmptyState'
 import { ErrorState } from '@/shared/components/ui/ErrorState'
-import { IconButton } from '@/shared/components/ui/IconButton'
 import { SUMMARY_SEP } from '@/shared/constants'
 import { useEffectivePermissions } from '../hooks/usePrincipals'
-import { useRevokeSources } from '../hooks/useGrants'
 import { isRevocableGrant, isTraceableOrigin } from '../lib/principal.rules'
 import type { EffectiveSource } from '../types/access.type'
 import { GrantSourceDialog } from './GrantSourceDialog'
 import { OriginChip } from './OriginChip'
+import { RevokeGrantButton } from './RevokeGrantButton'
 
 function accessSummary(readableCount: number, inherited: number): string {
   const parts = [`${readableCount} readable in total`]
   if (inherited > 0) parts.push(`${inherited} inherited via groups`)
   return parts.join(SUMMARY_SEP)
-}
-
-/** Revoking a direct grant removes read access immediately, so it goes
- *  through the same confirm step as deleting a source or revoking a
- *  credential. */
-function RevokeGrantButton({ principalId, sourceId }: { principalId: string; sourceId: string }) {
-  const revoke = useRevokeSources()
-  return (
-    <ConfirmDialog
-      trigger={
-        <IconButton tooltip={`Revoke access`} size="sm" variant="ghost">
-          <CircleMinus size={14} />
-        </IconButton>
-      }
-      icon={<CircleMinus className="size-5" />}
-      heading="Revoke this grant?"
-      message={
-        <p>
-          <strong>{principalId}</strong> loses direct read access to <strong>{sourceId}</strong>{' '}
-          immediately. It may still be reachable through a group grant or the default policy.
-        </p>
-      }
-      confirmButton={
-        <Button
-          slot="close"
-          variant="danger"
-          isPending={revoke.isPending}
-          onPress={() => revoke.mutate({ principalId, sourceIds: [sourceId] })}
-        >
-          Revoke
-        </Button>
-      }
-    />
-  )
 }
 
 function GrantRow({

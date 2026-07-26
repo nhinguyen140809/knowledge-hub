@@ -1,5 +1,5 @@
 export { AccessPage } from './pages/AccessPage'
-export { SourcePrincipalsPanel } from './components/SourcePrincipalsPanel'
+export { AccessSourcesPage } from './pages/AccessSourcesPage'
 export {
   useAccessGraph,
   useEffectivePermissions,
@@ -8,7 +8,7 @@ export {
   usePrincipalGraph,
   usePrincipals,
 } from './hooks/usePrincipals'
-export { useSourcePrincipals } from './hooks/useSourceAccess'
+export { useSourceAccessGraph, useSourcePrincipals } from './hooks/useSourceAccess'
 export {
   useAddMember,
   useCreatePrincipal,
@@ -43,6 +43,7 @@ export type {
   PrincipalGraph,
   PrincipalType,
   Role,
+  SourceAccessGraph,
   SourcePrincipal,
   SourcePrincipals,
 } from './types/access.type'

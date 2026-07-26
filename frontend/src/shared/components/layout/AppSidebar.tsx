@@ -24,7 +24,17 @@ import { type NavItem } from '@/shared/types/navigation.type'
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', to: '/', icon: LayoutDashboard, match: 'exact' },
   { label: 'Sources', to: '/sources', icon: Database },
-  { label: 'Access control', to: '/access', icon: KeyRound },
+  {
+    label: 'Access control',
+    icon: KeyRound,
+    children: [
+      // 'exact' matters here: without it, '/access' also matches
+      // '/access/sources' (prefix matching cuts at segment boundaries, not
+      // full-path equality), and both children would highlight at once.
+      { label: 'Principals', to: '/access', match: 'exact' },
+      { label: 'Sources', to: '/access/sources' },
+    ],
+  },
   { label: 'Query', to: '/query', icon: Search },
 ]
 

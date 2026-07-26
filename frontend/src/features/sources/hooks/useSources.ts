@@ -1,6 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { useActiveConnection } from '@/lib/store/connections.store'
-import { fetchSource, fetchSources, fetchSourceStatus, fetchSourceSummary } from '../api/sources.api'
+import {
+  fetchSource,
+  fetchSources,
+  fetchSourceStatus,
+  fetchSourceSummary,
+} from '../api/sources.api'
 import { sourceKeys } from '../api/sources.keys'
 
 /** All sources on the active backend. Disabled until a backend is selected. */

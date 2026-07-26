@@ -43,4 +43,21 @@ describe('findActiveLabel', () => {
   it('returns an empty string for unknown paths', () => {
     expect(findActiveLabel(items, '/nope')).toBe('')
   })
+
+  it("a group child's exact match keeps a sibling with a longer path from also claiming it", () => {
+    // Without 'exact' on the shorter child, prefix matching (the default)
+    // would make '/access' also match '/access/sources', highlighting both.
+    const grouped: NavItem[] = [
+      {
+        label: 'Access control',
+        icon: Circle,
+        children: [
+          { label: 'Principals', to: '/access', match: 'exact' },
+          { label: 'Sources', to: '/access/sources' },
+        ],
+      },
+    ]
+    expect(findActiveLabel(grouped, '/access')).toBe('Principals')
+    expect(findActiveLabel(grouped, '/access/sources')).toBe('Sources')
+  })
 })

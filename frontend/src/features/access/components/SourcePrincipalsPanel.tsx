@@ -1,11 +1,13 @@
 import { Button, Card, Skeleton, Tooltip } from '@heroui/react'
-import { Users } from 'lucide-react'
+import { MousePointerClick, Users } from 'lucide-react'
 import { EmptyState } from '@/shared/components/ui/EmptyState'
 import { ErrorState } from '@/shared/components/ui/ErrorState'
 import { SUMMARY_SEP } from '@/shared/constants'
 import { useSourcePrincipals } from '../hooks/useSourceAccess'
+import { isRevocableGrant } from '../lib/principal.rules'
 import type { SourcePrincipal } from '../types/access.type'
 import { OriginChip } from './OriginChip'
+import { RevokeGrantButton } from './RevokeGrantButton'
 
 function accessSummary(count: number, inherited: number): string {
   const parts = [`${count} ${count === 1 ? 'principal can' : 'principals can'} read this source`]
@@ -14,9 +16,11 @@ function accessSummary(count: number, inherited: number): string {
 }
 
 function PrincipalRow({
+  sourceId,
   principal,
   onSelect,
 }: {
+  sourceId: string
   principal: SourcePrincipal
   onSelect?: (principalId: string) => void
 }) {
@@ -36,7 +40,12 @@ function PrincipalRow({
       ) : (
         <span className="truncate text-sm">{principal.principalId}</span>
       )}
-      <OriginChip origin={principal.origin} />
+      <div className="flex shrink-0 items-center gap-1">
+        <OriginChip origin={principal.origin} />
+        {isRevocableGrant(principal.origin) && (
+          <RevokeGrantButton principalId={principal.principalId} sourceId={sourceId} />
+        )}
+      </div>
     </div>
   )
 }
@@ -44,22 +53,31 @@ function PrincipalRow({
 /**
  * Every principal that can read this source, with how its access arrived —
  * direct grant, inherited through a group, admin role bypass, or the default
- * policy. The inverse of a principal's own Sources panel.
+ * policy. Only a DIRECT grant is revocable here, same rule as a principal's
+ * own Sources panel. The inverse of that panel.
  */
 export function SourcePrincipalsPanel({
   sourceId,
   onSelectPrincipal,
 }: {
-  sourceId: string
+  sourceId: string | null
   /** Called when a principal is clicked, to open it on the Access page. */
   onSelectPrincipal?: (principalId: string) => void
 }) {
-  const { data, isPending, isError, error } = useSourcePrincipals(sourceId)
+  const { data, isPending, isError, error } = useSourcePrincipals(sourceId ?? undefined)
 
   const principals = data?.principals ?? []
   const inherited = principals.filter((p) => p.origin === 'INHERITED').length
 
   function content() {
+    if (!sourceId) {
+      return (
+        <EmptyState
+          icon={<MousePointerClick size={28} />}
+          description="Select a source to see who can access it"
+        />
+      )
+    }
     if (isPending) return <Skeleton className="h-5 w-2/3 rounded" />
     if (isError) return <ErrorState description={(error as Error).message} />
     if (principals.length === 0) {
@@ -72,6 +90,7 @@ export function SourcePrincipalsPanel({
         {principals.map((principal) => (
           <PrincipalRow
             key={principal.principalId}
+            sourceId={sourceId}
             principal={principal}
             onSelect={onSelectPrincipal}
           />

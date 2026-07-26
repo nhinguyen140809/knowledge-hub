@@ -11,6 +11,7 @@ import {
   type Principal,
   type PrincipalAccessGraph,
   type PrincipalGraph,
+  type SourceAccessGraph,
   type SourcePrincipal,
   type SourcePrincipals,
 } from '../types/access.type'
@@ -196,6 +197,45 @@ export function mockResolveSourcePrincipals(sourceId: string): SourcePrincipals 
   }
 
   return { sourceId, principals }
+}
+
+/**
+ * The subgraph GET .../sources/{id}/access-graph returns: the source, every
+ * principal a grant reaches (directly or through membership), and the edges
+ * among them. ADMIN/POLICY-origin principals have no edge to draw, so — like
+ * the principal-rooted graph never showing a role-bypassed source — they
+ * don't appear here even though `mockResolveSourcePrincipals` lists them.
+ */
+export function mockResolveSourceAccessGraph(sourceId: string): SourceAccessGraph {
+  const grantors = Object.entries(mockDirectGrants)
+    .filter(([, sourceIds]) => sourceIds.includes(sourceId))
+    .map(([principalId]) => principalId)
+
+  const reached = new Set<string>()
+  for (const grantor of grantors) {
+    for (const id of reachableFrom(grantor)) reached.add(id)
+  }
+
+  const typeById = new Map(mockPrincipals.map((p) => [p.principalId, p.type]))
+  const nodes: AccessGraphNode[] = [...reached].map((id) => ({
+    id,
+    kind: typeById.get(id) ?? 'SUBJECT',
+  }))
+  nodes.push({ id: sourceId, kind: 'SOURCE' })
+
+  const edges: AccessGraphEdge[] = grantors.map((grantor) => ({
+    from: grantor,
+    to: sourceId,
+    kind: 'GRANT' as const,
+  }))
+  for (const [groupId, memberIds] of Object.entries(mockMembers)) {
+    if (!reached.has(groupId)) continue
+    for (const memberId of memberIds) {
+      if (reached.has(memberId)) edges.push({ from: groupId, to: memberId, kind: 'MEMBER' })
+    }
+  }
+
+  return { focus: sourceId, nodes, edges }
 }
 
 /** The scoped subgraph GET .../access-graph returns: the focus principal, its

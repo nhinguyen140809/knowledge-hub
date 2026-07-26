@@ -1,6 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { ConnectPage, PrivateRoute } from '../features/auth'
-import { AccessPage } from '../features/access'
+import { AccessPage, AccessSourcesPage } from '../features/access'
 import { DashboardPage } from '../features/dashboard'
 import { HelpPage } from '../features/help'
 import { QueryPage } from '../features/query'
@@ -23,6 +23,7 @@ const router = createBrowserRouter([
       { path: '/sources', element: <SourcesPage /> },
       { path: '/sources/:id', element: <SourceDetailPage /> },
       { path: '/access', element: <AccessPage /> },
+      { path: '/access/sources', element: <AccessSourcesPage /> },
       { path: '/query', element: <QueryPage /> },
       { path: '/help', element: <HelpPage /> },
     ],

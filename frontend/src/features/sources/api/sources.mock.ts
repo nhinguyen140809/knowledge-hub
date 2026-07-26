@@ -187,7 +187,9 @@ export const mockSourceSummary: SourceSummary = (() => {
     synced: syncedAt.length,
     neverSynced: mockSources.length - syncedAt.length,
     stale: syncedAt.filter((at) => new Date(at).getTime() < staleCutoff).length,
-    lastSyncAt: syncedAt.length ? syncedAt.reduce((latest, at) => (at > latest ? at : latest)) : null,
+    lastSyncAt: syncedAt.length
+      ? syncedAt.reduce((latest, at) => (at > latest ? at : latest))
+      : null,
   }
 })()
 
