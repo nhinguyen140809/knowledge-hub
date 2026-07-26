@@ -2,6 +2,7 @@ package com.knowledgehub.access.application;
 
 import com.knowledgehub.access.domain.AuthenticatedPrincipal;
 import com.knowledgehub.access.domain.DefaultPolicy;
+import com.knowledgehub.access.domain.PermissionOrigin;
 import com.knowledgehub.access.domain.Principal;
 import com.knowledgehub.access.domain.PrincipalType;
 import com.knowledgehub.access.domain.Role;
@@ -12,6 +13,8 @@ import com.knowledgehub.access.domain.port.PrincipalRepository;
 import com.knowledgehub.access.domain.port.SystemConfigRepository;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -127,11 +130,28 @@ public class PrincipalAdminService {
     Principal principal = get(principalId);
     AuthenticatedPrincipal authenticated =
         new AuthenticatedPrincipal(principal.principalId(), principal.role());
-    return new EffectivePermissions(
-        principalId,
-        systemConfig.defaultPolicy(),
-        authorizer.readableSources(authenticated),
-        grants.grantingPrincipalsFor(principalId));
+    Set<String> readable = authorizer.readableSources(authenticated);
+    Map<String, Set<String>> grantingPrincipals = grants.grantingPrincipalsFor(principalId);
+    List<EffectivePermissions.SourceAccess> sources =
+        readable.stream().map(sourceId -> resolveAccess(principal, sourceId, grantingPrincipals)).toList();
+    return new EffectivePermissions(principalId, systemConfig.defaultPolicy(), sources);
+  }
+
+  /** Picks the one origin that matters most (see {@link PermissionOrigin}) for a readable source. */
+  private static EffectivePermissions.SourceAccess resolveAccess(
+      Principal principal, String sourceId, Map<String, Set<String>> grantingPrincipals) {
+    Set<String> via = grantingPrincipals.getOrDefault(sourceId, Set.of());
+    PermissionOrigin origin;
+    if (via.contains(principal.principalId())) {
+      origin = PermissionOrigin.DIRECT;
+    } else if (!via.isEmpty()) {
+      origin = PermissionOrigin.INHERITED;
+    } else if (principal.isAdmin()) {
+      origin = PermissionOrigin.ADMIN;
+    } else {
+      origin = PermissionOrigin.POLICY;
+    }
+    return new EffectivePermissions.SourceAccess(sourceId, origin, via);
   }
 
   private void requireGroup(String groupId) {

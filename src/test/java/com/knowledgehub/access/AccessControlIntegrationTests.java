@@ -1,9 +1,8 @@
 package com.knowledgehub.access;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -53,6 +52,7 @@ class AccessControlIntegrationTests {
 
   static final String ADMIN_KEY = "bootstrap-secret";
 
+  private static final String ADMIN_ID = "bootstrap-admin";
   private static final String MEMBER = "acl-member";
   private static final String GROUP = "acl-group";
   private static final String USER = "acl-user";
@@ -186,8 +186,10 @@ class AccessControlIntegrationTests {
             get("/api/v1/admin/principals/" + USER + "/effective-permissions")
                 .header("Authorization", bearer(ADMIN_KEY)))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.readableSources", containsInAnyOrder(SRC_A)))
-        .andExpect(jsonPath("$.grantedVia['" + SRC_A + "']", hasItem(GROUP)));
+        .andExpect(jsonPath("$.sources", hasSize(1)))
+        .andExpect(jsonPath("$.sources[0].sourceId").value(SRC_A))
+        .andExpect(jsonPath("$.sources[0].origin").value("INHERITED"))
+        .andExpect(jsonPath("$.sources[0].via", hasItem(GROUP)));
   }
 
   @Test
@@ -197,21 +199,31 @@ class AccessControlIntegrationTests {
     grant(RESTRICTED_OWNER, SRC_A); // SRC_A now restricted to its owner
     setPolicy("ALLOW");
 
-    // A user with no grants reads every source except the restricted SRC_A.
+    // A user with no grants reads every source except the restricted SRC_A, readable only by policy.
     mvc.perform(
             get("/api/v1/admin/principals/" + USER + "/effective-permissions")
                 .header("Authorization", bearer(ADMIN_KEY)))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.readableSources", hasItem(SRC_B)))
-        .andExpect(jsonPath("$.readableSources", not(hasItem(SRC_A))));
+        .andExpect(jsonPath("$.sources[?(@.sourceId=='" + SRC_B + "')].origin", hasItem("POLICY")))
+        .andExpect(jsonPath("$.sources[?(@.sourceId=='" + SRC_A + "')]", hasSize(0)));
 
-    // The owner still reads the restricted source plus everything else.
+    // The owner still reads the restricted source directly, plus everything else by policy.
     mvc.perform(
             get("/api/v1/admin/principals/" + RESTRICTED_OWNER + "/effective-permissions")
                 .header("Authorization", bearer(ADMIN_KEY)))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.readableSources", hasItem(SRC_A)))
-        .andExpect(jsonPath("$.readableSources", hasItem(SRC_B)));
+        .andExpect(jsonPath("$.sources[?(@.sourceId=='" + SRC_A + "')].origin", hasItem("DIRECT")))
+        .andExpect(jsonPath("$.sources[?(@.sourceId=='" + SRC_B + "')].origin", hasItem("POLICY")));
+  }
+
+  @Test
+  void adminEffectivePermissionsShowOriginAdminWhenNoGrantReachesTheSource() throws Exception {
+    // The bootstrap admin reads every source through role bypass alone: no grant, no group.
+    mvc.perform(
+            get("/api/v1/admin/principals/" + ADMIN_ID + "/effective-permissions")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.sources[?(@.sourceId=='" + SRC_A + "')].origin", hasItem("ADMIN")));
   }
 
   // --- helpers ---
