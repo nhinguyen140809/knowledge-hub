@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,19 +60,14 @@ public class SourcePrincipalsService {
     List<SourcePrincipals.PrincipalAccess> access = new ArrayList<>();
     for (Principal principal : principals.findAll()) {
       Set<String> via = viaByPrincipal.getOrDefault(principal.principalId(), Set.of());
-      PermissionOrigin origin;
-      if (via.contains(principal.principalId())) {
-        origin = PermissionOrigin.DIRECT;
-      } else if (!via.isEmpty()) {
-        origin = PermissionOrigin.INHERITED;
-      } else if (principal.isAdmin()) {
-        origin = PermissionOrigin.ADMIN;
-      } else if (policyReadable) {
-        origin = PermissionOrigin.POLICY;
-      } else {
+      Optional<PermissionOrigin> origin = principal.originFor(via);
+      if (origin.isEmpty() && policyReadable) {
+        origin = Optional.of(PermissionOrigin.POLICY);
+      }
+      if (origin.isEmpty()) {
         continue; // not readable at all
       }
-      access.add(new SourcePrincipals.PrincipalAccess(principal.principalId(), origin, via));
+      access.add(new SourcePrincipals.PrincipalAccess(principal.principalId(), origin.get(), via));
     }
     return new SourcePrincipals(sourceId, access);
   }

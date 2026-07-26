@@ -251,20 +251,10 @@ public class PrincipalAdminService {
     return new EffectivePermissions(principalId, systemConfig.defaultPolicy(), sources);
   }
 
-  /** Picks the one origin that matters most (see {@link PermissionOrigin}) for a readable source. */
   private static EffectivePermissions.SourceAccess resolveAccess(
       Principal principal, String sourceId, Map<String, Set<String>> grantingPrincipals) {
     Set<String> via = grantingPrincipals.getOrDefault(sourceId, Set.of());
-    PermissionOrigin origin;
-    if (via.contains(principal.principalId())) {
-      origin = PermissionOrigin.DIRECT;
-    } else if (!via.isEmpty()) {
-      origin = PermissionOrigin.INHERITED;
-    } else if (principal.isAdmin()) {
-      origin = PermissionOrigin.ADMIN;
-    } else {
-      origin = PermissionOrigin.POLICY;
-    }
+    PermissionOrigin origin = principal.originFor(via).orElse(PermissionOrigin.POLICY);
     return new EffectivePermissions.SourceAccess(sourceId, origin, via);
   }
 
