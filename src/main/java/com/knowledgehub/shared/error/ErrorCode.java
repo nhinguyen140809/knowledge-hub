@@ -18,6 +18,12 @@ public enum ErrorCode {
   DUPLICATE_PRINCIPAL(HttpStatus.CONFLICT, "Principal already exists"),
   DUPLICATE_CREDENTIAL_NAME(
       HttpStatus.CONFLICT, "Credential name already in use for this principal"),
+  MEMBERSHIP_CYCLE(HttpStatus.CONFLICT, "Membership change would create a cycle"),
+  ADMIN_MEMBERSHIP(HttpStatus.CONFLICT, "Admin principals cannot belong to a group"),
+  ADMIN_GRANT(
+      HttpStatus.CONFLICT,
+      "Admin principals already have full access; grants are not permitted"),
+  LAST_ADMIN(HttpStatus.CONFLICT, "Cannot delete the last remaining admin"),
   VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "Request validation failed"),
   UNAUTHENTICATED(HttpStatus.UNAUTHORIZED, "Authentication required or invalid"),
   FORBIDDEN(HttpStatus.FORBIDDEN, "Operation not permitted"),

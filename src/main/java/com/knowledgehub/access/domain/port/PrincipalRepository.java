@@ -25,6 +25,13 @@ public interface PrincipalRepository {
   /** Adds {@code memberId} to {@code groupId} (a {@code MEMBER_OF} edge). */
   void addMember(String groupId, String memberId);
 
+  /**
+   * Whether adding {@code memberId} to {@code groupId} would close a membership cycle — true when
+   * {@code groupId} is already (transitively, including itself) a member of {@code memberId}, so
+   * the new edge would complete a loop.
+   */
+  boolean wouldCreateCycle(String groupId, String memberId);
+
   /** Removes {@code memberId} from {@code groupId}. */
   void removeMember(String groupId, String memberId);
 

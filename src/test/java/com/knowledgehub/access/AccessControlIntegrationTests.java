@@ -55,6 +55,7 @@ class AccessControlIntegrationTests {
   private static final String ADMIN_ID = "bootstrap-admin";
   private static final String MEMBER = "acl-member";
   private static final String GROUP = "acl-group";
+  private static final String GROUP_2 = "acl-group-2";
   private static final String USER = "acl-user";
   private static final String RESTRICTED_OWNER = "acl-owner";
   private static final String SRC_A = "acl-src-a";
@@ -83,7 +84,7 @@ class AccessControlIntegrationTests {
 
   @AfterEach
   void tearDown() {
-    for (String id : List.of(MEMBER, GROUP, USER, RESTRICTED_OWNER)) {
+    for (String id : List.of(MEMBER, GROUP, GROUP_2, USER, RESTRICTED_OWNER)) {
       principals.deleteById(id);
     }
     sources.deleteById(SRC_A);
@@ -237,6 +238,22 @@ class AccessControlIntegrationTests {
         .andExpect(jsonPath("$.principals[?(@.principalId=='" + GROUP + "')]", hasSize(1)))
         .andExpect(jsonPath("$.principals[?(@.principalId=='" + USER + "')]", hasSize(1)))
         .andExpect(jsonPath("$.membership['" + GROUP + "']", hasItem(USER)));
+  }
+
+  @Test
+  void addMemberRejectsAChangeThatWouldCreateACycle() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER");
+    createPrincipal(GROUP_2, "GROUP", "MEMBER");
+    addMember(GROUP, GROUP_2); // GROUP_2 is now nested inside GROUP
+
+    // Nesting GROUP inside GROUP_2 would close the loop GROUP -> GROUP_2 -> GROUP.
+    mvc.perform(
+            post("/api/v1/admin/principals/" + GROUP_2 + "/members")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"memberId\":\"%s\"}".formatted(GROUP)))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("MEMBERSHIP_CYCLE"));
   }
 
   // --- helpers ---

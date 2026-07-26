@@ -7,6 +7,7 @@ import com.knowledgehub.access.domain.Principal;
 import com.knowledgehub.access.domain.PrincipalType;
 import com.knowledgehub.access.domain.Role;
 import com.knowledgehub.access.domain.exception.DuplicatePrincipalException;
+import com.knowledgehub.access.domain.exception.MembershipCycleException;
 import com.knowledgehub.access.domain.port.Authorizer;
 import com.knowledgehub.access.domain.port.GrantRepository;
 import com.knowledgehub.access.domain.port.PrincipalRepository;
@@ -76,6 +77,9 @@ public class PrincipalAdminService {
   public void addMember(String groupId, String memberId) {
     requireGroup(groupId);
     get(memberId);
+    if (principals.wouldCreateCycle(groupId, memberId)) {
+      throw new MembershipCycleException(groupId, memberId);
+    }
     principals.addMember(groupId, memberId);
   }
 

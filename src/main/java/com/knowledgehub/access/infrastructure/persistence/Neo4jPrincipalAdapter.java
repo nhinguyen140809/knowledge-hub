@@ -46,6 +46,11 @@ class Neo4jPrincipalAdapter implements PrincipalRepository {
       "MATCH (m:Principal)-[:MEMBER_OF]->(g:Principal {principal_id: $groupId})"
           + " RETURN m.principal_id AS id ORDER BY m.principal_id";
 
+  private static final String WOULD_CREATE_CYCLE =
+      "MATCH (g:Principal {principal_id: $groupId})"
+          + "-[:MEMBER_OF*0..]->(m:Principal {principal_id: $memberId})"
+          + " RETURN count(m) > 0 AS wouldCycle";
+
   private static final String MEMBERSHIP_GRAPH =
       "MATCH (m:Principal)-[:MEMBER_OF]->(g:Principal)"
           + " WITH g, m ORDER BY m.principal_id"
@@ -134,6 +139,17 @@ class Neo4jPrincipalAdapter implements PrincipalRepository {
         .all()
         .stream()
         .toList();
+  }
+
+  @Override
+  public boolean wouldCreateCycle(String groupId, String memberId) {
+    return client
+        .query(WOULD_CREATE_CYCLE)
+        .bindAll(Map.of("groupId", groupId, "memberId", memberId))
+        .fetchAs(Boolean.class)
+        .mappedBy((t, row) -> row.get("wouldCycle").asBoolean())
+        .one()
+        .orElse(false);
   }
 
   @Override
