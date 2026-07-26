@@ -31,4 +31,7 @@ public interface GrantRepository {
 
   /** Every source that appears in some grant; under an allow policy these become restricted. */
   Set<String> allGrantedSources();
+
+  /** Every principal (self or a group) with a direct grant to the given source. */
+  Set<String> directGrantorsOf(String sourceId);
 }

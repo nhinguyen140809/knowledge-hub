@@ -43,6 +43,10 @@ class Neo4jGrantAdapter implements GrantRepository {
   private static final String ALL_GRANTED =
       "MATCH (:Principal)-[:GRANTED]->(s:Source) RETURN collect(DISTINCT s.source_id) AS ids";
 
+  private static final String DIRECT_GRANTORS_OF =
+      "MATCH (p:Principal)-[:GRANTED]->(:Source {source_id: $id})"
+          + " RETURN collect(DISTINCT p.principal_id) AS ids";
+
   private final Neo4jClient client;
 
   Neo4jGrantAdapter(Neo4jClient client) {
@@ -116,6 +120,18 @@ class Neo4jGrantAdapter implements GrantRepository {
   public Set<String> allGrantedSources() {
     return client
         .query(ALL_GRANTED)
+        .fetch()
+        .one()
+        .<Set<String>>map(row -> new LinkedHashSet<>(asStrings(row.get("ids"))))
+        .orElseGet(LinkedHashSet::new);
+  }
+
+  @Override
+  public Set<String> directGrantorsOf(String sourceId) {
+    return client
+        .query(DIRECT_GRANTORS_OF)
+        .bind(sourceId)
+        .to("id")
         .fetch()
         .one()
         .<Set<String>>map(row -> new LinkedHashSet<>(asStrings(row.get("ids"))))

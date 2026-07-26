@@ -494,6 +494,52 @@ class AccessControlIntegrationTests {
         .andExpect(jsonPath("$[?(@.principalId=='" + USER + "')].name", hasItem("default")));
   }
 
+  @Test
+  void sourcePrincipalsExplainsWhoCanReadASource() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER"); // eng-team
+    createPrincipal(GROUP_2, "GROUP", "MEMBER"); // support-team
+    createPrincipal(USER, "SUBJECT", "MEMBER"); // bob
+    addMember(GROUP, GROUP_2); // support-team is a member of eng-team
+    addMember(GROUP_2, USER); // bob is a member of support-team
+    grant(GROUP, SRC_A); // eng-team granted SRC_A
+
+    mvc.perform(
+            get("/api/v1/admin/sources/" + SRC_A + "/principals")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.sourceId").value(SRC_A))
+        .andExpect(
+            jsonPath("$.principals[?(@.principalId=='" + GROUP + "')].origin", hasItem("DIRECT")))
+        .andExpect(
+            jsonPath(
+                "$.principals[?(@.principalId=='" + USER + "')].origin", hasItem("INHERITED")))
+        .andExpect(
+            jsonPath(
+                "$.principals[?(@.principalId=='" + ADMIN_ID + "')].origin", hasItem("ADMIN")));
+  }
+
+  @Test
+  void sourcePrincipalsShowsPolicyOriginUnderAllowWithNoGrant() throws Exception {
+    createPrincipal(USER, "SUBJECT", "MEMBER");
+    setPolicy("ALLOW");
+
+    mvc.perform(
+            get("/api/v1/admin/sources/" + SRC_B + "/principals")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(
+            jsonPath("$.principals[?(@.principalId=='" + USER + "')].origin", hasItem("POLICY")));
+  }
+
+  @Test
+  void sourcePrincipalsReturns404ForUnknownSource() throws Exception {
+    mvc.perform(
+            get("/api/v1/admin/sources/does-not-exist/principals")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("SOURCE_NOT_FOUND"));
+  }
+
   // --- helpers ---
 
   private static String bearer(String token) {
