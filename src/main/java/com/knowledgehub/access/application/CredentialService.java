@@ -1,6 +1,7 @@
 package com.knowledgehub.access.application;
 
 import com.knowledgehub.access.domain.Credential;
+import com.knowledgehub.access.domain.OwnedCredential;
 import com.knowledgehub.access.domain.exception.DuplicateCredentialNameException;
 import com.knowledgehub.access.domain.port.CredentialRepository;
 import com.knowledgehub.access.domain.port.PrincipalRepository;
@@ -66,5 +67,11 @@ public class CredentialService {
       throw new PrincipalNotFoundException(principalId);
     }
     return credentials.listByPrincipal(principalId);
+  }
+
+  /** Lists every credential across every principal, each paired with its owner. */
+  @Transactional(readOnly = true)
+  public List<OwnedCredential> listAll() {
+    return credentials.listAll();
   }
 }

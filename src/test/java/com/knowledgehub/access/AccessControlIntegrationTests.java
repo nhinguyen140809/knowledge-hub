@@ -484,6 +484,16 @@ class AccessControlIntegrationTests {
                 hasItem("GRANT")));
   }
 
+  @Test
+  void globalCredentialListAttributesEachCredentialToItsOwner() throws Exception {
+    createPrincipal(USER, "SUBJECT", "MEMBER");
+    issueCredential(USER);
+
+    mvc.perform(get("/api/v1/admin/credentials").header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[?(@.principalId=='" + USER + "')].name", hasItem("default")));
+  }
+
   // --- helpers ---
 
   private static String bearer(String token) {

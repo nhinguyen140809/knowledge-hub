@@ -1,6 +1,7 @@
 package com.knowledgehub.access.domain.port;
 
 import com.knowledgehub.access.domain.Credential;
+import com.knowledgehub.access.domain.OwnedCredential;
 import com.knowledgehub.access.domain.Principal;
 import java.time.Instant;
 import java.util.List;
@@ -35,6 +36,12 @@ public interface CredentialRepository {
 
   /** Lists a principal's credentials as metadata only (no secret, no hash). */
   List<Credential> listByPrincipal(String principalId);
+
+  /**
+   * Every credential across every principal, each paired with its owner — the single-query
+   * alternative to one {@link #listByPrincipal} call per principal.
+   */
+  List<OwnedCredential> listAll();
 
   /** Hard-deletes revoked credentials revoked before the cutoff; returns how many. */
   int purgeRevokedBefore(Instant cutoff);
