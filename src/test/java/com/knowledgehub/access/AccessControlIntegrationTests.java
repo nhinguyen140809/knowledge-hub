@@ -452,6 +452,38 @@ class AccessControlIntegrationTests {
         .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
   }
 
+  @Test
+  void accessGraphExplainsMembershipAncestryAndGrants() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER"); // eng-team
+    createPrincipal(GROUP_2, "GROUP", "MEMBER"); // support-team
+    createPrincipal(USER, "SUBJECT", "MEMBER"); // bob
+    addMember(GROUP, GROUP_2); // support-team is a member of eng-team
+    addMember(GROUP_2, USER); // bob is a member of support-team
+    grant(GROUP, SRC_A); // eng-team granted SRC_A
+
+    mvc.perform(
+            get("/api/v1/admin/principals/" + USER + "/access-graph")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.focus").value(USER))
+        .andExpect(jsonPath("$.nodes[?(@.id=='" + USER + "')].kind", hasItem("SUBJECT")))
+        .andExpect(jsonPath("$.nodes[?(@.id=='" + GROUP + "')].kind", hasItem("GROUP")))
+        .andExpect(jsonPath("$.nodes[?(@.id=='" + GROUP_2 + "')].kind", hasItem("GROUP")))
+        .andExpect(jsonPath("$.nodes[?(@.id=='" + SRC_A + "')].kind", hasItem("SOURCE")))
+        .andExpect(
+            jsonPath(
+                "$.edges[?(@.from=='" + GROUP + "' && @.to=='" + GROUP_2 + "')].kind",
+                hasItem("MEMBER")))
+        .andExpect(
+            jsonPath(
+                "$.edges[?(@.from=='" + GROUP_2 + "' && @.to=='" + USER + "')].kind",
+                hasItem("MEMBER")))
+        .andExpect(
+            jsonPath(
+                "$.edges[?(@.from=='" + GROUP + "' && @.to=='" + SRC_A + "')].kind",
+                hasItem("GRANT")));
+  }
+
   // --- helpers ---
 
   private static String bearer(String token) {

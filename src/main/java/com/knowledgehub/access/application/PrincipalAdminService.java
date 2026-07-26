@@ -1,5 +1,7 @@
 package com.knowledgehub.access.application;
 
+import com.knowledgehub.access.domain.AccessGraphEdgeKind;
+import com.knowledgehub.access.domain.AccessGraphNodeKind;
 import com.knowledgehub.access.domain.AuthenticatedPrincipal;
 import com.knowledgehub.access.domain.DefaultPolicy;
 import com.knowledgehub.access.domain.PermissionOrigin;
@@ -15,7 +17,9 @@ import com.knowledgehub.access.domain.port.Authorizer;
 import com.knowledgehub.access.domain.port.GrantRepository;
 import com.knowledgehub.access.domain.port.PrincipalRepository;
 import com.knowledgehub.access.domain.port.SystemConfigRepository;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -147,6 +151,55 @@ public class PrincipalAdminService {
   @Transactional(readOnly = true)
   public PrincipalGraph graph() {
     return new PrincipalGraph(principals.findAll(), principals.membershipGraph());
+  }
+
+  /**
+   * The subgraph explaining {@code principalId}'s access: its membership ancestry (scoped to just
+   * that ancestry, not the whole org) plus every source a grant along that ancestry reaches.
+   */
+  @Transactional(readOnly = true)
+  public AccessGraph accessGraph(String principalId) {
+    get(principalId);
+    List<Principal> ancestors = principals.ancestorsOf(principalId);
+    Set<String> ancestorIds = new LinkedHashSet<>();
+    List<AccessGraph.Node> nodes = new ArrayList<>();
+    for (Principal ancestor : ancestors) {
+      ancestorIds.add(ancestor.principalId());
+      AccessGraphNodeKind kind =
+          ancestor.type() == PrincipalType.GROUP
+              ? AccessGraphNodeKind.GROUP
+              : AccessGraphNodeKind.SUBJECT;
+      nodes.add(new AccessGraph.Node(ancestor.principalId(), kind));
+    }
+
+    List<AccessGraph.Edge> edges = new ArrayList<>();
+    principals
+        .membershipGraph()
+        .forEach(
+            (groupId, memberIds) -> {
+              if (!ancestorIds.contains(groupId)) {
+                return;
+              }
+              for (String memberId : memberIds) {
+                if (ancestorIds.contains(memberId)) {
+                  edges.add(new AccessGraph.Edge(groupId, memberId, AccessGraphEdgeKind.MEMBER));
+                }
+              }
+            });
+
+    Set<String> sourceIds = new LinkedHashSet<>();
+    grants
+        .grantingPrincipalsFor(principalId)
+        .forEach(
+            (sourceId, grantors) -> {
+              for (String grantorId : grantors) {
+                sourceIds.add(sourceId);
+                edges.add(new AccessGraph.Edge(grantorId, sourceId, AccessGraphEdgeKind.GRANT));
+              }
+            });
+    sourceIds.forEach(sourceId -> nodes.add(new AccessGraph.Node(sourceId, AccessGraphNodeKind.SOURCE)));
+
+    return new AccessGraph(principalId, nodes, edges);
   }
 
   // --- grants ---

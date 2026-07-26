@@ -54,6 +54,10 @@ class Neo4jPrincipalAdapter implements PrincipalRepository {
           + "-[:MEMBER_OF*0..]->(m:Principal {principal_id: $memberId})"
           + " RETURN count(m) > 0 AS wouldCycle";
 
+  private static final String ANCESTORS_OF =
+      "MATCH (p:Principal {principal_id: $id})-[:MEMBER_OF*0..]->(g:Principal)"
+          + " RETURN DISTINCT g.principal_id AS id, g.type AS type, g.role AS role";
+
   private static final String MEMBERSHIP_GRAPH =
       "MATCH (m:Principal)-[:MEMBER_OF]->(g:Principal)"
           + " WITH g, m ORDER BY m.principal_id"
@@ -165,6 +169,19 @@ class Neo4jPrincipalAdapter implements PrincipalRepository {
         .mappedBy((t, row) -> row.get("wouldCycle").asBoolean())
         .one()
         .orElse(false);
+  }
+
+  @Override
+  public List<Principal> ancestorsOf(String principalId) {
+    return client
+        .query(ANCESTORS_OF)
+        .bind(principalId)
+        .to("id")
+        .fetchAs(Principal.class)
+        .mappedBy((t, row) -> toPrincipal(row))
+        .all()
+        .stream()
+        .toList();
   }
 
   @Override

@@ -124,4 +124,10 @@ public class PrincipalController {
   public EffectivePermissionsResponse effectivePermissions(@PathVariable String id) {
     return EffectivePermissionsResponse.from(principals.effectivePermissions(id));
   }
+
+  @GetMapping("/{id}/access-graph")
+  @Operation(summary = "The subgraph explaining one principal's access: membership and grants")
+  public AccessGraphResponse accessGraph(@PathVariable String id) {
+    return AccessGraphResponse.from(principals.accessGraph(id));
+  }
 }
