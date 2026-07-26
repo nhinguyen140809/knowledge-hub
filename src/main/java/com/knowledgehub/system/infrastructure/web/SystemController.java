@@ -1,12 +1,15 @@
 package com.knowledgehub.system.infrastructure.web;
 
+import com.knowledgehub.system.application.DependencyHealthService;
 import com.knowledgehub.system.application.KnowledgeStatsService;
 import com.knowledgehub.system.application.SystemInfoService;
+import com.knowledgehub.system.domain.DependencyStatus;
 import com.knowledgehub.system.domain.KnowledgeStats;
 import com.knowledgehub.system.domain.SystemInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -22,11 +25,15 @@ public class SystemController {
 
   private final SystemInfoService systemInfoService;
   private final KnowledgeStatsService knowledgeStatsService;
+  private final DependencyHealthService dependencyHealthService;
 
   public SystemController(
-      SystemInfoService systemInfoService, KnowledgeStatsService knowledgeStatsService) {
+      SystemInfoService systemInfoService,
+      KnowledgeStatsService knowledgeStatsService,
+      DependencyHealthService dependencyHealthService) {
     this.systemInfoService = systemInfoService;
     this.knowledgeStatsService = knowledgeStatsService;
+    this.dependencyHealthService = dependencyHealthService;
   }
 
   @GetMapping("/info")
@@ -39,6 +46,12 @@ public class SystemController {
   @Operation(summary = "Scale of the knowledge base: graph size and vector count")
   public KnowledgeStats knowledgeStats() {
     return knowledgeStatsService.currentStats();
+  }
+
+  @GetMapping("/dependencies")
+  @Operation(summary = "Reachability of Neo4j, Qdrant and the embedding provider")
+  public List<DependencyStatus> dependencies() {
+    return dependencyHealthService.currentStatus();
   }
 
   @PutMapping("/product-name")

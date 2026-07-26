@@ -7,8 +7,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.knowledgehub.system.application.DependencyHealthService;
 import com.knowledgehub.system.application.KnowledgeStatsService;
 import com.knowledgehub.system.application.SystemInfoService;
+import com.knowledgehub.system.domain.DependencyState;
+import com.knowledgehub.system.domain.DependencyStatus;
 import com.knowledgehub.system.domain.KnowledgeStats;
 import com.knowledgehub.system.domain.SystemInfo;
 import java.util.List;
@@ -28,6 +31,7 @@ class SystemControllerTests {
 
   @MockitoBean private SystemInfoService systemInfoService;
   @MockitoBean private KnowledgeStatsService knowledgeStatsService;
+  @MockitoBean private DependencyHealthService dependencyHealthService;
 
   @Test
   void returnsSystemInfoAsJson() throws Exception {
@@ -81,5 +85,23 @@ class SystemControllerTests {
         .andExpect(jsonPath("$.graphNodes").value(8300))
         .andExpect(jsonPath("$.graphEdges").value(19400))
         .andExpect(jsonPath("$.vectors").value(1240));
+  }
+
+  @Test
+  void returnsDependencyStatusesAsJson() throws Exception {
+    when(dependencyHealthService.currentStatus())
+        .thenReturn(
+            List.of(
+                new DependencyStatus("neo4j", DependencyState.UP),
+                new DependencyStatus("qdrant", DependencyState.UP),
+                new DependencyStatus("embeddings", DependencyState.DOWN)));
+
+    mockMvc
+        .perform(get("/api/v1/system/dependencies"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].name").value("neo4j"))
+        .andExpect(jsonPath("$[0].status").value("UP"))
+        .andExpect(jsonPath("$[2].name").value("embeddings"))
+        .andExpect(jsonPath("$[2].status").value("DOWN"));
   }
 }
