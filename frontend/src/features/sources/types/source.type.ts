@@ -71,3 +71,13 @@ export interface SourceStatus {
   commitSha: string | null
   ref: string | null
 }
+
+/** GET /admin/sources/summary — freshness roll-up across every configured source. */
+export interface SourceSummary {
+  total: number
+  synced: number
+  neverSynced: number
+  stale: number
+  /** ISO-8601 timestamp of the most recent sync across all sources, or null if none has synced. */
+  lastSyncAt: string | null
+}

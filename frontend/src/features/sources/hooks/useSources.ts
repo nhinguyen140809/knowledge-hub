@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useActiveConnection } from '@/lib/store/connections.store'
-import { fetchSource, fetchSources, fetchSourceStatus } from '../api/sources.api'
+import { fetchSource, fetchSources, fetchSourceStatus, fetchSourceSummary } from '../api/sources.api'
 import { sourceKeys } from '../api/sources.keys'
 
 /** All sources on the active backend. Disabled until a backend is selected. */
@@ -30,5 +30,15 @@ export function useSourceStatus(id: string | undefined) {
     queryKey: sourceKeys.status(active?.id, id ?? ''),
     queryFn: () => fetchSourceStatus(id!),
     enabled: !!active && !!id,
+  })
+}
+
+/** Freshness roll-up across every configured source, for the dashboard's attention panel. */
+export function useSourceSummary() {
+  const active = useActiveConnection()
+  return useQuery({
+    queryKey: sourceKeys.summary(active?.id),
+    queryFn: fetchSourceSummary,
+    enabled: !!active,
   })
 }

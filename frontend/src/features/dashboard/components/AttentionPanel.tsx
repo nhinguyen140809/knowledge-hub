@@ -1,6 +1,6 @@
 import { Card, Skeleton } from '@heroui/react'
 import { CircleCheck, TriangleAlert } from 'lucide-react'
-import { useSources } from '@/features/sources'
+import { useSourceSummary } from '@/features/sources'
 import { deriveAttentionItems, type AttentionItem } from '../lib/attention.util'
 import { useDependencyHealth } from '../hooks/useDashboardStats'
 import { useSystemInfo } from '../hooks/useSystemInfo'
@@ -33,14 +33,14 @@ function AllClear() {
 export function AttentionPanel() {
   const dependencies = useDependencyHealth()
   const systemInfo = useSystemInfo()
-  const sources = useSources()
+  const sourceSummary = useSourceSummary()
 
-  const isPending = dependencies.isPending || systemInfo.isPending || sources.isPending
+  const isPending = dependencies.isPending || systemInfo.isPending || sourceSummary.isPending
 
   const items = deriveAttentionItems({
     dependencies: dependencies.data,
     systemInfo: systemInfo.data,
-    sources: sources.data,
+    sourceSummary: sourceSummary.data,
   })
 
   function content() {
