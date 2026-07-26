@@ -13,8 +13,11 @@ import jakarta.validation.constraints.Pattern;
  * @param principalId the new principal's id
  * @param type subject or group
  * @param role admin or member
+ * @param parentGroupId group to create the principal directly inside, atomically; null for a
+ *     top-level principal
  */
 public record CreatePrincipalRequest(
     @NotBlank @Pattern(regexp = IdFormat.PATTERN, message = IdFormat.MESSAGE) String principalId,
     @NotNull PrincipalType type,
-    @NotNull Role role) {}
+    @NotNull Role role,
+    String parentGroupId) {}

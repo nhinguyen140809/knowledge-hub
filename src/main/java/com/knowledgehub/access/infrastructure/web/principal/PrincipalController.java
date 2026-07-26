@@ -41,7 +41,9 @@ public class PrincipalController {
   @Operation(summary = "Create a principal (subject or group)")
   public ResponseEntity<PrincipalResponse> create(
       @Valid @RequestBody CreatePrincipalRequest request) {
-    Principal created = principals.create(request.principalId(), request.type(), request.role());
+    Principal created =
+        principals.create(
+            request.principalId(), request.type(), request.role(), request.parentGroupId());
     URI location =
         ServletUriComponentsBuilder.fromCurrentRequest()
             .path("/{id}")

@@ -385,6 +385,73 @@ class AccessControlIntegrationTests {
         .andExpect(jsonPath("$.code").value("ADMIN_MEMBERSHIP"));
   }
 
+  @Test
+  void createWithParentGroupIdAddsThePrincipalToTheGroupAtomically() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER");
+
+    mvc.perform(
+            post("/api/v1/admin/principals")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    ("{\"principalId\":\"%s\",\"type\":\"SUBJECT\",\"role\":\"MEMBER\","
+                            + "\"parentGroupId\":\"%s\"}")
+                        .formatted(USER, GROUP)))
+        .andExpect(status().isCreated());
+
+    mvc.perform(
+            get("/api/v1/admin/principals/" + GROUP + "/members")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasItem(USER)));
+  }
+
+  @Test
+  void createWithAnUnknownParentGroupIdIsNotFound() throws Exception {
+    mvc.perform(
+            post("/api/v1/admin/principals")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    ("{\"principalId\":\"%s\",\"type\":\"SUBJECT\",\"role\":\"MEMBER\","
+                            + "\"parentGroupId\":\"does-not-exist\"}")
+                        .formatted(USER)))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("PRINCIPAL_NOT_FOUND"));
+  }
+
+  @Test
+  void createWithAParentGroupIdThatIsASubjectIsRejected() throws Exception {
+    createPrincipal(RESTRICTED_OWNER, "SUBJECT", "MEMBER");
+
+    mvc.perform(
+            post("/api/v1/admin/principals")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    ("{\"principalId\":\"%s\",\"type\":\"SUBJECT\",\"role\":\"MEMBER\","
+                            + "\"parentGroupId\":\"%s\"}")
+                        .formatted(USER, RESTRICTED_OWNER)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+  }
+
+  @Test
+  void createWithParentGroupIdAndRoleAdminIsRejected() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER");
+
+    mvc.perform(
+            post("/api/v1/admin/principals")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    ("{\"principalId\":\"%s\",\"type\":\"SUBJECT\",\"role\":\"ADMIN\","
+                            + "\"parentGroupId\":\"%s\"}")
+                        .formatted(USER, GROUP)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+  }
+
   // --- helpers ---
 
   private static String bearer(String token) {

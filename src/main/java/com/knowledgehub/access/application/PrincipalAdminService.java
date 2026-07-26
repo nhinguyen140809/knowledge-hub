@@ -48,15 +48,30 @@ public class PrincipalAdminService {
 
   // --- principals ---
 
+  /**
+   * Creates a principal, optionally directly inside a group in the same transaction. A brand-new
+   * node cannot be anyone's ancestor, so unlike {@link #addMember} this needs no cycle check.
+   */
   @Transactional
-  public Principal create(String principalId, PrincipalType type, Role role) {
+  public Principal create(String principalId, PrincipalType type, Role role, String parentGroupId) {
     if (type == PrincipalType.GROUP && role == Role.ADMIN) {
       throw new IllegalArgumentException("A group cannot have role ADMIN: " + principalId);
+    }
+    if (parentGroupId != null && role == Role.ADMIN) {
+      throw new IllegalArgumentException(
+          "An admin principal cannot be created inside a group: " + principalId);
     }
     if (principals.findById(principalId).isPresent()) {
       throw new DuplicatePrincipalException(principalId);
     }
-    return principals.save(new Principal(principalId, type, role));
+    if (parentGroupId != null) {
+      requireGroup(parentGroupId);
+    }
+    Principal created = principals.save(new Principal(principalId, type, role));
+    if (parentGroupId != null) {
+      principals.addMember(parentGroupId, principalId);
+    }
+    return created;
   }
 
   @Transactional(readOnly = true)
