@@ -50,7 +50,7 @@ class Neo4jCredentialAdapter implements CredentialRepository {
           + " SET c.last_used_at = $when";
 
   private static final String REVOKE =
-      "MATCH (c:Credential {credential_id: $id}) SET c.revoked = true";
+      "MATCH (c:Credential {credential_id: $id}) SET c.revoked = true, c.revoked_at = $revokedAt";
 
   private static final String LIST_BY_PRINCIPAL =
       "MATCH (:Principal {principal_id: $principalId})-[:HAS_CREDENTIAL]->(c:Credential)"
@@ -58,7 +58,7 @@ class Neo4jCredentialAdapter implements CredentialRepository {
           + " c.created_at AS createdAt, c.last_used_at AS lastUsedAt ORDER BY c.created_at";
 
   private static final String PURGE_REVOKED =
-      "MATCH (c:Credential {revoked: true}) WHERE c.created_at < $cutoff"
+      "MATCH (c:Credential {revoked: true}) WHERE c.revoked_at < $cutoff"
           + " DETACH DELETE c RETURN count(c) AS purged";
 
   private final Neo4jClient client;
@@ -125,8 +125,11 @@ class Neo4jCredentialAdapter implements CredentialRepository {
   }
 
   @Override
-  public void revoke(String credentialId) {
-    client.query(REVOKE).bind(credentialId).to("id").run();
+  public void revoke(String credentialId, Instant revokedAt) {
+    client
+        .query(REVOKE)
+        .bindAll(Map.of("id", credentialId, "revokedAt", revokedAt.toEpochMilli()))
+        .run();
   }
 
   @Override

@@ -55,7 +55,7 @@ public class CredentialService {
   /** Revokes a credential; the next request using it fails authentication. */
   @Transactional
   public void revoke(String credentialId) {
-    credentials.revoke(credentialId);
+    credentials.revoke(credentialId, Instant.now());
     log.info("Revoked credential {}", credentialId);
   }
 

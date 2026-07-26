@@ -62,6 +62,6 @@ class CredentialServiceTests {
   @Test
   void revokeDelegatesToTheRepository() {
     service.revoke("cred-1");
-    verify(credentials).revoke("cred-1");
+    verify(credentials).revoke(eq("cred-1"), any());
   }
 }
