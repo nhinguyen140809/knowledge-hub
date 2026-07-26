@@ -540,6 +540,63 @@ class AccessControlIntegrationTests {
         .andExpect(jsonPath("$.code").value("SOURCE_NOT_FOUND"));
   }
 
+  @Test
+  void sourceAccessGraphExplainsMembershipAncestryAndGrants() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER"); // eng-team
+    createPrincipal(GROUP_2, "GROUP", "MEMBER"); // support-team
+    createPrincipal(USER, "SUBJECT", "MEMBER"); // bob
+    addMember(GROUP, GROUP_2); // support-team is a member of eng-team
+    addMember(GROUP_2, USER); // bob is a member of support-team
+    grant(GROUP, SRC_A); // eng-team granted SRC_A
+
+    mvc.perform(
+            get("/api/v1/admin/sources/" + SRC_A + "/access-graph")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.focus").value(SRC_A))
+        // bootstrap-admin reaches SRC_A only through its role, not a grant, so it has no edge to
+        // draw and is excluded — the same asymmetry the principal-rooted graph already has.
+        .andExpect(jsonPath("$.nodes", hasSize(4)))
+        .andExpect(jsonPath("$.nodes[?(@.id=='" + SRC_A + "')].kind", hasItem("SOURCE")))
+        .andExpect(jsonPath("$.nodes[?(@.id=='" + GROUP + "')].kind", hasItem("GROUP")))
+        .andExpect(jsonPath("$.nodes[?(@.id=='" + GROUP_2 + "')].kind", hasItem("GROUP")))
+        .andExpect(jsonPath("$.nodes[?(@.id=='" + USER + "')].kind", hasItem("SUBJECT")))
+        .andExpect(
+            jsonPath(
+                "$.edges[?(@.from=='" + GROUP + "' && @.to=='" + GROUP_2 + "')].kind",
+                hasItem("MEMBER")))
+        .andExpect(
+            jsonPath(
+                "$.edges[?(@.from=='" + GROUP_2 + "' && @.to=='" + USER + "')].kind",
+                hasItem("MEMBER")))
+        .andExpect(
+            jsonPath(
+                "$.edges[?(@.from=='" + GROUP + "' && @.to=='" + SRC_A + "')].kind",
+                hasItem("GRANT")));
+  }
+
+  @Test
+  void sourceAccessGraphHasOnlyTheSourceNodeWhenNobodyIsGrantedIt() throws Exception {
+    mvc.perform(
+            get("/api/v1/admin/sources/" + SRC_B + "/access-graph")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.focus").value(SRC_B))
+        .andExpect(jsonPath("$.nodes", hasSize(1)))
+        .andExpect(jsonPath("$.nodes[0].id").value(SRC_B))
+        .andExpect(jsonPath("$.nodes[0].kind").value("SOURCE"))
+        .andExpect(jsonPath("$.edges", hasSize(0)));
+  }
+
+  @Test
+  void sourceAccessGraphReturns404ForUnknownSource() throws Exception {
+    mvc.perform(
+            get("/api/v1/admin/sources/does-not-exist/access-graph")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("SOURCE_NOT_FOUND"));
+  }
+
   // --- helpers ---
 
   private static String bearer(String token) {

@@ -1,8 +1,11 @@
 package com.knowledgehub.access.application;
 
+import com.knowledgehub.access.domain.AccessGraphEdgeKind;
+import com.knowledgehub.access.domain.AccessGraphNodeKind;
 import com.knowledgehub.access.domain.DefaultPolicy;
 import com.knowledgehub.access.domain.PermissionOrigin;
 import com.knowledgehub.access.domain.Principal;
+import com.knowledgehub.access.domain.PrincipalType;
 import com.knowledgehub.access.domain.port.GrantRepository;
 import com.knowledgehub.access.domain.port.PrincipalRepository;
 import com.knowledgehub.access.domain.port.SystemConfigRepository;
@@ -18,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,6 +74,54 @@ public class SourcePrincipalsService {
       access.add(new SourcePrincipals.PrincipalAccess(principal.principalId(), origin.get(), via));
     }
     return new SourcePrincipals(sourceId, access);
+  }
+
+  /**
+   * The subgraph explaining who can read a source: every principal a grant reaches (directly or
+   * through membership), the source itself, and the membership/grant edges among them. The
+   * inverse of {@link PrincipalAdminService#accessGraph}. ADMIN- and POLICY-origin principals have
+   * no edge to draw, so — like the principal-rooted graph never showing a role-bypassed source —
+   * they don't appear here even though {@link #resolve} lists them.
+   */
+  @Transactional(readOnly = true)
+  public AccessGraph accessGraph(String sourceId) {
+    if (sources.findById(sourceId).isEmpty()) {
+      throw new SourceNotFoundException(sourceId);
+    }
+
+    Set<String> reachedIds = directAndInheritedVia(sourceId).keySet();
+    Map<String, Principal> byId =
+        principals.findAll().stream()
+            .collect(Collectors.toMap(Principal::principalId, principal -> principal));
+
+    List<AccessGraph.Node> nodes = new ArrayList<>();
+    for (String id : reachedIds) {
+      Principal principal = byId.get(id);
+      AccessGraphNodeKind kind =
+          principal.type() == PrincipalType.GROUP ? AccessGraphNodeKind.GROUP : AccessGraphNodeKind.SUBJECT;
+      nodes.add(new AccessGraph.Node(id, kind));
+    }
+    nodes.add(new AccessGraph.Node(sourceId, AccessGraphNodeKind.SOURCE));
+
+    List<AccessGraph.Edge> edges = new ArrayList<>();
+    for (String grantor : grants.directGrantorsOf(sourceId)) {
+      edges.add(new AccessGraph.Edge(grantor, sourceId, AccessGraphEdgeKind.GRANT));
+    }
+    principals
+        .membershipGraph()
+        .forEach(
+            (groupId, memberIds) -> {
+              if (!reachedIds.contains(groupId)) {
+                return;
+              }
+              for (String memberId : memberIds) {
+                if (reachedIds.contains(memberId)) {
+                  edges.add(new AccessGraph.Edge(groupId, memberId, AccessGraphEdgeKind.MEMBER));
+                }
+              }
+            });
+
+    return new AccessGraph(sourceId, nodes, edges);
   }
 
   /**

@@ -31,4 +31,10 @@ public class SourcePrincipalsController {
   public SourcePrincipalsResponse principals(@PathVariable String id) {
     return SourcePrincipalsResponse.from(service.resolve(id));
   }
+
+  @GetMapping("/{id}/access-graph")
+  @Operation(summary = "The subgraph explaining who can read a source: grants and membership")
+  public SourceAccessGraphResponse accessGraph(@PathVariable String id) {
+    return SourceAccessGraphResponse.from(service.accessGraph(id));
+  }
 }
