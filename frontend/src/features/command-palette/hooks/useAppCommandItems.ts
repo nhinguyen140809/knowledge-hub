@@ -1,11 +1,10 @@
 import { Database, FolderClosed, KeyRound, User, type LucideIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAllCredentials } from '@/features/access/hooks/useCredentials'
-import { usePrincipalGraph } from '@/features/access/hooks/usePrincipals'
-import type { PrincipalType } from '@/features/access/types/access.type'
+import { useAllCredentials, usePrincipalGraph, type PrincipalType } from '@/features/access'
 import { useSources } from '@/features/sources/hooks/useSources'
 import type { CommandItem } from '@/shared/components/ui/command-palette'
+import { ROUTES } from '@/shared/constants'
 
 const PRINCIPAL_ICON: Record<PrincipalType, LucideIcon> = {
   GROUP: FolderClosed,
@@ -38,7 +37,8 @@ export function useAppCommandItems(): CommandItem[] {
         hint: p.type === 'GROUP' ? 'group' : 'subject',
         search: p.principalId.toLowerCase(),
         icon: PRINCIPAL_ICON[p.type],
-        action: () => navigate('/access', { state: { selectPrincipal: p.principalId } }),
+        action: () =>
+          navigate(ROUTES.accessPrincipals, { state: { selectPrincipal: p.principalId } }),
       })
     }
     for (const s of sources.data ?? []) {
@@ -48,7 +48,7 @@ export function useAppCommandItems(): CommandItem[] {
         hint: 'source',
         search: `${s.id} ${s.name ?? ''}`.toLowerCase(),
         icon: Database,
-        action: () => navigate(`/sources/${encodeURIComponent(s.id)}`),
+        action: () => navigate(ROUTES.sourceDetail(s.id)),
       })
     }
     for (const c of credentials.data ?? []) {
@@ -59,7 +59,8 @@ export function useAppCommandItems(): CommandItem[] {
         // Not the credentialId: it's an opaque id, not something anyone types.
         search: c.name.toLowerCase(),
         icon: KeyRound,
-        action: () => navigate('/access', { state: { selectPrincipal: c.principalId } }),
+        action: () =>
+          navigate(ROUTES.accessPrincipals, { state: { selectPrincipal: c.principalId } }),
       })
     }
     return items

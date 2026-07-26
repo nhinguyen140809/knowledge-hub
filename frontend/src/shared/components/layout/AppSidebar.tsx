@@ -5,6 +5,7 @@ import { ConnectionSwitcher } from '@/features/auth'
 import { isMock } from '@/lib/config'
 import { useConnectionStore } from '@/lib/store/connections.store'
 import { ThemeToggle } from '@/shared/components/theme/ThemeToggle'
+import { ROUTES } from '@/shared/constants'
 import {
   Sidebar,
   SidebarContent,
@@ -22,20 +23,17 @@ import { type NavItem } from '@/shared/types/navigation.type'
 /** The app's navigation entries — the data this sidebar renders. */
 // eslint-disable-next-line react-refresh/only-export-components
 export const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', to: '/', icon: LayoutDashboard, match: 'exact' },
-  { label: 'Sources', to: '/sources', icon: Database },
+  { label: 'Dashboard', to: ROUTES.dashboard, icon: LayoutDashboard, match: 'exact' },
+  { label: 'Sources', to: ROUTES.sources, icon: Database },
   {
     label: 'Access control',
     icon: KeyRound,
     children: [
-      // 'exact' matters here: without it, '/access' also matches
-      // '/access/sources' (prefix matching cuts at segment boundaries, not
-      // full-path equality), and both children would highlight at once.
-      { label: 'Principals', to: '/access', match: 'exact' },
-      { label: 'Sources', to: '/access/sources' },
+      { label: 'Principals', to: ROUTES.accessPrincipals },
+      { label: 'Sources', to: ROUTES.accessSources },
     ],
   },
-  { label: 'Query', to: '/query', icon: Search },
+  { label: 'Query', to: ROUTES.query, icon: Search },
 ]
 
 function AppLogo() {
@@ -119,7 +117,10 @@ export function AppSidebar() {
       <SidebarFooter>
         <Separator className="mb-2" />
         <ThemeToggle />
-        <SidebarMenuButton isActive={isActivePath(pathname, '/help')} render={renderLink('/help')}>
+        <SidebarMenuButton
+          isActive={isActivePath(pathname, ROUTES.help)}
+          render={renderLink(ROUTES.help)}
+        >
           <CircleHelp size={16} />
           Help
         </SidebarMenuButton>

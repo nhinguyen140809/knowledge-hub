@@ -2,6 +2,7 @@ import { Button, Skeleton } from '@heroui/react'
 import { ArrowLeft } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ErrorState } from '@/shared/components/ui/ErrorState'
+import { ROUTES } from '@/shared/constants'
 import { renderLink } from '@/shared/lib/renderLink'
 import { DeleteSourceButton } from '../components/DeleteSourceButton'
 import { EditSourceDialog } from '../components/EditSourceDialog'
@@ -38,7 +39,7 @@ export function SourceDetailPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-4">
-        <Button size="sm" variant="ghost" render={renderLink('/sources')}>
+        <Button size="sm" variant="ghost" render={renderLink(ROUTES.sources)}>
           <ArrowLeft size={16} />
           All sources
         </Button>
@@ -48,7 +49,7 @@ export function SourceDetailPage() {
             <DeleteSourceButton
               sourceId={data.id}
               label={data.name ?? data.id}
-              onDeleted={() => navigate('/sources')}
+              onDeleted={() => navigate(ROUTES.sources)}
             />
           </div>
         )}

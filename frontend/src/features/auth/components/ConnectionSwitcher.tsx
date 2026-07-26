@@ -2,6 +2,7 @@ import { Description, Label, ListBox, Select, Separator } from '@heroui/react'
 import { Plus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useConnectionStore } from '@/lib/store/connections.store'
+import { ROUTES } from '@/shared/constants'
 
 const ADD_CONNECTION = '__add-connection__'
 
@@ -20,7 +21,7 @@ export function ConnectionSwitcher() {
       placeholder="Select a backend"
       selectedKey={activeId}
       onSelectionChange={(key) => {
-        if (key === ADD_CONNECTION) navigate('/connect')
+        if (key === ADD_CONNECTION) navigate(ROUTES.connect)
         else setActive(String(key))
       }}
     >
