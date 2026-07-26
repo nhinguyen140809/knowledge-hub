@@ -96,6 +96,14 @@ public class PrincipalController {
     return ResponseEntity.noContent().build();
   }
 
+  @PostMapping("/{memberId}/move")
+  @Operation(summary = "Atomically move a principal between groups")
+  public ResponseEntity<Void> move(
+      @PathVariable String memberId, @Valid @RequestBody MoveRequest request) {
+    principals.move(memberId, request.fromGroupId(), request.toGroupId());
+    return ResponseEntity.noContent().build();
+  }
+
   @PostMapping("/{id}/credentials")
   @Operation(summary = "Issue a named credential (returns the secret once)")
   public IssuedCredentialResponse issueCredential(

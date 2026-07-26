@@ -107,6 +107,28 @@ public class PrincipalAdminService {
     return principals.membersOf(groupId);
   }
 
+  /**
+   * Atomically moves {@code memberId} from {@code fromGroupId} (null when not yet in a group) to
+   * {@code toGroupId}. One transaction, so a failure never leaves the principal in both groups or
+   * in neither.
+   */
+  @Transactional
+  public void move(String memberId, String fromGroupId, String toGroupId) {
+    Principal member = get(memberId);
+    requireGroup(toGroupId);
+    if (member.isAdmin()) {
+      throw new AdminMembershipException(memberId);
+    }
+    if (principals.wouldCreateCycle(toGroupId, memberId)) {
+      throw new MembershipCycleException(toGroupId, memberId);
+    }
+    if (fromGroupId != null) {
+      requireGroup(fromGroupId);
+      principals.removeMember(fromGroupId, memberId);
+    }
+    principals.addMember(toGroupId, memberId);
+  }
+
   @Transactional(readOnly = true)
   public PrincipalGraph graph() {
     return new PrincipalGraph(principals.findAll(), principals.membershipGraph());

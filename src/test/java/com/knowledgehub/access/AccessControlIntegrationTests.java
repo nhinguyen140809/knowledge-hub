@@ -309,6 +309,82 @@ class AccessControlIntegrationTests {
         .andExpect(jsonPath("$.code").value("LAST_ADMIN"));
   }
 
+  @Test
+  void moveAtomicallyRelocatesAPrincipalBetweenGroups() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER");
+    createPrincipal(GROUP_2, "GROUP", "MEMBER");
+    createPrincipal(USER, "SUBJECT", "MEMBER");
+    addMember(GROUP, USER);
+
+    mvc.perform(
+            post("/api/v1/admin/principals/" + USER + "/move")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"fromGroupId\":\"%s\",\"toGroupId\":\"%s\"}".formatted(GROUP, GROUP_2)))
+        .andExpect(status().isNoContent());
+
+    mvc.perform(
+            get("/api/v1/admin/principals/" + GROUP + "/members")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(0)));
+    mvc.perform(
+            get("/api/v1/admin/principals/" + GROUP_2 + "/members")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasItem(USER)));
+  }
+
+  @Test
+  void moveAddsToTheGroupWhenFromGroupIdIsNull() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER");
+    createPrincipal(USER, "SUBJECT", "MEMBER");
+
+    mvc.perform(
+            post("/api/v1/admin/principals/" + USER + "/move")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"toGroupId\":\"%s\"}".formatted(GROUP)))
+        .andExpect(status().isNoContent());
+
+    mvc.perform(
+            get("/api/v1/admin/principals/" + GROUP + "/members")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasItem(USER)));
+  }
+
+  @Test
+  void moveRejectsAChangeThatWouldCreateACycle() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER");
+    createPrincipal(GROUP_2, "GROUP", "MEMBER");
+    addMember(GROUP, GROUP_2); // GROUP_2 is now nested inside GROUP
+
+    // Moving GROUP into GROUP_2 would close the loop GROUP -> GROUP_2 -> GROUP.
+    mvc.perform(
+            post("/api/v1/admin/principals/" + GROUP + "/move")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"toGroupId\":\"%s\"}".formatted(GROUP_2)))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("MEMBERSHIP_CYCLE"));
+  }
+
+  @Test
+  void moveRejectsAnAdminPrincipal() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER");
+    createPrincipal(USER, "SUBJECT", "ADMIN");
+
+    mvc.perform(
+            post("/api/v1/admin/principals/" + USER + "/move")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"toGroupId\":\"%s\"}".formatted(GROUP)))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("ADMIN_MEMBERSHIP"));
+  }
+
   // --- helpers ---
 
   private static String bearer(String token) {
