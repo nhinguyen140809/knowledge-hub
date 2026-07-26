@@ -1,9 +1,8 @@
-import { Card, ScrollShadow, Skeleton } from '@heroui/react'
+import { Button, Card, ScrollShadow, Skeleton } from '@heroui/react'
 import { Database } from 'lucide-react'
 import { useSources } from '@/features/sources'
 import { EmptyState } from '@/shared/components/ui/EmptyState'
 import { ErrorState } from '@/shared/components/ui/ErrorState'
-import { Tree } from '@/shared/components/ui/Tree'
 
 interface SourceListPanelProps {
   selectedId: string | null
@@ -12,9 +11,9 @@ interface SourceListPanelProps {
 
 /**
  * The selector side of the Access-Control-Sources page: a flat list of
- * sources — unlike principals, sources don't nest into groups, so this has no
- * tree/membership logic. Source lifecycle (create/edit/delete) stays owned by
- * the standalone Sources page; this panel only selects.
+ * sources — unlike principals, sources don't nest into groups, so this is a
+ * plain list, not a tree. Source lifecycle (create/edit/delete) stays owned
+ * by the standalone Sources page; this panel only selects.
  */
 export function SourceListPanel({ selectedId, onSelect }: SourceListPanelProps) {
   const { data, isPending, isError, error } = useSources()
@@ -34,17 +33,22 @@ export function SourceListPanel({ selectedId, onSelect }: SourceListPanelProps) 
       return <EmptyState icon={<Database size={28} />} description="No sources configured yet." />
     }
     return (
-      <Tree>
+      <ul className="flex flex-col gap-0.5">
         {data.map((source) => (
-          <Tree.Item
-            key={source.id}
-            label={source.name ?? source.id}
-            icon={<Database size={14} className="text-muted" />}
-            isSelected={selectedId === source.id}
-            onSelect={() => onSelect(source.id)}
-          />
+          <li key={source.id}>
+            <Button
+              fullWidth
+              size="sm"
+              variant={selectedId === source.id ? 'tertiary' : 'ghost'}
+              className="min-w-0 justify-start font-normal"
+              onPress={() => onSelect(source.id)}
+            >
+              <Database size={14} className="text-muted" />
+              <span className="truncate">{source.name ?? source.id}</span>
+            </Button>
+          </li>
         ))}
-      </Tree>
+      </ul>
     )
   }
 
