@@ -220,9 +220,9 @@ public class PrincipalAdminService {
   }
 
   @Transactional(readOnly = true)
-  public List<String> grantedSources(String principalId) {
+  public List<String> directGrantedSources(String principalId) {
     get(principalId);
-    return grants.grantedSources(principalId);
+    return grants.directGrantedSources(principalId);
   }
 
   // --- default policy ---

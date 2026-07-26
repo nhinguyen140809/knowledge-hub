@@ -15,7 +15,7 @@ public interface GrantRepository {
   void revoke(String principalId, Collection<String> sourceIds);
 
   /** The sources a principal lists as directly granted. */
-  List<String> grantedSources(String principalId);
+  List<String> directGrantedSources(String principalId);
 
   /**
    * The sources readable through a principal's own grants and those of every group it belongs to,

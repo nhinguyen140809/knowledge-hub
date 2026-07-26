@@ -72,7 +72,7 @@ class Neo4jGrantAdapter implements GrantRepository {
   }
 
   @Override
-  public List<String> grantedSources(String principalId) {
+  public List<String> directGrantedSources(String principalId) {
     return client
         .query(GRANTED_SOURCES)
         .bind(principalId)

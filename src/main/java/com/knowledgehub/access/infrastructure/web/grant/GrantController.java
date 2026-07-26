@@ -43,7 +43,7 @@ public class GrantController {
 
   @GetMapping("/{principalId}")
   @Operation(summary = "List a principal's directly granted sources")
-  public List<String> list(@PathVariable String principalId) {
-    return principals.grantedSources(principalId);
+  public List<String> listDirect(@PathVariable String principalId) {
+    return principals.directGrantedSources(principalId);
   }
 }
