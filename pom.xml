@@ -234,6 +234,16 @@
 				</executions>
 			</plugin>
 
+			<!-- Caps the forked test JVM's heap so it fits this dev machine's constrained memory
+			     alongside the Testcontainers-launched Neo4j/Qdrant containers. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<argLine>-Xmx512m -XX:MaxMetaspaceSize=128m</argLine>
+				</configuration>
+			</plugin>
+
 			<!-- Code formatting: mvn spotless:apply / spotless:check -->
 			<plugin>
 				<groupId>com.diffplug.spotless</groupId>
