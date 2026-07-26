@@ -1,6 +1,6 @@
 package com.knowledgehub.access.infrastructure.web.grant;
 
-import com.knowledgehub.access.application.PrincipalAdminService;
+import com.knowledgehub.access.application.GrantAdminService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -21,29 +21,29 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Access — Grants", description = "Grant and revoke read access to sources")
 public class GrantController {
 
-  private final PrincipalAdminService principals;
+  private final GrantAdminService grants;
 
-  public GrantController(PrincipalAdminService principals) {
-    this.principals = principals;
+  public GrantController(GrantAdminService grants) {
+    this.grants = grants;
   }
 
   @PostMapping
   @Operation(summary = "Grant a principal read access to sources")
   public ResponseEntity<Void> grant(@Valid @RequestBody GrantRequest request) {
-    principals.grant(request.principalId(), request.sourceIds());
+    grants.grant(request.principalId(), request.sourceIds());
     return ResponseEntity.noContent().build();
   }
 
   @PostMapping("/revoke")
   @Operation(summary = "Revoke a principal's read access to sources")
   public ResponseEntity<Void> revoke(@Valid @RequestBody GrantRequest request) {
-    principals.revokeGrant(request.principalId(), request.sourceIds());
+    grants.revokeGrant(request.principalId(), request.sourceIds());
     return ResponseEntity.noContent().build();
   }
 
   @GetMapping("/{principalId}")
   @Operation(summary = "List a principal's directly granted sources")
   public List<String> listDirect(@PathVariable String principalId) {
-    return principals.directGrantedSources(principalId);
+    return grants.directGrantedSources(principalId);
   }
 }

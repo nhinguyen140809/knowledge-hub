@@ -8,7 +8,6 @@ import com.knowledgehub.access.domain.PermissionOrigin;
 import com.knowledgehub.access.domain.Principal;
 import com.knowledgehub.access.domain.PrincipalType;
 import com.knowledgehub.access.domain.Role;
-import com.knowledgehub.access.domain.exception.AdminGrantException;
 import com.knowledgehub.access.domain.exception.AdminMembershipException;
 import com.knowledgehub.access.domain.exception.DuplicatePrincipalException;
 import com.knowledgehub.access.domain.exception.LastAdminException;
@@ -18,7 +17,6 @@ import com.knowledgehub.access.domain.port.GrantRepository;
 import com.knowledgehub.access.domain.port.PrincipalRepository;
 import com.knowledgehub.access.domain.port.SystemConfigRepository;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -27,9 +25,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Administers principals, group membership, grants and the default policy, and resolves a
- * principal's effective permissions. All mutating operations here are admin-only at the API
- * boundary; this service assumes the caller is already authorized.
+ * Administers principals and group membership, and resolves a principal's effective permissions
+ * and access graph. Grants ({@link GrantAdminService}) and the default policy ({@link
+ * PolicyService}) are separate concerns with their own services. All mutating operations here are
+ * admin-only at the API boundary; this service assumes the caller is already authorized.
  */
 @Service
 public class PrincipalAdminService {
@@ -200,41 +199,6 @@ public class PrincipalAdminService {
     sourceIds.forEach(sourceId -> nodes.add(new AccessGraph.Node(sourceId, AccessGraphNodeKind.SOURCE)));
 
     return new AccessGraph(principalId, nodes, edges);
-  }
-
-  // --- grants ---
-
-  @Transactional
-  public void grant(String principalId, Collection<String> sourceIds) {
-    Principal principal = get(principalId);
-    if (principal.isAdmin()) {
-      throw new AdminGrantException(principalId);
-    }
-    grants.grant(principalId, sourceIds);
-  }
-
-  @Transactional
-  public void revokeGrant(String principalId, Collection<String> sourceIds) {
-    get(principalId);
-    grants.revoke(principalId, sourceIds);
-  }
-
-  @Transactional(readOnly = true)
-  public List<String> directGrantedSources(String principalId) {
-    get(principalId);
-    return grants.directGrantedSources(principalId);
-  }
-
-  // --- default policy ---
-
-  @Transactional(readOnly = true)
-  public DefaultPolicy defaultPolicy() {
-    return systemConfig.defaultPolicy();
-  }
-
-  @Transactional
-  public void setDefaultPolicy(DefaultPolicy policy) {
-    systemConfig.setDefaultPolicy(policy);
   }
 
   // --- inspection ---
