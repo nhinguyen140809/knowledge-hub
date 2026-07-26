@@ -1,6 +1,7 @@
-import { Database, FolderClosed, User, type LucideIcon } from 'lucide-react'
+import { Database, FolderClosed, KeyRound, User, type LucideIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAllCredentials } from '@/features/access/hooks/useCredentials'
 import { usePrincipalGraph } from '@/features/access/hooks/usePrincipals'
 import type { PrincipalType } from '@/features/access/types/access.type'
 import { useSources } from '@/features/sources/hooks/useSources'
@@ -18,12 +19,15 @@ const PRINCIPAL_ICON: Record<PrincipalType, LucideIcon> = {
  * Sources pages use, so the list is warm the moment the palette opens.
  *
  * A principal is opened via navigation state (not a URL param) so choosing the
- * same one twice still re-selects it; a source opens its detail route.
+ * same one twice still re-selects it; a source opens its detail route. A
+ * credential has no page of its own, so selecting one opens its *owning*
+ * principal the same way — the credential lives in that principal's panel.
  */
 export function useAppCommandItems(): CommandItem[] {
   const navigate = useNavigate()
   const principals = usePrincipalGraph()
   const sources = useSources()
+  const credentials = useAllCredentials()
 
   return useMemo(() => {
     const items: CommandItem[] = []
@@ -47,6 +51,17 @@ export function useAppCommandItems(): CommandItem[] {
         action: () => navigate(`/sources/${encodeURIComponent(s.id)}`),
       })
     }
+    for (const c of credentials.data ?? []) {
+      items.push({
+        key: `credential:${c.credentialId}`,
+        label: c.name,
+        hint: c.principalId,
+        // Not the credentialId: it's an opaque id, not something anyone types.
+        search: c.name.toLowerCase(),
+        icon: KeyRound,
+        action: () => navigate('/access', { state: { selectPrincipal: c.principalId } }),
+      })
+    }
     return items
-  }, [principals.data, sources.data, navigate])
+  }, [principals.data, sources.data, credentials.data, navigate])
 }

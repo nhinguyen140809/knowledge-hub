@@ -32,6 +32,7 @@ export type {
   DefaultPolicy,
   EffectivePermissions,
   EffectiveSource,
+  GlobalCredential,
   GrantInput,
   GrantOrigin,
   IssuedCredential,

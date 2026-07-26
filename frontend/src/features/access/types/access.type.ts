@@ -47,6 +47,12 @@ export interface IssuedCredential {
   secret: string
 }
 
+/** A credential from the cross-principal list (GET /admin/credentials), tagged
+ *  with the principal it belongs to since that isn't implied by the URL there. */
+export interface GlobalCredential extends Credential {
+  principalId: string
+}
+
 /** Where a readable source's access comes from, precedence in this order when
  *  several apply — a direct grant is the only one revocable from the
  *  principal's own panel. ADMIN marks sources readable purely because the

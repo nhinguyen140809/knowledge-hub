@@ -1,8 +1,8 @@
 import { apiFetch } from '@/lib/api/axios'
 import { mockResolve } from '@/lib/api/mocks/mock.util'
 import { isMock } from '@/lib/config'
-import type { Credential, IssuedCredential } from '../types/access.type'
-import { mockCredentials, mockIssuedCredential } from './access.mock'
+import type { Credential, GlobalCredential, IssuedCredential } from '../types/access.type'
+import { mockCredentials, mockGlobalCredentials, mockIssuedCredential } from './access.mock'
 
 const PRINCIPALS = '/admin/principals'
 const CREDENTIALS = '/admin/credentials'
@@ -26,10 +26,11 @@ export function issueCredential(principalId: string, name: string): Promise<Issu
   })
 }
 
-/** GET /admin/credentials — every credential across principals. */
-export function fetchAllCredentials(): Promise<Credential[]> {
-  if (isMock) return mockResolve(mockCredentials)
-  return apiFetch<Credential[]>(CREDENTIALS)
+/** GET /admin/credentials — every credential across principals, each tagged
+ *  with its owner. */
+export function fetchAllCredentials(): Promise<GlobalCredential[]> {
+  if (isMock) return mockResolve(mockGlobalCredentials)
+  return apiFetch<GlobalCredential[]>(CREDENTIALS)
 }
 
 /** DELETE /admin/credentials/{id} — soft-delete (revoke), 204. */

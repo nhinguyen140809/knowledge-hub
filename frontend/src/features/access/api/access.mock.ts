@@ -6,6 +6,7 @@ import {
   type Credential,
   type EffectivePermissions,
   type EffectiveSource,
+  type GlobalCredential,
   type IssuedCredential,
   type Principal,
   type PrincipalAccessGraph,
@@ -56,6 +57,15 @@ export const mockCredentials: Credential[] = [
     createdAt: '2026-01-08T16:40:00Z',
     lastUsedAt: '2026-05-30T10:11:00Z',
   },
+]
+
+/** The cross-principal list — same rows as `mockCredentials`, each attributed
+ *  to an owner so the command palette and a future dashboard can navigate
+ *  straight to the principal that holds it. */
+export const mockGlobalCredentials: GlobalCredential[] = [
+  { ...mockCredentials[0], principalId: 'bob' },
+  { ...mockCredentials[1], principalId: 'alice' },
+  { ...mockCredentials[2], principalId: 'bob' },
 ]
 
 export const mockIssuedCredential: IssuedCredential = {
