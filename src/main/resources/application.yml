@@ -73,6 +73,8 @@ app:
     overlap: ${APP_CHUNK_OVERLAP:64}
   commits:
     history-depth: ${APP_COMMITS_HISTORY_DEPTH:100}   # newest commits indexed per source; 0 disables commit indexing
+  sources:
+    stale-after: ${APP_SOURCES_STALE_AFTER:7d}   # no sync within this window counts as stale in the summary
   retrieval:
     top-k: ${APP_RETRIEVAL_TOP_K:10}
     candidate-k: ${APP_RETRIEVAL_CANDIDATE_K:50}   # candidates each path fetches before fusion

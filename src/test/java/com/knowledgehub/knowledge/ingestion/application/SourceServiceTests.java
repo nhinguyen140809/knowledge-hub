@@ -7,12 +7,17 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.knowledgehub.knowledge.ingestion.application.port.SourceFreshness;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
 import com.knowledgehub.knowledge.ingestion.domain.SourceRegistered;
 import com.knowledgehub.knowledge.ingestion.domain.SourceType;
 import com.knowledgehub.knowledge.ingestion.domain.exception.DuplicateSourceException;
 import com.knowledgehub.knowledge.ingestion.domain.port.SourceRepository;
+import com.knowledgehub.shared.config.SourceProperties;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -23,7 +28,9 @@ class SourceServiceTests {
   private final SourceRepository repository = org.mockito.Mockito.mock(SourceRepository.class);
   private final ApplicationEventPublisher events =
       org.mockito.Mockito.mock(ApplicationEventPublisher.class);
-  private final SourceService service = new SourceService(repository, events);
+  private final SourceFreshness freshness = org.mockito.Mockito.mock(SourceFreshness.class);
+  private final SourceService service =
+      new SourceService(repository, events, freshness, new SourceProperties(null));
 
   private static SourceSpec spec(String id) {
     return new SourceSpec(
@@ -161,5 +168,40 @@ class SourceServiceTests {
     service.remove("s1");
 
     verify(repository).deleteById("s1");
+  }
+
+  @Test
+  void summaryCountsSyncedNeverSyncedAndStale() {
+    when(repository.findAll())
+        .thenReturn(
+            List.of(spec("fresh").toSource(), spec("stale").toSource(), spec("new").toSource()));
+    Instant recent = Instant.now().minus(1, ChronoUnit.HOURS);
+    Instant longAgo = Instant.now().minus(30, ChronoUnit.DAYS);
+    when(freshness.lastIndexedAt(any()))
+        .thenReturn(Map.of("fresh", recent, "stale", longAgo));
+    SourceService withDefaultStaleness =
+        new SourceService(repository, events, freshness, new SourceProperties(null));
+
+    SourceSummary summary = withDefaultStaleness.summary();
+
+    assertThat(summary.total()).isEqualTo(3);
+    assertThat(summary.synced()).isEqualTo(2);
+    assertThat(summary.neverSynced()).isEqualTo(1);
+    assertThat(summary.stale()).isEqualTo(1);
+    assertThat(summary.lastSyncAt()).isEqualTo(recent);
+  }
+
+  @Test
+  void summaryReportsNoLastSyncWhenNothingHasEverSynced() {
+    when(repository.findAll()).thenReturn(List.of(spec("new").toSource()));
+    when(freshness.lastIndexedAt(any())).thenReturn(Map.of());
+
+    SourceSummary summary = service.summary();
+
+    assertThat(summary.total()).isEqualTo(1);
+    assertThat(summary.synced()).isZero();
+    assertThat(summary.neverSynced()).isEqualTo(1);
+    assertThat(summary.stale()).isZero();
+    assertThat(summary.lastSyncAt()).isNull();
   }
 }

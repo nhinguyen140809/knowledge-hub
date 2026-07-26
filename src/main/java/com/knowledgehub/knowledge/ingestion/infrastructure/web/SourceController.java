@@ -52,6 +52,12 @@ public class SourceController {
     return ResponseEntity.created(location).body(SourceResponse.from(created, null));
   }
 
+  @GetMapping("/summary")
+  @Operation(summary = "At-a-glance freshness roll-up across every source")
+  public SourceSummaryResponse summary() {
+    return SourceSummaryResponse.from(sourceService.summary());
+  }
+
   @GetMapping
   @Operation(summary = "List all configured sources")
   public List<SourceResponse> list() {

@@ -17,6 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.knowledgehub.knowledge.ingestion.application.SourceNotFoundException;
 import com.knowledgehub.knowledge.ingestion.application.SourceService;
 import com.knowledgehub.knowledge.ingestion.application.SourceSpec;
+import com.knowledgehub.knowledge.ingestion.application.SourceSummary;
 import com.knowledgehub.knowledge.ingestion.application.port.SourceFreshness;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
 import com.knowledgehub.knowledge.ingestion.domain.SourceType;
@@ -230,5 +231,20 @@ class SourceControllerTests {
         .perform(delete("/api/v1/admin/sources/nope"))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("SOURCE_NOT_FOUND"));
+  }
+
+  @Test
+  void summaryReturnsTheFreshnessRollUpAsJson() throws Exception {
+    when(sourceService.summary())
+        .thenReturn(new SourceSummary(12, 10, 1, 1, Instant.parse("2026-07-23T09:15:00Z")));
+
+    mockMvc
+        .perform(get("/api/v1/admin/sources/summary"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(12))
+        .andExpect(jsonPath("$.synced").value(10))
+        .andExpect(jsonPath("$.neverSynced").value(1))
+        .andExpect(jsonPath("$.stale").value(1))
+        .andExpect(jsonPath("$.lastSyncAt").value("2026-07-23T09:15:00Z"));
   }
 }
