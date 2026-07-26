@@ -10,9 +10,9 @@ import org.springframework.boot.actuate.health.Status;
 import org.springframework.stereotype.Service;
 
 /**
- * Normalizes the actuator health contributors this service cares about into the flat shape the
- * dashboard renders — Neo4j's is auto-registered by Spring Boot; Qdrant's and the embedding
- * provider's are this feature's own {@link HealthIndicator} beans.
+ * Normalizes the actuator health contributors this service tracks into a flat per-dependency
+ * status: Neo4j's is auto-registered by Spring Boot; Qdrant's and the embedding provider's are
+ * this feature's own {@link HealthIndicator} beans.
  */
 @Service
 public class DependencyHealthService {

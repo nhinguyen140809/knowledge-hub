@@ -3,8 +3,8 @@ package com.knowledgehub.knowledge.ingestion.application;
 import java.time.Instant;
 
 /**
- * At-a-glance freshness roll-up over every configured source, so the dashboard doesn't fetch every
- * source and reduce client-side.
+ * Freshness roll-up over every configured source: how many are synced, never synced, or stale,
+ * and when the most recent sync happened.
  *
  * @param total configured sources
  * @param synced sources with at least one successful sync

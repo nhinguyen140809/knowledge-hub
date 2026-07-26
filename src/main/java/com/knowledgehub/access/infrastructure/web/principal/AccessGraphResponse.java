@@ -5,10 +5,7 @@ import com.knowledgehub.access.domain.AccessGraphEdgeKind;
 import com.knowledgehub.access.domain.AccessGraphNodeKind;
 import java.util.List;
 
-/**
- * JSON view of one principal's access subgraph, render-ready for the frontend's own layout
- * (dagre/elk) — no coordinates.
- */
+/** JSON view of one principal's access subgraph: nodes and edges only, no coordinates. */
 public record AccessGraphResponse(String focus, List<NodeResponse> nodes, List<EdgeResponse> edges) {
 
   static AccessGraphResponse from(AccessGraph graph) {

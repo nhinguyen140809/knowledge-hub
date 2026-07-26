@@ -5,9 +5,9 @@ import com.knowledgehub.access.domain.AccessGraphNodeKind;
 import java.util.List;
 
 /**
- * The subgraph that explains one principal's access, render-ready: the principal, every group
- * reachable through membership (transitively), every source those reach, and the edges between
- * them — nothing else from the org. No coordinates; layout is the frontend's job.
+ * The subgraph that explains one principal's access: the principal, every group reachable through
+ * membership (transitively), every source those reach, and the edges between them — nothing else
+ * from the org. Carries only nodes and edges, no coordinates.
  *
  * @param focus the principal this graph explains
  * @param nodes every principal and source in the subgraph
