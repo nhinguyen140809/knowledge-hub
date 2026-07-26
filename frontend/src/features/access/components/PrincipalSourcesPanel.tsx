@@ -1,4 +1,4 @@
-import { Button, Card, Chip, Skeleton, Tooltip } from '@heroui/react'
+import { Button, Card, Skeleton, Tooltip } from '@heroui/react'
 import { Database, MousePointerClick, CircleMinus } from 'lucide-react'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { EmptyState } from '@/shared/components/ui/EmptyState'
@@ -8,20 +8,9 @@ import { SUMMARY_SEP } from '@/shared/constants'
 import { useEffectivePermissions } from '../hooks/usePrincipals'
 import { useRevokeSources } from '../hooks/useGrants'
 import { isRevocableGrant, isTraceableOrigin } from '../lib/principal.rules'
-import type { EffectiveSource, GrantOrigin } from '../types/access.type'
+import type { EffectiveSource } from '../types/access.type'
 import { GrantSourceDialog } from './GrantSourceDialog'
-
-/** Each source arrives already tagged with its origin; this only maps the tag
- *  to a look. Only DIRECT is revocable from this panel. */
-const GRANT_ORIGIN_CONFIG: Record<
-  GrantOrigin,
-  { color: 'default' | 'accent' | 'warning' | 'danger'; label: string }
-> = {
-  DIRECT: { color: 'default', label: 'direct' },
-  INHERITED: { color: 'accent', label: 'inherited' },
-  ADMIN: { color: 'danger', label: 'admin' },
-  POLICY: { color: 'warning', label: 'policy' },
-}
+import { OriginChip } from './OriginChip'
 
 function accessSummary(readableCount: number, inherited: number): string {
   const parts = [`${readableCount} readable in total`]
@@ -72,7 +61,6 @@ function GrantRow({
   source: EffectiveSource
   onTrace?: (source: EffectiveSource) => void
 }) {
-  const config = GRANT_ORIGIN_CONFIG[source.origin]
   const canTrace = onTrace && isTraceableOrigin(source.origin)
   return (
     <div className="flex items-center justify-between gap-2">
@@ -91,9 +79,7 @@ function GrantRow({
         <span className="truncate text-sm">{source.sourceId}</span>
       )}
       <div className="flex shrink-0 items-center gap-1">
-        <Chip size="sm" variant="soft" color={config.color}>
-          {config.label}
-        </Chip>
+        <OriginChip origin={source.origin} />
         {isRevocableGrant(source.origin) && (
           <RevokeGrantButton principalId={principalId} sourceId={source.sourceId} />
         )}

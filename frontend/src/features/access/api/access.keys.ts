@@ -31,6 +31,9 @@ export const accessKeys = {
   accessGraph: (connectionId: string | undefined, principalId: string) =>
     [...accessKeys.all, 'access-graph', connectionId, principalId] as const,
 
+  sourcePrincipals: (connectionId: string | undefined, sourceId: string) =>
+    [...accessKeys.all, 'source-principals', connectionId, sourceId] as const,
+
   defaultPolicy: (connectionId: string | undefined) =>
     [...accessKeys.all, 'default-policy', connectionId] as const,
 }

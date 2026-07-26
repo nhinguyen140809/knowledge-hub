@@ -78,6 +78,22 @@ export interface EffectivePermissions {
   sources: EffectiveSource[]
 }
 
+/** One principal that can read a source, with its provenance. The same
+ *  `GrantOrigin`/`via` shape as `EffectiveSource`, with principal and source
+ *  swapped. */
+export interface SourcePrincipal {
+  principalId: string
+  origin: GrantOrigin
+  via: string[]
+}
+
+/** Every principal that can read one source — the inverse of
+ *  `EffectivePermissions`, resolved from the source's side. */
+export interface SourcePrincipals {
+  sourceId: string
+  principals: SourcePrincipal[]
+}
+
 /** Body of POST /admin/grants and POST /admin/grants/revoke. */
 export interface GrantInput {
   principalId: string

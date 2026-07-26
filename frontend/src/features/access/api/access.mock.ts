@@ -11,6 +11,8 @@ import {
   type Principal,
   type PrincipalAccessGraph,
   type PrincipalGraph,
+  type SourcePrincipal,
+  type SourcePrincipals,
 } from '../types/access.type'
 
 export const mockPrincipals: Principal[] = [
@@ -141,6 +143,59 @@ export function mockResolveEffectivePermissions(principalId: string): EffectiveP
   }
 
   return { principalId, defaultPolicy: DENY, sources }
+}
+
+/** Every principal reachable downward from a direct grantor by walking
+ *  membership the other way — the mirror of `membershipClosure`, which walks
+ *  the same `mockMembers` edges upward from a principal instead. */
+function reachableFrom(grantorId: string): Set<string> {
+  const reached = new Set<string>([grantorId])
+  const queue = [grantorId]
+  while (queue.length > 0) {
+    const current = queue.pop()!
+    for (const memberId of mockMembers[current] ?? []) {
+      if (!reached.has(memberId)) {
+        reached.add(memberId)
+        queue.push(memberId)
+      }
+    }
+  }
+  return reached
+}
+
+/** Resolves which principals can read a source: every direct grantor, every
+ *  principal that inherits through group membership, and every admin (role
+ *  bypasses grants) not already reached some other way. The inverse of
+ *  `mockResolveEffectivePermissions`, resolved from the source's side. */
+export function mockResolveSourcePrincipals(sourceId: string): SourcePrincipals {
+  const grantors = Object.entries(mockDirectGrants)
+    .filter(([, sourceIds]) => sourceIds.includes(sourceId))
+    .map(([principalId]) => principalId)
+
+  const via: Record<string, string[]> = {}
+  for (const grantor of grantors) {
+    for (const principalId of reachableFrom(grantor)) {
+      ;(via[principalId] ??= []).push(grantor)
+    }
+  }
+
+  const principals: SourcePrincipal[] = Object.entries(via).map(([principalId, viaGrantors]) => ({
+    principalId,
+    // Same rule as the backend: a principal is its own grantor only when it
+    // appears among the ids that reached it.
+    origin: viaGrantors.includes(principalId) ? 'DIRECT' : 'INHERITED',
+    via: viaGrantors,
+  }))
+
+  // Mock default policy is DENY (see mockResolveEffectivePermissions), so the
+  // only principals left to add are admins bypassing grants entirely.
+  for (const principal of mockPrincipals) {
+    if (principal.role === 'ADMIN' && !via[principal.principalId]) {
+      principals.push({ principalId: principal.principalId, origin: 'ADMIN', via: [] })
+    }
+  }
+
+  return { sourceId, principals }
 }
 
 /** The scoped subgraph GET .../access-graph returns: the focus principal, its

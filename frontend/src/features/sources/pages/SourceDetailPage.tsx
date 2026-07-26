@@ -1,6 +1,7 @@
 import { Button, Skeleton } from '@heroui/react'
 import { ArrowLeft } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { SourcePrincipalsPanel } from '@/features/access'
 import { ErrorState } from '@/shared/components/ui/ErrorState'
 import { renderLink } from '@/shared/lib/renderLink'
 import { DeleteSourceButton } from '../components/DeleteSourceButton'
@@ -10,9 +11,10 @@ import { SourceIndexCard } from '../components/SourceIndexCard'
 import { SourceSummaryCard } from '../components/SourceSummaryCard'
 import { useSource } from '../hooks/useSources'
 
-/** Everything about one source: what it is, what it ingests, and how fresh its
- *  index is. Summary spans the full width since it's the identity card; index
- *  and patterns sit side by side below it. */
+/** Everything about one source: what it is, what it ingests, how fresh its
+ *  index is, and who can read it. Summary spans the full width since it's the
+ *  identity card; index and patterns sit side by side below it, and access
+ *  follows as its own full-width section. */
 export function SourceDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -31,6 +33,14 @@ export function SourceDetailPage() {
           {id && <SourceIndexCard key={id} sourceId={id} />}
           <SourceGlobsCard source={data} />
         </div>
+        {id && (
+          <SourcePrincipalsPanel
+            sourceId={id}
+            onSelectPrincipal={(principalId) =>
+              navigate('/access', { state: { selectPrincipal: principalId } })
+            }
+          />
+        )}
       </div>
     )
   }
