@@ -91,6 +91,11 @@ public class PrincipalAdminService {
     return principals.membersOf(groupId);
   }
 
+  @Transactional(readOnly = true)
+  public PrincipalGraph graph() {
+    return new PrincipalGraph(principals.findAll(), principals.membershipGraph());
+  }
+
   // --- grants ---
 
   @Transactional

@@ -56,6 +56,12 @@ public class PrincipalController {
     return principals.list().stream().map(PrincipalResponse::from).toList();
   }
 
+  @GetMapping("/graph")
+  @Operation(summary = "Every principal plus direct group membership edges, for the tree view")
+  public PrincipalGraphResponse graph() {
+    return PrincipalGraphResponse.from(principals.graph());
+  }
+
   @GetMapping("/{id}")
   @Operation(summary = "Get a principal")
   public PrincipalResponse get(@PathVariable String id) {

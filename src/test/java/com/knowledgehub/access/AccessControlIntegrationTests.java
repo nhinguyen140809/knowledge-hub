@@ -226,6 +226,19 @@ class AccessControlIntegrationTests {
         .andExpect(jsonPath("$.sources[?(@.sourceId=='" + SRC_A + "')].origin", hasItem("ADMIN")));
   }
 
+  @Test
+  void principalsGraphReturnsEveryPrincipalAndDirectMembershipInOneCall() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER");
+    createPrincipal(USER, "SUBJECT", "MEMBER");
+    addMember(GROUP, USER);
+
+    mvc.perform(get("/api/v1/admin/principals/graph").header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.principals[?(@.principalId=='" + GROUP + "')]", hasSize(1)))
+        .andExpect(jsonPath("$.principals[?(@.principalId=='" + USER + "')]", hasSize(1)))
+        .andExpect(jsonPath("$.membership['" + GROUP + "']", hasItem(USER)));
+  }
+
   // --- helpers ---
 
   private static String bearer(String token) {

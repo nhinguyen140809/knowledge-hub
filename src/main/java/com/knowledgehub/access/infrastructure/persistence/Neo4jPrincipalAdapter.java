@@ -4,6 +4,7 @@ import com.knowledgehub.access.domain.Principal;
 import com.knowledgehub.access.domain.PrincipalType;
 import com.knowledgehub.access.domain.Role;
 import com.knowledgehub.access.domain.port.PrincipalRepository;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -44,6 +45,12 @@ class Neo4jPrincipalAdapter implements PrincipalRepository {
   private static final String MEMBERS_OF =
       "MATCH (m:Principal)-[:MEMBER_OF]->(g:Principal {principal_id: $groupId})"
           + " RETURN m.principal_id AS id ORDER BY m.principal_id";
+
+  private static final String MEMBERSHIP_GRAPH =
+      "MATCH (m:Principal)-[:MEMBER_OF]->(g:Principal)"
+          + " WITH g, m ORDER BY m.principal_id"
+          + " RETURN g.principal_id AS groupId, collect(m.principal_id) AS memberIds"
+          + " ORDER BY groupId";
 
   private final Neo4jClient client;
 
@@ -127,6 +134,23 @@ class Neo4jPrincipalAdapter implements PrincipalRepository {
         .all()
         .stream()
         .toList();
+  }
+
+  @Override
+  public Map<String, List<String>> membershipGraph() {
+    Map<String, List<String>> membership = new LinkedHashMap<>();
+    client
+        .query(MEMBERSHIP_GRAPH)
+        .fetch()
+        .all()
+        .forEach(
+            row -> membership.put((String) row.get("groupId"), asStrings(row.get("memberIds"))));
+    return membership;
+  }
+
+  @SuppressWarnings("unchecked")
+  private static List<String> asStrings(Object value) {
+    return value == null ? List.of() : (List<String>) value;
   }
 
   private static Principal toPrincipal(Record row) {

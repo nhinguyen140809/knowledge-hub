@@ -3,6 +3,7 @@ package com.knowledgehub.access.domain.port;
 import com.knowledgehub.access.domain.Principal;
 import com.knowledgehub.access.domain.Role;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /** Stores principals (subjects and groups) and their group membership. */
@@ -29,4 +30,10 @@ public interface PrincipalRepository {
 
   /** The direct members of a group. */
   List<String> membersOf(String groupId);
+
+  /**
+   * Direct member ids per group id, for every group at once — the single-query alternative to one
+   * {@link #membersOf} call per group. A group with no members has no entry.
+   */
+  Map<String, List<String>> membershipGraph();
 }
