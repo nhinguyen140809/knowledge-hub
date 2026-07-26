@@ -34,6 +34,9 @@ class Neo4jPrincipalAdapter implements PrincipalRepository {
   private static final String EXISTS_BY_ROLE =
       "MATCH (p:Principal {role: $role}) RETURN count(p) > 0 AS present";
 
+  private static final String COUNT_BY_ROLE =
+      "MATCH (p:Principal {role: $role}) RETURN count(p) AS total";
+
   private static final String ADD_MEMBER =
       "MATCH (m:Principal {principal_id: $memberId}), (g:Principal {principal_id: $groupId})"
           + " MERGE (m)-[:MEMBER_OF]->(g)";
@@ -116,6 +119,18 @@ class Neo4jPrincipalAdapter implements PrincipalRepository {
         .mappedBy((t, row) -> row.get("present").asBoolean())
         .one()
         .orElse(false);
+  }
+
+  @Override
+  public long countByRole(Role role) {
+    return client
+        .query(COUNT_BY_ROLE)
+        .bind(role.name())
+        .to("role")
+        .fetchAs(Long.class)
+        .mappedBy((t, row) -> row.get("total").asLong())
+        .one()
+        .orElse(0L);
   }
 
   @Override

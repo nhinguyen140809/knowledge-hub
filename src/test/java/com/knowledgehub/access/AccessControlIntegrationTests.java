@@ -256,6 +256,59 @@ class AccessControlIntegrationTests {
         .andExpect(jsonPath("$.code").value("MEMBERSHIP_CYCLE"));
   }
 
+  @Test
+  void createPrincipalRejectsAGroupWithRoleAdmin() throws Exception {
+    // Role ADMIN is SUBJECT-only: a GROUP has no role inheritance, so ADMIN on one confers
+    // admin on nobody and can only mislead.
+    mvc.perform(
+            post("/api/v1/admin/principals")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"principalId\":\"%s\",\"type\":\"GROUP\",\"role\":\"ADMIN\"}"
+                        .formatted(GROUP)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+  }
+
+  @Test
+  void addMemberRejectsAnAdminPrincipal() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER");
+    createPrincipal(USER, "SUBJECT", "ADMIN");
+
+    mvc.perform(
+            post("/api/v1/admin/principals/" + GROUP + "/members")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"memberId\":\"%s\"}".formatted(USER)))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("ADMIN_MEMBERSHIP"));
+  }
+
+  @Test
+  void grantRejectsAnAdminPrincipal() throws Exception {
+    createPrincipal(USER, "SUBJECT", "ADMIN");
+
+    mvc.perform(
+            post("/api/v1/admin/grants")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"principalId\":\"%s\",\"sourceIds\":[\"%s\"]}".formatted(USER, SRC_A)))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("ADMIN_GRANT"));
+  }
+
+  @Test
+  void deleteRejectsTheLastRemainingAdmin() throws Exception {
+    // The bootstrap admin is the only admin in this context; deleting it must be refused so the
+    // service never ends up with no one able to administer it until the next restart.
+    mvc.perform(
+            delete("/api/v1/admin/principals/" + ADMIN_ID).header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("LAST_ADMIN"));
+  }
+
   // --- helpers ---
 
   private static String bearer(String token) {

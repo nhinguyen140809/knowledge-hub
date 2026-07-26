@@ -22,6 +22,9 @@ public interface PrincipalRepository {
   /** Whether any principal with the given role exists (used to decide bootstrap). */
   boolean existsByRole(Role role);
 
+  /** How many principals currently have the given role (used to guard the last admin). */
+  long countByRole(Role role);
+
   /** Adds {@code memberId} to {@code groupId} (a {@code MEMBER_OF} edge). */
   void addMember(String groupId, String memberId);
 

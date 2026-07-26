@@ -6,7 +6,10 @@ import com.knowledgehub.access.domain.PermissionOrigin;
 import com.knowledgehub.access.domain.Principal;
 import com.knowledgehub.access.domain.PrincipalType;
 import com.knowledgehub.access.domain.Role;
+import com.knowledgehub.access.domain.exception.AdminGrantException;
+import com.knowledgehub.access.domain.exception.AdminMembershipException;
 import com.knowledgehub.access.domain.exception.DuplicatePrincipalException;
+import com.knowledgehub.access.domain.exception.LastAdminException;
 import com.knowledgehub.access.domain.exception.MembershipCycleException;
 import com.knowledgehub.access.domain.port.Authorizer;
 import com.knowledgehub.access.domain.port.GrantRepository;
@@ -47,6 +50,9 @@ public class PrincipalAdminService {
 
   @Transactional
   public Principal create(String principalId, PrincipalType type, Role role) {
+    if (type == PrincipalType.GROUP && role == Role.ADMIN) {
+      throw new IllegalArgumentException("A group cannot have role ADMIN: " + principalId);
+    }
     if (principals.findById(principalId).isPresent()) {
       throw new DuplicatePrincipalException(principalId);
     }
@@ -67,7 +73,10 @@ public class PrincipalAdminService {
 
   @Transactional
   public void delete(String principalId) {
-    get(principalId);
+    Principal principal = get(principalId);
+    if (principal.isAdmin() && principals.countByRole(Role.ADMIN) <= 1) {
+      throw new LastAdminException(principalId);
+    }
     principals.deleteById(principalId);
   }
 
@@ -76,7 +85,10 @@ public class PrincipalAdminService {
   @Transactional
   public void addMember(String groupId, String memberId) {
     requireGroup(groupId);
-    get(memberId);
+    Principal member = get(memberId);
+    if (member.isAdmin()) {
+      throw new AdminMembershipException(memberId);
+    }
     if (principals.wouldCreateCycle(groupId, memberId)) {
       throw new MembershipCycleException(groupId, memberId);
     }
@@ -104,7 +116,10 @@ public class PrincipalAdminService {
 
   @Transactional
   public void grant(String principalId, Collection<String> sourceIds) {
-    get(principalId);
+    Principal principal = get(principalId);
+    if (principal.isAdmin()) {
+      throw new AdminGrantException(principalId);
+    }
     grants.grant(principalId, sourceIds);
   }
 
