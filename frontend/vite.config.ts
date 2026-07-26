@@ -43,7 +43,6 @@ export default defineConfig({
     setupFiles: ['./tests/setup.ts'],
     // This dev machine has little memory to spare, so tests run in one worker
     // process instead of vitest's default per-core pool.
-    pool: 'forks',
-    poolOptions: { forks: { singleFork: true } },
+    fileParallelism: false,
   },
 })
