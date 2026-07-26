@@ -47,4 +47,16 @@ class RetrievalCacheTests {
     // A different allow-list is a different key, so one principal never gets another's answer.
     assertThat(computations.get()).isEqualTo(2);
   }
+
+  @Test
+  void statsTrackHitsAndMisses() {
+    Supplier<RankedResult> compute = RankedResult::empty;
+    Query query = Query.of("hello world");
+
+    cache.get(query, null, compute); // miss
+    cache.get(query, null, compute); // hit
+
+    assertThat(cache.stats().hitCount()).isEqualTo(1);
+    assertThat(cache.stats().missCount()).isEqualTo(1);
+  }
 }

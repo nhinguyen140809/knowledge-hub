@@ -2,9 +2,11 @@ package com.knowledgehub.system.infrastructure.web;
 
 import com.knowledgehub.system.application.DependencyHealthService;
 import com.knowledgehub.system.application.KnowledgeStatsService;
+import com.knowledgehub.system.application.RetrievalStatsService;
 import com.knowledgehub.system.application.SystemInfoService;
 import com.knowledgehub.system.domain.DependencyStatus;
 import com.knowledgehub.system.domain.KnowledgeStats;
+import com.knowledgehub.system.domain.RetrievalStats;
 import com.knowledgehub.system.domain.SystemInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,14 +28,17 @@ public class SystemController {
   private final SystemInfoService systemInfoService;
   private final KnowledgeStatsService knowledgeStatsService;
   private final DependencyHealthService dependencyHealthService;
+  private final RetrievalStatsService retrievalStatsService;
 
   public SystemController(
       SystemInfoService systemInfoService,
       KnowledgeStatsService knowledgeStatsService,
-      DependencyHealthService dependencyHealthService) {
+      DependencyHealthService dependencyHealthService,
+      RetrievalStatsService retrievalStatsService) {
     this.systemInfoService = systemInfoService;
     this.knowledgeStatsService = knowledgeStatsService;
     this.dependencyHealthService = dependencyHealthService;
+    this.retrievalStatsService = retrievalStatsService;
   }
 
   @GetMapping("/info")
@@ -52,6 +57,12 @@ public class SystemController {
   @Operation(summary = "Reachability of Neo4j, Qdrant and the embedding provider")
   public List<DependencyStatus> dependencies() {
     return dependencyHealthService.currentStatus();
+  }
+
+  @GetMapping("/retrieval-stats")
+  @Operation(summary = "Retrieval activity since process start")
+  public RetrievalStats retrievalStats() {
+    return retrievalStatsService.currentStats();
   }
 
   @PutMapping("/product-name")

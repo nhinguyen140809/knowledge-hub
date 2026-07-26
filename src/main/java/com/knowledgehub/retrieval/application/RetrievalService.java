@@ -6,7 +6,9 @@ import com.knowledgehub.retrieval.domain.QueryParams;
 import com.knowledgehub.retrieval.domain.RankedResult;
 import com.knowledgehub.retrieval.domain.port.ResultCachePort;
 import com.knowledgehub.retrieval.domain.port.RetrievalReadPort;
+import com.knowledgehub.retrieval.infrastructure.metrics.RetrievalMetrics;
 import com.knowledgehub.shared.config.RetrievalProperties;
+import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -40,6 +42,7 @@ public class RetrievalService {
   private final AclFilterStage aclFilterStage;
   private final RetrievalReadPort reader;
   private final ResultCachePort cache;
+  private final RetrievalMetrics metrics;
   private final Executor executor;
   private final int defaultTopK;
 
@@ -53,6 +56,7 @@ public class RetrievalService {
       AclFilterStage aclFilterStage,
       RetrievalReadPort reader,
       ResultCachePort cache,
+      RetrievalMetrics metrics,
       RetrievalProperties properties,
       @Qualifier("retrievalExecutor") Executor executor) {
     this.prepareStage = prepareStage;
@@ -64,6 +68,7 @@ public class RetrievalService {
     this.aclFilterStage = aclFilterStage;
     this.reader = reader;
     this.cache = cache;
+    this.metrics = metrics;
     this.executor = executor;
     this.defaultTopK = properties.topK();
   }
@@ -80,13 +85,15 @@ public class RetrievalService {
     long startNanos = System.nanoTime();
     RankedResult result =
         cache.get(query, allowedSources, () -> runPipeline(query, allowedSources));
+    long elapsedNanos = System.nanoTime() - startNanos;
+    metrics.recordQuery(Duration.ofNanos(elapsedNanos));
     // Log the query as metadata only — never the query text, which may be sensitive.
     log.info(
         "Query served: type={} ref={} hits={} in {} ms",
         query.params().type(),
         query.params().ref(),
         result.hits().size(),
-        (System.nanoTime() - startNanos) / 1_000_000);
+        elapsedNanos / 1_000_000);
     return result;
   }
 

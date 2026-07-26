@@ -9,10 +9,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.knowledgehub.system.application.DependencyHealthService;
 import com.knowledgehub.system.application.KnowledgeStatsService;
+import com.knowledgehub.system.application.RetrievalStatsService;
 import com.knowledgehub.system.application.SystemInfoService;
 import com.knowledgehub.system.domain.DependencyState;
 import com.knowledgehub.system.domain.DependencyStatus;
 import com.knowledgehub.system.domain.KnowledgeStats;
+import com.knowledgehub.system.domain.RetrievalStats;
 import com.knowledgehub.system.domain.SystemInfo;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -32,6 +34,7 @@ class SystemControllerTests {
   @MockitoBean private SystemInfoService systemInfoService;
   @MockitoBean private KnowledgeStatsService knowledgeStatsService;
   @MockitoBean private DependencyHealthService dependencyHealthService;
+  @MockitoBean private RetrievalStatsService retrievalStatsService;
 
   @Test
   void returnsSystemInfoAsJson() throws Exception {
@@ -103,5 +106,18 @@ class SystemControllerTests {
         .andExpect(jsonPath("$[0].status").value("UP"))
         .andExpect(jsonPath("$[2].name").value("embeddings"))
         .andExpect(jsonPath("$[2].status").value("DOWN"));
+  }
+
+  @Test
+  void returnsRetrievalStatsAsJson() throws Exception {
+    when(retrievalStatsService.currentStats()).thenReturn(new RetrievalStats(4210, 42, 180, 0.73));
+
+    mockMvc
+        .perform(get("/api/v1/system/retrieval-stats"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.queriesServed").value(4210))
+        .andExpect(jsonPath("$.p50LatencyMs").value(42))
+        .andExpect(jsonPath("$.p95LatencyMs").value(180))
+        .andExpect(jsonPath("$.cacheHitRate").value(0.73));
   }
 }
