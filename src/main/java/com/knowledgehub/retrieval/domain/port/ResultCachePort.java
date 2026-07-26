@@ -22,4 +22,7 @@ public interface ResultCachePort {
    * @param compute runs the pipeline on a miss
    */
   RankedResult get(Query query, Set<String> allowedSources, Supplier<RankedResult> compute);
+
+  /** Fraction of lookups served from cache since process start. */
+  double hitRate();
 }
