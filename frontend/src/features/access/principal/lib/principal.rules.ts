@@ -1,4 +1,5 @@
-import type { Credential, GrantOrigin, Principal, PrincipalType, Role } from '../types/access.type'
+import type { Principal, PrincipalType, Role } from '../../shared/types/access.type'
+import type { Credential } from '../types/principal.type'
 
 /**
  * The access-control business rules in one place. Each export answers one "is
@@ -6,6 +7,8 @@ import type { Credential, GrantOrigin, Principal, PrincipalType, Role } from '..
  * re-deriving domain logic inline, so a rule change lands in exactly one file.
  * Every rule is re-validated on submit anyway — these gates only spare a round
  * trip and keep the UI from offering actions that would be rejected.
+ * Grant-eligibility rules (revocable, traceable, receivable) live in the
+ * shared `grant.rules` instead — both sides' panels need those.
  */
 
 /** Role ADMIN is SUBJECT-only: roles don't inherit through membership, so a
@@ -30,29 +33,6 @@ export function canHaveMembers(principal: Principal): boolean {
 /** The only legal role for a principal born inside a group: ADMIN can't live
  *  in a group, and a GROUP can't be ADMIN — the intersection leaves MEMBER. */
 export const ROLE_IN_GROUP: Role = 'MEMBER'
-
-/** A new grant to an admin is dead config (its role already reads every
- *  source); pre-existing grants stay listed and revocable. Gates the
- *  "+ Source" button. */
-export function canReceiveGrants(principal: Principal): boolean {
-  return principal.role !== 'ADMIN'
-}
-
-/** A source's access can be traced in the graph only when it arrives through a
- *  grant edge. POLICY (default-allow) and ADMIN (role bypass) reach a source
- *  with no edge to follow, so there is nothing to point at. Gates whether a
- *  grant row is clickable-to-trace. */
-export function isTraceableOrigin(origin: GrantOrigin): boolean {
-  return origin === 'DIRECT' || origin === 'INHERITED'
-}
-
-/** Only a principal's own DIRECT grant is revocable from its Sources panel;
- *  inherited/admin/policy access has no edge to remove here — it goes away only
- *  by revoking the group grant or changing the policy. Gates the revoke button
- *  on a grant row. */
-export function isRevocableGrant(origin: GrantOrigin): boolean {
-  return origin === 'DIRECT'
-}
 
 /** An already-revoked credential can't be revoked again — revoke is a
  *  soft-delete, so revoked ones stay listed but inert. Gates the revoke button

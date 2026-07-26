@@ -1,20 +1,19 @@
 import { apiFetch } from '@/lib/api/axios'
 import { mockResolve } from '@/lib/api/mocks/mock.util'
 import { isMock } from '@/lib/config'
+import { mockMembers, mockPrincipals } from '../../shared/api/access.mock'
+import type { Principal } from '../../shared/types/access.type'
 import type {
   CreatePrincipalInput,
   EffectivePermissions,
-  Principal,
   PrincipalAccessGraph,
   PrincipalGraph,
-} from '../types/access.type'
+} from '../types/principal.type'
 import {
-  mockMembers,
   mockPrincipalGraph,
-  mockPrincipals,
-  mockResolveAccessGraph,
   mockResolveEffectivePermissions,
-} from './access.mock'
+  mockResolvePrincipalAccessGraph,
+} from './principal.mock'
 
 const PRINCIPALS = '/admin/principals'
 
@@ -105,7 +104,7 @@ export function fetchEffectivePermissions(principalId: string): Promise<Effectiv
 
 /** GET /admin/principals/{id}/access-graph — the scoped subgraph explaining
  *  this principal's access. */
-export function fetchAccessGraph(principalId: string): Promise<PrincipalAccessGraph> {
-  if (isMock) return mockResolve(mockResolveAccessGraph(principalId))
+export function fetchPrincipalAccessGraph(principalId: string): Promise<PrincipalAccessGraph> {
+  if (isMock) return mockResolve(mockResolvePrincipalAccessGraph(principalId))
   return apiFetch<PrincipalAccessGraph>(`${PRINCIPALS}/${enc(principalId)}/access-graph`)
 }

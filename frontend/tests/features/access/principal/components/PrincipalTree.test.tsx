@@ -1,17 +1,17 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import type { PrincipalGraph } from '@/features/access/types/access.type'
+import type { PrincipalGraph } from '@/features/access/principal/types/principal.type'
 
 const graphResult = vi.hoisted(() => ({ current: {} as Record<string, unknown> }))
 
 // Stub the data hook so the tree can be driven with hand-built graphs — no query
 // client, store or network involved.
-vi.mock('@/features/access/hooks/usePrincipals', () => ({
+vi.mock('@/features/access/principal/hooks/usePrincipals', () => ({
   usePrincipalGraph: () => graphResult.current,
 }))
 
-const { PrincipalTree } = await import('@/features/access/components/PrincipalTree')
+const { PrincipalTree } = await import('@/features/access/principal/components/PrincipalTree')
 
 // The tree mounts its action dialogs, which own their mutations (hence a
 // query client); none of these tests open one, but they must be able to

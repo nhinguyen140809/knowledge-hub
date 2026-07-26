@@ -1,18 +1,18 @@
 import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import type { EffectiveSource } from '../types/access.type'
+import type { EffectiveSource } from '../types/principal.type'
 
 /** The right side is two views of the selected principal; a click may need to
  *  steer which one is showing. */
-export type AccessView = 'details' | 'graph'
+export type PrincipalAccessView = 'details' | 'graph'
 
-export interface AccessSelection {
+export interface PrincipalAccessSelection {
   selectedId: string | null
-  view: AccessView
+  view: PrincipalAccessView
   /** Source whose access path is being traced in the graph, or null for none.
    *  The graph derives which nodes and edges to light from this. */
   tracedSourceId: string | null
-  setView: (view: AccessView) => void
+  setView: (view: PrincipalAccessView) => void
   /** Select a principal, or deselect it when it is already selected. */
   toggleSelect: (id: string) => void
   /** Drop the selection if the given principal was the selected one — for a
@@ -24,14 +24,14 @@ export interface AccessSelection {
 }
 
 /**
- * All of the Access page's interaction state in one place: which principal is
- * selected, which view (details/graph) is showing, and any access path being
- * traced. Also honours a selection carried in navigation state (e.g. from the
- * command palette), selecting that principal on arrival.
+ * All of the Access-Control-Principals page's interaction state in one place:
+ * which principal is selected, which view (details/graph) is showing, and any
+ * access path being traced. Also honours a selection carried in navigation
+ * state (e.g. from the command palette), selecting that principal on arrival.
  */
-export function useAccessSelection(): AccessSelection {
+export function usePrincipalAccessSelection(): PrincipalAccessSelection {
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [view, setView] = useState<AccessView>('details')
+  const [view, setView] = useState<PrincipalAccessView>('details')
   // A path belongs to one principal's view, so it is cleared whenever the
   // selection changes.
   const [tracedSourceId, setTracedSourceId] = useState<string | null>(null)

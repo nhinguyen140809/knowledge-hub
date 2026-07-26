@@ -1,8 +1,8 @@
 import { apiFetch } from '@/lib/api/axios'
 import { mockResolve } from '@/lib/api/mocks/mock.util'
 import { isMock } from '@/lib/config'
-import type { Credential, GlobalCredential, IssuedCredential } from '../types/access.type'
-import { mockCredentials, mockGlobalCredentials, mockIssuedCredential } from './access.mock'
+import type { Credential, GlobalCredential, IssuedCredential } from '../types/principal.type'
+import { mockCredentials, mockGlobalCredentials, mockIssuedCredential } from './principal.mock'
 
 const PRINCIPALS = '/admin/principals'
 const CREDENTIALS = '/admin/credentials'

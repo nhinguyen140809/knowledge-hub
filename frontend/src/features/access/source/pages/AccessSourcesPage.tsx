@@ -2,7 +2,8 @@ import { ScrollShadow, Skeleton, Tabs } from '@heroui/react'
 import { lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSetHeaderActions } from '@/lib/store/header.store'
-import { DefaultPolicyToggle } from '../components/DefaultPolicyToggle'
+import { ROUTES } from '@/shared/constants'
+import { DefaultPolicyToggle } from '../../shared/components/DefaultPolicyToggle'
 import { SourceListPanel } from '../components/SourceListPanel'
 import { SourcePrincipalsPanel } from '../components/SourcePrincipalsPanel'
 import { useSourceAccessSelection, type SourceAccessView } from '../hooks/useSourceAccessSelection'
@@ -14,10 +15,10 @@ const SourceAccessGraph = lazy(() =>
 )
 
 /**
- * Source-centric access control: the mirror of {@link AccessPage}. The list on
- * the left selects a source; the right side answers "who can read it"
- * (Principals, with DIRECT grants revocable) and "why" (Graph). Interaction
- * state lives in {@link useSourceAccessSelection}.
+ * Source-centric access control: the mirror of {@link ../../principal/pages/AccessPrincipalsPage}.
+ * The list on the left selects a source; the right side answers "who can read
+ * it" (Principals, with DIRECT grants revocable) and "why" (Graph).
+ * Interaction state lives in {@link useSourceAccessSelection}.
  */
 export function AccessSourcesPage() {
   const { selectedId, view, setView, toggleSelect } = useSourceAccessSelection()
@@ -54,7 +55,7 @@ export function AccessSourcesPage() {
             <SourcePrincipalsPanel
               sourceId={selectedId}
               onSelectPrincipal={(principalId) =>
-                navigate('/access', { state: { selectPrincipal: principalId } })
+                navigate(ROUTES.accessPrincipals, { state: { selectPrincipal: principalId } })
               }
             />
           </ScrollShadow>

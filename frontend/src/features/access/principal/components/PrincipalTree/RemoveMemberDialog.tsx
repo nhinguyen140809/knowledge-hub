@@ -2,7 +2,7 @@ import { Button } from '@heroui/react'
 import { UserMinus } from 'lucide-react'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { useRemoveMember } from '../../hooks/usePrincipalMutations'
-import type { Principal } from '../../types/access.type'
+import type { Principal } from '../../../shared/types/access.type'
 
 export interface RemoveMemberTarget {
   groupId: string

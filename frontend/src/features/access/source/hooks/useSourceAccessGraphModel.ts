@@ -1,6 +1,11 @@
 import type { Edge, Node } from '@xyflow/react'
 import { useMemo } from 'react'
-import { grantEdge, memberEdge, principalNode, sourceNode } from '../lib/accessGraphElements'
+import {
+  grantEdge,
+  memberEdge,
+  principalNode,
+  sourceNode,
+} from '../../shared/lib/accessGraphElements'
 import { useSourceAccessGraph } from './useSourceAccess'
 
 /**

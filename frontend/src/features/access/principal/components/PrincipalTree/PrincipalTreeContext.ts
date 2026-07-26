@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react'
-import type { Principal } from '../../types/access.type'
+import type { Principal } from '../../../shared/types/access.type'
 import type { MoveToGroupTarget } from './MoveToGroupDialog'
 import type { RemoveMemberTarget } from './RemoveMemberDialog'
 

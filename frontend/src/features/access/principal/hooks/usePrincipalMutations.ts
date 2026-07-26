@@ -6,8 +6,8 @@ import {
   movePrincipal,
   removeMember,
 } from '../api/principal.api'
-import { accessKeys } from '../api/access.keys'
-import type { CreatePrincipalInput } from '../types/access.type'
+import { accessKeys } from '../../shared/api/access.keys'
+import type { CreatePrincipalInput } from '../types/principal.type'
 
 /** Access data is interdependent (membership feeds effective permissions), so
  *  every mutation invalidates the whole access namespace rather than guessing. */

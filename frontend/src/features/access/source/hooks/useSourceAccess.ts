@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useActiveConnection } from '@/lib/store/connections.store'
-import { accessKeys } from '../api/access.keys'
+import { accessKeys } from '../../shared/api/access.keys'
 import { fetchSourceAccessGraph, fetchSourcePrincipals } from '../api/source.api'
 
 /** Every principal that can read a source, with its access origin — the

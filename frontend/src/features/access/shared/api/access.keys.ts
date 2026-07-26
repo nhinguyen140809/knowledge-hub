@@ -28,8 +28,8 @@ export const accessKeys = {
   effectivePermissions: (connectionId: string | undefined, principalId: string) =>
     [...accessKeys.all, 'effective-permissions', connectionId, principalId] as const,
 
-  accessGraph: (connectionId: string | undefined, principalId: string) =>
-    [...accessKeys.all, 'access-graph', connectionId, principalId] as const,
+  principalAccessGraph: (connectionId: string | undefined, principalId: string) =>
+    [...accessKeys.all, 'principal-access-graph', connectionId, principalId] as const,
 
   sourcePrincipals: (connectionId: string | undefined, sourceId: string) =>
     [...accessKeys.all, 'source-principals', connectionId, sourceId] as const,

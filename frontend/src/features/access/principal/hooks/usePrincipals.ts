@@ -1,14 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { useActiveConnection } from '@/lib/store/connections.store'
+import { accessKeys } from '../../shared/api/access.keys'
 import {
-  fetchAccessGraph,
   fetchEffectivePermissions,
   fetchMembers,
   fetchPrincipal,
+  fetchPrincipalAccessGraph,
   fetchPrincipalGraph,
   fetchPrincipals,
 } from '../api/principal.api'
-import { accessKeys } from '../api/access.keys'
 
 /** Principals plus their membership edges — one call, enough to draw the tree
  *  (including which principals are roots). */
@@ -53,11 +53,11 @@ export function useMembers(groupId: string | undefined) {
 
 /** The scoped subgraph explaining one principal's access — nodes, edges, done;
  *  the client only lays out and styles. */
-export function useAccessGraph(principalId: string | undefined) {
+export function usePrincipalAccessGraph(principalId: string | undefined) {
   const active = useActiveConnection()
   return useQuery({
-    queryKey: accessKeys.accessGraph(active?.id, principalId ?? ''),
-    queryFn: () => fetchAccessGraph(principalId!),
+    queryKey: accessKeys.principalAccessGraph(active?.id, principalId ?? ''),
+    queryFn: () => fetchPrincipalAccessGraph(principalId!),
     enabled: !!active && !!principalId,
   })
 }

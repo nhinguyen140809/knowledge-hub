@@ -8,7 +8,7 @@ import { SUMMARY_SEP } from '@/shared/constants'
 import { formatTimestamp } from '@/shared/lib/datetime.utils'
 import { useCredentials, useRevokeCredential } from '../hooks/useCredentials'
 import { canRevokeCredential } from '../lib/principal.rules'
-import type { Credential } from '../types/access.type'
+import type { Credential } from '../types/principal.type'
 import { IssueCredentialDialog } from './IssueCredentialDialog'
 
 const CREDENTIAL_STATUS_CONFIG = {

@@ -4,8 +4,8 @@ import {
   memberEdge,
   principalNode,
   sourceNode,
-} from '@/features/access/lib/accessGraphElements'
-import { sourceNodeId } from '@/features/access/lib/sourceNode'
+} from '@/features/access/shared/lib/accessGraphElements'
+import { sourceNodeId } from '@/features/access/shared/lib/sourceNode'
 
 describe('principalNode', () => {
   it('labels a group with a "(group)" suffix, a subject without one', () => {

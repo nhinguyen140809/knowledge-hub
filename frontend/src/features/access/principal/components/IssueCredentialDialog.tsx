@@ -3,7 +3,7 @@ import { Check, Copy, Plus, TriangleAlert } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard'
 import { useIssueCredential } from '../hooks/useCredentials'
-import type { IssuedCredential } from '../types/access.type'
+import type { IssuedCredential } from '../types/principal.type'
 
 interface IssueFormProps {
   isPending: boolean

@@ -2,7 +2,7 @@ import { Button, Form, Label, ListBox, Modal, Select } from '@heroui/react'
 import { FolderInput } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import { useMovePrincipal } from '../../hooks/usePrincipalMutations'
-import type { Principal } from '../../types/access.type'
+import type { Principal } from '../../../shared/types/access.type'
 
 export interface MoveToGroupTarget {
   principal: Principal

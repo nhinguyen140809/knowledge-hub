@@ -1,10 +1,10 @@
 import { Button, Form, Label, ListBox, Modal, Select } from '@heroui/react'
 import { Plus } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
-import { useGrantSources } from '../hooks/useGrants'
+import { useGrantSources } from '../../shared/hooks/useGrants'
+import { canReceiveGrants } from '../../shared/lib/grant.rules'
 import { useGrantSourceCandidates } from '../hooks/useGrantSourceCandidates'
 import { usePrincipalGraph } from '../hooks/usePrincipals'
-import { canReceiveGrants } from '../lib/principal.rules'
 
 /** Grants one source directly to the selected principal. Only sources without
  *  an existing direct grant are offered — access that is inherited or comes

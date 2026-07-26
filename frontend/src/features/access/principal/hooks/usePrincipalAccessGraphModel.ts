@@ -1,11 +1,16 @@
 import { type Edge, type Node } from '@xyflow/react'
 import { useMemo } from 'react'
-import { grantEdge, memberEdge, principalNode, sourceNode } from '../lib/accessGraphElements'
-import { sourceNodeId } from '../lib/sourceNode'
+import {
+  grantEdge,
+  memberEdge,
+  principalNode,
+  sourceNode,
+  type EdgeEmphasis,
+} from '../../shared/lib/accessGraphElements'
+import { sourceNodeId } from '../../shared/lib/sourceNode'
+import type { AccessGraphEdge } from '../../shared/types/access.type'
 import { tracePath, type TracedPath } from '../lib/tracePath'
-import { useAccessGraph, usePrincipalGraph } from './usePrincipals'
-import type { AccessGraphEdge } from '../types/access.type'
-import type { EdgeEmphasis } from '../lib/accessGraphElements'
+import { usePrincipalAccessGraph, usePrincipalGraph } from './usePrincipals'
 
 /** Emphasis for one scoped edge given the traced path (null when not tracing). */
 function edgeEmphasisFor(traced: TracedPath | null, edge: AccessGraphEdge): EdgeEmphasis {
@@ -19,12 +24,12 @@ function edgeEmphasisFor(traced: TracedPath | null, edge: AccessGraphEdge): Edge
  * scoped access-graph. The response decides what belongs in the subgraph;
  * this hook only translates its structure into styled elements.
  */
-export function useAccessGraphModel(
+export function usePrincipalAccessGraphModel(
   selectedId: string | null | undefined,
   traceSourceId?: string | null,
 ) {
   const overview = usePrincipalGraph()
-  const scoped = useAccessGraph(selectedId ?? undefined)
+  const scoped = usePrincipalAccessGraph(selectedId ?? undefined)
 
   const { nodes, edges, highlightNodeIds } = useMemo(() => {
     const nodes: Node[] = []

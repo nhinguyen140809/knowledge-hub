@@ -1,49 +1,53 @@
-export { AccessPage } from './pages/AccessPage'
-export { AccessSourcesPage } from './pages/AccessSourcesPage'
+export { AccessPrincipalsPage } from './principal/pages/AccessPrincipalsPage'
+export { AccessSourcesPage } from './source/pages/AccessSourcesPage'
 export {
-  useAccessGraph,
-  useEffectivePermissions,
-  useMembers,
   usePrincipal,
+  usePrincipalAccessGraph,
   usePrincipalGraph,
   usePrincipals,
-} from './hooks/usePrincipals'
-export { useSourceAccessGraph, useSourcePrincipals } from './hooks/useSourceAccess'
+  useEffectivePermissions,
+  useMembers,
+} from './principal/hooks/usePrincipals'
+export { useSourceAccessGraph, useSourcePrincipals } from './source/hooks/useSourceAccess'
 export {
   useAddMember,
   useCreatePrincipal,
   useDeletePrincipal,
   useMovePrincipal,
   useRemoveMember,
-} from './hooks/usePrincipalMutations'
+} from './principal/hooks/usePrincipalMutations'
 export {
   useAllCredentials,
   useCredentials,
   useIssueCredential,
   useRevokeCredential,
-} from './hooks/useCredentials'
-export { useGrantSources, useRevokeSources } from './hooks/useGrants'
-export { useDefaultPolicy, useSetDefaultPolicy } from './hooks/useDefaultPolicy'
-export { accessKeys } from './api/access.keys'
+} from './principal/hooks/useCredentials'
+export { useGrantSources, useRevokeSources } from './shared/hooks/useGrants'
+export { useDefaultPolicy, useSetDefaultPolicy } from './shared/hooks/useDefaultPolicy'
+export { accessKeys } from './shared/api/access.keys'
 export type {
   AccessGraphEdge,
   AccessGraphNode,
   AccessGraphNodeKind,
+  DefaultPolicy,
+  GrantInput,
+  GrantOrigin,
+  Principal,
+  PrincipalType,
+  Role,
+} from './shared/types/access.type'
+export type {
   CreatePrincipalInput,
   Credential,
-  DefaultPolicy,
   EffectivePermissions,
   EffectiveSource,
   GlobalCredential,
-  GrantInput,
-  GrantOrigin,
   IssuedCredential,
-  Principal,
   PrincipalAccessGraph,
   PrincipalGraph,
-  PrincipalType,
-  Role,
+} from './principal/types/principal.type'
+export type {
   SourceAccessGraph,
   SourcePrincipal,
   SourcePrincipals,
-} from './types/access.type'
+} from './source/types/source.type'

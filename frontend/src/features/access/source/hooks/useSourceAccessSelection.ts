@@ -14,8 +14,9 @@ export interface SourceAccessSelection {
 /**
  * The Access-Control-Sources page's interaction state: which source is
  * selected, and which view (principals/graph) is showing. Simpler than
- * {@link ../hooks/useAccessSelection}'s principal-side counterpart — no trace
- * state, since there's no source-to-source path to highlight here.
+ * {@link ../../principal/hooks/usePrincipalAccessSelection}'s principal-side
+ * counterpart — no trace state, since there's no source-to-source path to
+ * highlight here.
  */
 export function useSourceAccessSelection(): SourceAccessSelection {
   const [selectedId, setSelectedId] = useState<string | null>(null)

@@ -2,7 +2,7 @@ import { Button, Form, Label, ListBox, Modal, Select } from '@heroui/react'
 import { FolderPlus } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import { useAddMember } from '../../hooks/usePrincipalMutations'
-import type { Principal } from '../../types/access.type'
+import type { Principal } from '../../../shared/types/access.type'
 
 interface AddToGroupDialogProps {
   target: Principal | null

@@ -13,9 +13,9 @@ import { Plus } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import { useFormReducer } from '@/shared/hooks/useFormReducer'
 import { validateId } from '@/shared/lib/id.utils'
+import type { PrincipalType, Role } from '../../shared/types/access.type'
 import { useCreatePrincipal } from '../hooks/usePrincipalMutations'
 import { canBeAdmin } from '../lib/principal.rules'
-import type { PrincipalType, Role } from '../types/access.type'
 
 interface FormState {
   principalId: string

@@ -5,7 +5,7 @@ import { copyText } from '@/shared/hooks/useCopyToClipboard'
 import { canDelete, canHaveMembers, canJoinGroup } from '../../lib/principal.rules'
 import { PrincipalContextMenu } from './PrincipalContextMenu'
 import { usePrincipalTreeContext } from './PrincipalTreeContext'
-import type { Principal, PrincipalType } from '../../types/access.type'
+import type { Principal, PrincipalType } from '../../../shared/types/access.type'
 
 /** Row icon per principal type — shape *and* color, because two same-size
  *  person glyphs in the same tone read as identical at 15px. Groups take the

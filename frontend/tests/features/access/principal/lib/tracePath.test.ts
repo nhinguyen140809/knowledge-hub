@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { tracePath } from '@/features/access/lib/tracePath'
-import type { AccessGraphEdge, PrincipalAccessGraph } from '@/features/access/types/access.type'
+import { tracePath } from '@/features/access/principal/lib/tracePath'
+import type { PrincipalAccessGraph } from '@/features/access/principal/types/principal.type'
+import type { AccessGraphEdge } from '@/features/access/shared/types/access.type'
 
 // Minimal graph builder: nodes are inferred from the edges, kinds don't affect
 // tracePath (it works off edge kind and direction), so only edges matter here.

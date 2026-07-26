@@ -3,12 +3,12 @@ import { Database, MousePointerClick } from 'lucide-react'
 import { EmptyState } from '@/shared/components/ui/EmptyState'
 import { ErrorState } from '@/shared/components/ui/ErrorState'
 import { SUMMARY_SEP } from '@/shared/constants'
+import { OriginChip } from '../../shared/components/OriginChip'
+import { RevokeGrantButton } from '../../shared/components/RevokeGrantButton'
+import { isRevocableGrant, isTraceableOrigin } from '../../shared/lib/grant.rules'
 import { useEffectivePermissions } from '../hooks/usePrincipals'
-import { isRevocableGrant, isTraceableOrigin } from '../lib/principal.rules'
-import type { EffectiveSource } from '../types/access.type'
+import type { EffectiveSource } from '../types/principal.type'
 import { GrantSourceDialog } from './GrantSourceDialog'
-import { OriginChip } from './OriginChip'
-import { RevokeGrantButton } from './RevokeGrantButton'
 
 function accessSummary(readableCount: number, inherited: number): string {
   const parts = [`${readableCount} readable in total`]

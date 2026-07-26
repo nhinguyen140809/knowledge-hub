@@ -4,8 +4,8 @@ import { useState } from 'react'
 import { EmptyState } from '@/shared/components/ui/EmptyState'
 import { ErrorState } from '@/shared/components/ui/ErrorState'
 import { GraphView } from '@/shared/components/ui/GraphView'
+import { isSourceNodeId } from '../../shared/lib/sourceNode'
 import { useSourceAccessGraphModel } from '../hooks/useSourceAccessGraphModel'
-import { isSourceNodeId } from '../lib/sourceNode'
 
 /**
  * The scoped subgraph explaining who can read one source: the source, every

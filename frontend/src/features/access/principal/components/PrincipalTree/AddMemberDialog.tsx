@@ -14,7 +14,7 @@ import { type FormEvent } from 'react'
 import { useFormReducer } from '@/shared/hooks/useFormReducer'
 import { useCreatePrincipal } from '../../hooks/usePrincipalMutations'
 import { ROLE_IN_GROUP } from '../../lib/principal.rules'
-import type { Principal, PrincipalType } from '../../types/access.type'
+import type { Principal, PrincipalType } from '../../../shared/types/access.type'
 
 interface AddMemberDialogProps {
   group: Principal | null

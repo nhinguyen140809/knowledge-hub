@@ -1,8 +1,8 @@
 import { apiFetch } from '@/lib/api/axios'
 import { mockResolve } from '@/lib/api/mocks/mock.util'
 import { isMock } from '@/lib/config'
-import type { SourceAccessGraph, SourcePrincipals } from '../types/access.type'
-import { mockResolveSourceAccessGraph, mockResolveSourcePrincipals } from './access.mock'
+import type { SourceAccessGraph, SourcePrincipals } from '../types/source.type'
+import { mockResolveSourceAccessGraph, mockResolveSourcePrincipals } from './source.mock'
 
 const SOURCES = '/admin/sources'
 

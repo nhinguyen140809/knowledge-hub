@@ -1,10 +1,10 @@
 import { Skeleton } from '@heroui/react'
 import { GraphView } from '@/shared/components/ui/GraphView'
 import { ErrorState } from '@/shared/components/ui/ErrorState'
-import { useAccessGraphModel } from '../hooks/useAccessGraphModel'
-import { isSourceNodeId } from '../lib/sourceNode'
+import { isSourceNodeId } from '../../shared/lib/sourceNode'
+import { usePrincipalAccessGraphModel } from '../hooks/usePrincipalAccessGraphModel'
 
-interface AccessGraphProps {
+interface PrincipalAccessGraphProps {
   selectedId?: string | null
   onSelect?: (principalId: string) => void
   /** Source whose access path to light up — set when the user asks "why can it
@@ -17,15 +17,17 @@ interface AccessGraphProps {
  * Hybrid view: with nothing selected, the whole membership graph as an
  * overview; with a principal selected, the scoped access-graph explaining
  * "*why* does this principal reach that source". The model (nodes, edges,
- * query state) comes from {@link useAccessGraphModel}; this component only
- * picks what each state renders as. Source nodes are display-only — clicking
- * one selects nothing.
+ * query state) comes from {@link usePrincipalAccessGraphModel}; this
+ * component only picks what each state renders as. Source nodes are
+ * display-only — clicking one selects nothing.
  */
-export function AccessGraph({ selectedId, onSelect, traceSourceId }: AccessGraphProps) {
-  const { nodes, edges, highlightNodeIds, isPending, isError, error } = useAccessGraphModel(
-    selectedId,
-    traceSourceId,
-  )
+export function PrincipalAccessGraph({
+  selectedId,
+  onSelect,
+  traceSourceId,
+}: PrincipalAccessGraphProps) {
+  const { nodes, edges, highlightNodeIds, isPending, isError, error } =
+    usePrincipalAccessGraphModel(selectedId, traceSourceId)
 
   if (isPending) return <Skeleton className="h-105 w-full rounded-xl lg:h-full" />
 

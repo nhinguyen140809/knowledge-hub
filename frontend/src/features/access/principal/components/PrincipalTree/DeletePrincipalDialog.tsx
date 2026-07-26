@@ -2,7 +2,7 @@ import { Button } from '@heroui/react'
 import { Trash2 } from 'lucide-react'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { useDeletePrincipal } from '../../hooks/usePrincipalMutations'
-import type { Principal } from '../../types/access.type'
+import type { Principal } from '../../../shared/types/access.type'
 
 interface DeletePrincipalDialogProps {
   target: Principal | null

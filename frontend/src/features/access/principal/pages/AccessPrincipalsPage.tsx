@@ -1,27 +1,31 @@
 import { ScrollShadow, Skeleton, Tabs } from '@heroui/react'
 import { lazy, Suspense } from 'react'
 import { useSetHeaderActions } from '@/lib/store/header.store'
-import { DefaultPolicyToggle } from '../components/DefaultPolicyToggle'
+import { DefaultPolicyToggle } from '../../shared/components/DefaultPolicyToggle'
 import { PrincipalCredentialsPanel } from '../components/PrincipalCredentialsPanel'
 import { PrincipalSourcesPanel } from '../components/PrincipalSourcesPanel'
 import { PrincipalsPanel } from '../components/PrincipalsPanel'
-import { useAccessSelection, type AccessView } from '../hooks/useAccessSelection'
+import {
+  usePrincipalAccessSelection,
+  type PrincipalAccessView,
+} from '../hooks/usePrincipalAccessSelection'
 
 // React Flow and its layout engine are the heaviest thing the app pulls in, and
 // this tab is closed by default — load them the first time it is opened.
-const AccessGraph = lazy(() =>
-  import('../components/AccessGraph').then((m) => ({ default: m.AccessGraph })),
+const PrincipalAccessGraph = lazy(() =>
+  import('../components/PrincipalAccessGraph').then((m) => ({ default: m.PrincipalAccessGraph })),
 )
 
 /**
  * Principal-centric access control. The tree on the left is the selector — fast
  * to scan and keyboard navigable — while the right side answers two different
  * questions: "what does this principal have" (details) and "where does that
- * access come from" (graph). Interaction state lives in {@link useAccessSelection}.
+ * access come from" (graph). Interaction state lives in
+ * {@link usePrincipalAccessSelection}.
  */
-export function AccessPage() {
+export function AccessPrincipalsPage() {
   const { selectedId, view, tracedSourceId, setView, toggleSelect, clearIfSelected, traceAccess } =
-    useAccessSelection()
+    usePrincipalAccessSelection()
 
   // The default-policy control is page chrome, not page content — it lives in
   // the app header next to the title while this page is mounted.
@@ -40,7 +44,7 @@ export function AccessPage() {
 
       <Tabs
         selectedKey={view}
-        onSelectionChange={(key) => setView(key as AccessView)}
+        onSelectionChange={(key) => setView(key as PrincipalAccessView)}
         className="lg:flex lg:min-h-0 lg:flex-col"
       >
         <Tabs.ListContainer>
@@ -67,7 +71,7 @@ export function AccessPage() {
 
         <Tabs.Panel id="graph" className="pt-4 lg:min-h-0 lg:flex-1">
           <Suspense fallback={<Skeleton className="h-105 w-full rounded-xl lg:h-full" />}>
-            <AccessGraph
+            <PrincipalAccessGraph
               selectedId={selectedId}
               onSelect={toggleSelect}
               traceSourceId={tracedSourceId}

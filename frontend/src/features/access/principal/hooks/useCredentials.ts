@@ -6,7 +6,7 @@ import {
   issueCredential,
   revokeCredential,
 } from '../api/credential.api'
-import { accessKeys } from '../api/access.keys'
+import { accessKeys } from '../../shared/api/access.keys'
 
 /** Every credential across all principals — used for totals and global views. */
 export function useAllCredentials() {

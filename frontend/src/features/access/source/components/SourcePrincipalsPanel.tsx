@@ -3,11 +3,12 @@ import { MousePointerClick, Users } from 'lucide-react'
 import { EmptyState } from '@/shared/components/ui/EmptyState'
 import { ErrorState } from '@/shared/components/ui/ErrorState'
 import { SUMMARY_SEP } from '@/shared/constants'
+import { OriginChip } from '../../shared/components/OriginChip'
+import { RevokeGrantButton } from '../../shared/components/RevokeGrantButton'
+import { isRevocableGrant } from '../../shared/lib/grant.rules'
 import { useSourcePrincipals } from '../hooks/useSourceAccess'
-import { isRevocableGrant } from '../lib/principal.rules'
-import type { SourcePrincipal } from '../types/access.type'
-import { OriginChip } from './OriginChip'
-import { RevokeGrantButton } from './RevokeGrantButton'
+import type { SourcePrincipal } from '../types/source.type'
+import { GrantPrincipalDialog } from './GrantPrincipalDialog'
 
 function accessSummary(count: number, inherited: number): string {
   const parts = [`${count} ${count === 1 ? 'principal can' : 'principals can'} read this source`]
@@ -35,7 +36,7 @@ function PrincipalRow({
           >
             <span className="truncate text-sm">{principal.principalId}</span>
           </Button>
-          <Tooltip.Content>Open in Access</Tooltip.Content>
+          <Tooltip.Content>Open in principal access</Tooltip.Content>
         </Tooltip>
       ) : (
         <span className="truncate text-sm">{principal.principalId}</span>
@@ -53,8 +54,9 @@ function PrincipalRow({
 /**
  * Every principal that can read this source, with how its access arrived —
  * direct grant, inherited through a group, admin role bypass, or the default
- * policy. Only a DIRECT grant is revocable here, same rule as a principal's
- * own Sources panel. The inverse of that panel.
+ * policy. Only a DIRECT grant is revocable here, and a new one can be added
+ * from this panel too — both the same rules as a principal's own Sources
+ * panel. The inverse of that panel.
  */
 export function SourcePrincipalsPanel({
   sourceId,
@@ -102,8 +104,9 @@ export function SourcePrincipalsPanel({
 
   return (
     <Card className="px-6">
-      <Card.Header>
+      <Card.Header className="flex-row items-center justify-between">
         <Card.Title className="text-accent text-lg font-bold">Who can access this</Card.Title>
+        <GrantPrincipalDialog sourceId={sourceId} />
       </Card.Header>
       <Card.Content className="flex flex-col gap-2">{content()}</Card.Content>
     </Card>

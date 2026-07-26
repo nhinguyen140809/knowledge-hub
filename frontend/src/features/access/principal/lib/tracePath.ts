@@ -1,4 +1,4 @@
-import type { PrincipalAccessGraph } from '../types/access.type'
+import type { PrincipalAccessGraph } from '../types/principal.type'
 
 export interface TracedPath {
   /** Principal node ids on the path (holders, intermediate groups, focus). */
