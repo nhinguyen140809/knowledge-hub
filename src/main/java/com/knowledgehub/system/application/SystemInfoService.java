@@ -1,5 +1,6 @@
 package com.knowledgehub.system.application;
 
+import com.knowledgehub.shared.config.SystemProperties;
 import com.knowledgehub.system.domain.SystemInfo;
 import com.knowledgehub.system.domain.port.SystemSettings;
 import java.util.List;
@@ -20,14 +21,17 @@ public class SystemInfoService {
   private final Environment environment;
   private final ObjectProvider<BuildProperties> buildProperties;
   private final SystemSettings settings;
+  private final SystemProperties properties;
 
   public SystemInfoService(
       Environment environment,
       ObjectProvider<BuildProperties> buildProperties,
-      SystemSettings settings) {
+      SystemSettings settings,
+      SystemProperties properties) {
     this.environment = environment;
     this.buildProperties = buildProperties;
     this.settings = settings;
+    this.properties = properties;
   }
 
   /** Returns a snapshot of the service's current runtime information. */
@@ -60,7 +64,7 @@ public class SystemInfoService {
   private String resolveProductName(String application) {
     return settings
         .productName()
-        .or(() -> Optional.ofNullable(environment.getProperty("app.product-name")))
+        .or(() -> Optional.ofNullable(properties.productName()))
         .filter(name -> !name.isBlank())
         .orElse(application);
   }

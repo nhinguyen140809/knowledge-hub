@@ -61,6 +61,7 @@ springdoc:
 
 # --- Application toggles (config-as-a-feature) ---
 app:
+  product-name: ${APP_PRODUCT_NAME:}   # operator-facing display name; blank falls back to spring.application.name
   embedding:
     provider: ${EMBEDDING_PROVIDER:api}   # api (remote, needs key) | local (OpenAI-compatible server; use any placeholder key)
     dimension: ${EMBEDDING_DIMENSION:1536}   # MUST match the model (1536 text-embedding-3-small, 1024 voyage-3); sizes the Qdrant collection
