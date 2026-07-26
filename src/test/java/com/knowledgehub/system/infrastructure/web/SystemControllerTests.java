@@ -7,7 +7,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.knowledgehub.system.application.KnowledgeStatsService;
 import com.knowledgehub.system.application.SystemInfoService;
+import com.knowledgehub.system.domain.KnowledgeStats;
 import com.knowledgehub.system.domain.SystemInfo;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,7 @@ class SystemControllerTests {
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private SystemInfoService systemInfoService;
+  @MockitoBean private KnowledgeStatsService knowledgeStatsService;
 
   @Test
   void returnsSystemInfoAsJson() throws Exception {
@@ -65,5 +68,18 @@ class SystemControllerTests {
                 .content("{\"productName\":\"  \"}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+  }
+
+  @Test
+  void returnsKnowledgeStatsAsJson() throws Exception {
+    when(knowledgeStatsService.currentStats()).thenReturn(new KnowledgeStats(1240, 8300, 19400, 1240));
+
+    mockMvc
+        .perform(get("/api/v1/system/knowledge-stats"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.documents").value(1240))
+        .andExpect(jsonPath("$.graphNodes").value(8300))
+        .andExpect(jsonPath("$.graphEdges").value(19400))
+        .andExpect(jsonPath("$.vectors").value(1240));
   }
 }
