@@ -16,6 +16,9 @@ export interface ConnectionState {
   addConnection: (input: Omit<Connection, 'id'>) => void
   /** Forget a backend; if it was active, fall back to the first remaining one. */
   removeConnection: (id: string) => void
+  /** Rename a connection in place. baseUrl isn't editable here — changing it
+   *  goes through /connect, which validates it against the backend. */
+  renameConnection: (id: string, label: string) => void
   /** Log out of a backend: drop its key but keep the connection entry. */
   disconnect: (id: string) => void
   /** Switch which backend subsequent requests target. */
@@ -85,6 +88,10 @@ export const useConnectionStore = create<ConnectionState>()(
           return { connections, activeId }
         })
       },
+      renameConnection: (id, label) =>
+        set((state) => ({
+          connections: state.connections.map((c) => (c.id === id ? { ...c, label } : c)),
+        })),
       disconnect: (id) => {
         useConnectionKeys.getState().drop(id)
         set((state) => ({

@@ -1,4 +1,5 @@
 export { ConnectPage } from './pages/ConnectPage'
+export { ConnectionsPage } from './pages/ConnectionsPage'
 export { PrivateRoute } from './components/PrivateRoute'
 export { ConnectionSwitcher } from './components/ConnectionSwitcher'
 export { useConnect } from './hooks/useConnect'

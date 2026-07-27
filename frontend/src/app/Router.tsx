@@ -1,5 +1,5 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import { ConnectPage, PrivateRoute } from '../features/auth'
+import { ConnectionsPage, ConnectPage, PrivateRoute } from '../features/auth'
 import { AccessPrincipalsPage, AccessSourcesPage } from '../features/access'
 import { DashboardPage } from '../features/dashboard'
 import { HelpPage } from '../features/help'
@@ -21,6 +21,7 @@ const router = createBrowserRouter([
     ),
     children: [
       { path: ROUTES.dashboard, element: <DashboardPage /> },
+      { path: ROUTES.connections, element: <ConnectionsPage /> },
       { path: ROUTES.sources, element: <SourcesPage /> },
       { path: '/sources/:id', element: <SourceDetailPage /> },
       { path: ROUTES.accessPrincipals, element: <AccessPrincipalsPage /> },
