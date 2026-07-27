@@ -14,20 +14,10 @@ import { Plus } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import { TagField } from '@/shared/components/ui/TagField'
 import { useFormReducer } from '@/shared/hooks/useFormReducer'
+import { validateId } from '@/shared/lib/id.utils'
 import { SOURCE_TYPE_LOCATION } from '../constants/source.config'
 import { useCreateSource } from '../hooks/useSourceMutations'
 import type { SourceType } from '../types/source.type'
-
-/** Lowercase letters, digits and single hyphens between them — the id ends up
- *  in URL paths, and nothing beyond non-blank is required elsewhere, so this
- *  is enforced client-side. */
-const ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
-
-function validateId(value: string): string | null {
-  return ID_PATTERN.test(value)
-    ? null
-    : 'Lowercase letters, numbers and hyphens only (e.g. engineering-wiki)'
-}
 
 interface FormState {
   id: string

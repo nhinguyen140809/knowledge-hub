@@ -1,4 +1,4 @@
-import type { Source, SourceStatus, SyncResult } from '../types/source.type'
+import type { Source, SourceStatus, SourceSummary, SyncResult } from '../types/source.type'
 
 const MOCK_NOW = new Date('2026-07-21T10:00:00Z').getTime()
 
@@ -175,6 +175,23 @@ export function mockStatusFor(id: string): SourceStatus {
     ref: source.ref,
   }
 }
+
+/** A source not synced within this window counts as stale. */
+const STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000
+
+export const mockSourceSummary: SourceSummary = (() => {
+  const syncedAt = mockSources.map((s) => s.updatedAt).filter((at): at is string => at !== null)
+  const staleCutoff = MOCK_NOW - STALE_AFTER_MS
+  return {
+    total: mockSources.length,
+    synced: syncedAt.length,
+    neverSynced: mockSources.length - syncedAt.length,
+    stale: syncedAt.filter((at) => new Date(at).getTime() < staleCutoff).length,
+    lastSyncAt: syncedAt.length
+      ? syncedAt.reduce((latest, at) => (at > latest ? at : latest))
+      : null,
+  }
+})()
 
 export const mockSyncResult: SyncResult = {
   sourceId: 'engineering-wiki',

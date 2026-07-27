@@ -1,6 +1,7 @@
 import { Card, Chip } from '@heroui/react'
 import { Link } from 'react-router-dom'
 import { formatTimestamp } from '@/shared/lib/datetime.utils'
+import { ROUTES } from '@/shared/constants'
 import { SOURCE_TYPE_COLOR, SOURCE_TYPE_LABEL } from '../constants/source.config'
 import type { Source } from '../types/source.type'
 import { SyncSourceButton } from './SyncSourceButton'
@@ -9,7 +10,7 @@ import { SyncSourceButton } from './SyncSourceButton'
  *  status and a sync trigger on the right. The title opens the detail page. */
 export function SourceCard({ source }: { source: Source }) {
   const location = source.ref ? `${source.uriOrPath} @ ${source.ref}` : source.uriOrPath
-  const detailPath = `/sources/${encodeURIComponent(source.id)}`
+  const detailPath = ROUTES.sourceDetail(source.id)
   const lastUpdate = source.updatedAt
     ? `Updated ${formatTimestamp(new Date(source.updatedAt))}`
     : 'Never synced'

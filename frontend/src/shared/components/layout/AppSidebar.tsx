@@ -1,10 +1,10 @@
 import { Avatar, Chip, Separator } from '@heroui/react'
-import { CircleHelp, Database, KeyRound, LayoutDashboard, LogOut, Search } from 'lucide-react'
+import { CircleHelp, LogOut } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
-import { ConnectionSwitcher } from '@/features/auth'
+import { ConnectionSwitcher } from '@/features/connect'
 import { isMock } from '@/lib/config'
 import { useConnectionStore } from '@/lib/store/connections.store'
-import { ThemeToggle } from '@/shared/components/theme/ThemeToggle'
+import { NAV_ITEMS, ROUTES } from '@/shared/constants'
 import {
   Sidebar,
   SidebarContent,
@@ -17,16 +17,7 @@ import {
 } from '@/shared/components/ui/Sidebar'
 import { isActivePath } from '@/shared/lib/navigation.utils'
 import { renderLink } from '@/shared/lib/renderLink'
-import { type NavItem } from '@/shared/types/navigation.type'
-
-/** The app's navigation entries — the data this sidebar renders. */
-// eslint-disable-next-line react-refresh/only-export-components
-export const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', to: '/', icon: LayoutDashboard, match: 'exact' },
-  { label: 'Sources', to: '/sources', icon: Database },
-  { label: 'Access control', to: '/access', icon: KeyRound },
-  { label: 'Query', to: '/query', icon: Search },
-]
+import { SettingsPopover } from './SettingsPopover'
 
 function AppLogo() {
   return (
@@ -37,7 +28,8 @@ function AppLogo() {
 }
 
 /** The app's sidebar: nav from NAV_ITEMS, app name + backend switcher in the
- *  header, Help/Log out in the footer. All rows are ui/Sidebar primitives. */
+ *  header, Settings/Help/Log out in the footer. All rows are ui/Sidebar
+ *  primitives. */
 export function AppSidebar() {
   const { pathname } = useLocation()
   const activeId = useConnectionStore((s) => s.activeId)
@@ -108,8 +100,11 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <Separator className="mb-2" />
-        <ThemeToggle />
-        <SidebarMenuButton isActive={isActivePath(pathname, '/help')} render={renderLink('/help')}>
+        <SettingsPopover />
+        <SidebarMenuButton
+          isActive={isActivePath(pathname, ROUTES.help)}
+          render={renderLink(ROUTES.help)}
+        >
           <CircleHelp size={16} />
           Help
         </SidebarMenuButton>

@@ -63,7 +63,7 @@ export function EditSourceDialog({ source }: { source: Source }) {
 
   return (
     <>
-      <Button size="sm" variant="primary" onPress={open}>
+      <Button size="sm" variant="secondary" onPress={open}>
         <Pencil size={16} />
         Edit
       </Button>

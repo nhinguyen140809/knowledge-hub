@@ -1,6 +1,6 @@
 export { SourcesPage } from './pages/SourcesPage'
 export { SourceDetailPage } from './pages/SourceDetailPage'
-export { useSource, useSources, useSourceStatus } from './hooks/useSources'
+export { useSource, useSources, useSourceStatus, useSourceSummary } from './hooks/useSources'
 export {
   useCreateSource,
   useDeleteSource,
@@ -12,6 +12,7 @@ export type {
   CreateSourceInput,
   Source,
   SourceStatus,
+  SourceSummary,
   SourceType,
   SyncResult,
   UpdateSourceInput,

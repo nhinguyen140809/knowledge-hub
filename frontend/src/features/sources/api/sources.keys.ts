@@ -10,4 +10,6 @@ export const sourceKeys = {
     [...sourceKeys.all, 'detail', connectionId, id] as const,
   status: (connectionId: string | undefined, id: string) =>
     [...sourceKeys.all, 'status', connectionId, id] as const,
+  summary: (connectionId: string | undefined) =>
+    [...sourceKeys.all, 'summary', connectionId] as const,
 }

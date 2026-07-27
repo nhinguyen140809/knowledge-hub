@@ -4,6 +4,7 @@ import { formatTimestamp } from '@/shared/lib/datetime.utils'
 import { useSystemInfo } from '../hooks/useSystemInfo'
 import { deriveHealthStatus } from '../lib/health.util'
 import { NO_VALUE } from '@/shared/constants'
+import { EditProductNameDialog } from './EditProductNameDialog'
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -35,7 +36,12 @@ export function SystemInfoPanel() {
     if (!data) return null
     return (
       <>
-        <Row label="Product">{data.productName}</Row>
+        <Row label="Product">
+          <span className="inline-flex items-center gap-1.5">
+            {data.productName}
+            <EditProductNameDialog current={data.productName} />
+          </span>
+        </Row>
         <Row label="Version">{data.version}</Row>
         <Row label="Profiles">{data.activeProfiles.join(', ') || NO_VALUE}</Row>
         <Row label="Last update">{formatTimestamp(dataUpdatedAt)}</Row>
