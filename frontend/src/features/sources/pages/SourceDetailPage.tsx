@@ -28,7 +28,6 @@ export function SourceDetailPage() {
     return (
       <div className="flex flex-col gap-4">
         <SourceSummaryCard source={data} />
-        
         <div className="grid gap-4 lg:grid-cols-2">
           {id && <SourceIndexCard key={id} sourceId={id} />}
           <SourceGlobsCard source={data} />
@@ -48,7 +47,7 @@ export function SourceDetailPage() {
           <div className="flex items-center gap-2">
             <Button
               size="sm"
-              variant="secondary"
+              variant="primary"
               render={renderLink(ROUTES.accessSources, { selectSource: data.id })}
             >
               <KeyRound size={16} />
