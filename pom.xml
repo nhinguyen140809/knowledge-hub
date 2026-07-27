@@ -35,6 +35,9 @@
 		<jtokkit.version>1.1.0</jtokkit.version>
 		<flexmark.version>0.64.8</flexmark.version>
 		<jsoup.version>1.22.2</jsoup.version>
+		<!-- Default fits this dev machine's constrained RAM; CI overrides it with more
+		     headroom via -Dsurefire.argLine (see .github/workflows/ci.yml). -->
+		<surefire.argLine>-Xmx512m -XX:MaxMetaspaceSize=128m</surefire.argLine>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -234,13 +237,13 @@
 				</executions>
 			</plugin>
 
-			<!-- Caps the forked test JVM's heap so it fits this dev machine's constrained memory
-			     alongside the Testcontainers-launched Neo4j/Qdrant containers. -->
+			<!-- Caps the forked test JVM's heap so it fits alongside the Testcontainers-launched
+			     Neo4j/Qdrant containers. See the surefire.argLine property for the default. -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
-					<argLine>-Xmx512m -XX:MaxMetaspaceSize=128m</argLine>
+					<argLine>${surefire.argLine}</argLine>
 				</configuration>
 			</plugin>
 

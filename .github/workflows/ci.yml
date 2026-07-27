@@ -22,7 +22,7 @@ jobs:
         run: ./mvnw -B spotless:check
 
       - name: Build & test
-        run: ./mvnw -B verify
+        run: ./mvnw -B verify -Dsurefire.argLine="-Xmx2g -XX:MaxMetaspaceSize=768m"
 
   frontend:
     runs-on: ubuntu-latest
