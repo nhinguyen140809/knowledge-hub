@@ -1,5 +1,5 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import { ConnectionsPage, ConnectPage, PrivateRoute } from '../features/auth'
+import { ConnectionsPage, ConnectPage, PrivateRoute } from '../features/connect'
 import { AccessPrincipalsPage, AccessSourcesPage } from '../features/access'
 import { DashboardPage } from '../features/dashboard'
 import { HelpPage } from '../features/help'

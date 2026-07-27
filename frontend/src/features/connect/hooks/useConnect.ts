@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { useConnectionStore } from '@/lib/store/connections.store'
-import { validateConnection } from '../api/auth.api'
+import { validateConnection } from '../api/connect.api'
 
 export interface ConnectInput {
   label: string

@@ -1,7 +1,7 @@
 import { Avatar, Chip, Separator } from '@heroui/react'
 import { CircleHelp, LogOut } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
-import { ConnectionSwitcher } from '@/features/auth'
+import { ConnectionSwitcher } from '@/features/connect'
 import { isMock } from '@/lib/config'
 import { useConnectionStore } from '@/lib/store/connections.store'
 import { NAV_ITEMS, ROUTES } from '@/shared/constants'
