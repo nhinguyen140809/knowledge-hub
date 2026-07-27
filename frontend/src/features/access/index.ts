@@ -25,6 +25,7 @@ export {
 export { useGrantSources, useRevokeSources } from './shared/hooks/useGrants'
 export { useDefaultPolicy, useSetDefaultPolicy } from './shared/hooks/useDefaultPolicy'
 export { accessKeys } from './shared/api/access.keys'
+export { navigateToPrincipal, navigateToSource } from './shared/lib/accessNav'
 export type {
   AccessGraphEdge,
   AccessGraphNode,

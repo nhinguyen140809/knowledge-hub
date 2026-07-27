@@ -1,5 +1,5 @@
 import { Button, Skeleton } from '@heroui/react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, KeyRound } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ErrorState } from '@/shared/components/ui/ErrorState'
 import { ROUTES } from '@/shared/constants'
@@ -28,6 +28,7 @@ export function SourceDetailPage() {
     return (
       <div className="flex flex-col gap-4">
         <SourceSummaryCard source={data} />
+        
         <div className="grid gap-4 lg:grid-cols-2">
           {id && <SourceIndexCard key={id} sourceId={id} />}
           <SourceGlobsCard source={data} />
@@ -45,6 +46,14 @@ export function SourceDetailPage() {
         </Button>
         {data && (
           <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              render={renderLink(ROUTES.accessSources, { selectSource: data.id })}
+            >
+              <KeyRound size={16} />
+              Access
+            </Button>
             <EditSourceDialog source={data} />
             <DeleteSourceButton
               sourceId={data.id}

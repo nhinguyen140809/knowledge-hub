@@ -7,6 +7,8 @@ import { Link } from 'react-router-dom'
  * types are structurally incompatible (onClick handlers disagree), so the cast
  * happens here once instead of at every call site.
  */
-export function renderLink(to: string) {
-  return (props: object) => <Link {...(props as ComponentProps<typeof Link>)} to={to} />
+export function renderLink(to: string, state?: unknown) {
+  return (props: object) => (
+    <Link {...(props as ComponentProps<typeof Link>)} to={to} state={state} />
+  )
 }

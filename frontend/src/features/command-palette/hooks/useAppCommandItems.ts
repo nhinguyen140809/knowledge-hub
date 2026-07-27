@@ -1,7 +1,13 @@
 import { Database, FolderClosed, KeyRound, User, type LucideIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAllCredentials, usePrincipalGraph, type PrincipalType } from '@/features/access'
+import {
+  navigateToPrincipal,
+  navigateToSource,
+  useAllCredentials,
+  usePrincipalGraph,
+  type PrincipalType,
+} from '@/features/access'
 import { useSources } from '@/features/sources/hooks/useSources'
 import type { CommandItem } from '@/shared/components/ui/command-palette'
 import { ROUTES } from '@/shared/constants'
@@ -18,9 +24,11 @@ const PRINCIPAL_ICON: Record<PrincipalType, LucideIcon> = {
  * Sources pages use, so the list is warm the moment the palette opens.
  *
  * A principal is opened via navigation state (not a URL param) so choosing the
- * same one twice still re-selects it; a source opens its detail route. A
- * credential has no page of its own, so selecting one opens its *owning*
- * principal the same way — the credential lives in that principal's panel.
+ * same one twice still re-selects it; a source gets two entries the same way —
+ * one to its detail route, one to its access page — since both are equally
+ * likely destinations and neither implies the other. A credential has no page
+ * of its own, so selecting one opens its *owning* principal the same way — the
+ * credential lives in that principal's panel.
  */
 export function useAppCommandItems(): CommandItem[] {
   const navigate = useNavigate()
@@ -37,8 +45,7 @@ export function useAppCommandItems(): CommandItem[] {
         hint: p.type === 'GROUP' ? 'group' : 'subject',
         search: p.principalId.toLowerCase(),
         icon: PRINCIPAL_ICON[p.type],
-        action: () =>
-          navigate(ROUTES.accessPrincipals, { state: { selectPrincipal: p.principalId } }),
+        action: () => navigateToPrincipal(navigate, p.principalId),
       })
     }
     for (const s of sources.data ?? []) {
@@ -50,6 +57,14 @@ export function useAppCommandItems(): CommandItem[] {
         icon: Database,
         action: () => navigate(ROUTES.sourceDetail(s.id)),
       })
+      items.push({
+        key: `source-access:${s.id}`,
+        label: s.name ?? s.id,
+        hint: 'access',
+        search: `${s.id} ${s.name ?? ''} access`.toLowerCase(),
+        icon: KeyRound,
+        action: () => navigateToSource(navigate, s.id),
+      })
     }
     for (const c of credentials.data ?? []) {
       items.push({
@@ -59,8 +74,7 @@ export function useAppCommandItems(): CommandItem[] {
         // Not the credentialId: it's an opaque id, not something anyone types.
         search: c.name.toLowerCase(),
         icon: KeyRound,
-        action: () =>
-          navigate(ROUTES.accessPrincipals, { state: { selectPrincipal: c.principalId } }),
+        action: () => navigateToPrincipal(navigate, c.principalId),
       })
     }
     return items

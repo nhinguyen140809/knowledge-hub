@@ -2,8 +2,8 @@ import { ScrollShadow, Skeleton, Tabs } from '@heroui/react'
 import { lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSetHeaderActions } from '@/lib/store/header.store'
-import { ROUTES } from '@/shared/constants'
 import { DefaultPolicyToggle } from '../../shared/components/DefaultPolicyToggle'
+import { navigateToPrincipal } from '../../shared/lib/accessNav'
 import { SourceListPanel } from '../components/SourceListPanel'
 import { SourcePrincipalsPanel } from '../components/SourcePrincipalsPanel'
 import { useSourceAccessSelection, type SourceAccessView } from '../hooks/useSourceAccessSelection'
@@ -54,9 +54,7 @@ export function AccessSourcesPage() {
           <ScrollShadow className="lg:min-h-0 lg:flex-1" offset={2}>
             <SourcePrincipalsPanel
               sourceId={selectedId}
-              onSelectPrincipal={(principalId) =>
-                navigate(ROUTES.accessPrincipals, { state: { selectPrincipal: principalId } })
-              }
+              onSelectPrincipal={(principalId) => navigateToPrincipal(navigate, principalId)}
             />
           </ScrollShadow>
         </Tabs.Panel>
