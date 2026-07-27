@@ -1,10 +1,10 @@
 package com.knowledgehub.access.domain;
 
 /**
- * Why a source is readable by a principal. When several reasons apply, this is the precedence
- * order (highest first): a direct grant beats an inherited one, which beats the admin-role
- * bypass, which beats the default-allow policy. This is "what can the admin do about it here" — a
- * direct grant is the only one revocable from the principal's panel.
+ * Why a source is readable by a principal. When several reasons apply, this is the precedence order
+ * (highest first): a direct grant beats an inherited one, which beats the admin-role bypass, which
+ * beats the default-allow policy. This is "what can the admin do about it here" — a direct grant is
+ * the only one revocable from the principal's panel.
  */
 public enum PermissionOrigin {
   /** The principal itself has a grant to the source. */

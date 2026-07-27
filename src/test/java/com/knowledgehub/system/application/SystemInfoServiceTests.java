@@ -31,8 +31,7 @@ class SystemInfoServiceTests {
     when(settings.productName()).thenReturn(Optional.empty());
 
     SystemInfoService service =
-        new SystemInfoService(
-            environment, noBuildInfo(), settings, new SystemProperties(null));
+        new SystemInfoService(environment, noBuildInfo(), settings, new SystemProperties(null));
 
     SystemInfo info = service.currentInfo();
 
@@ -49,8 +48,7 @@ class SystemInfoServiceTests {
     when(settings.productName()).thenReturn(Optional.empty());
 
     SystemInfoService service =
-        new SystemInfoService(
-            environment, noBuildInfo(), settings, new SystemProperties(null));
+        new SystemInfoService(environment, noBuildInfo(), settings, new SystemProperties(null));
 
     assertThat(service.currentInfo().productName()).isEqualTo("knowledge-hub");
   }

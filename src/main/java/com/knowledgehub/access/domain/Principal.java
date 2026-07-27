@@ -29,9 +29,9 @@ public record Principal(String principalId, PrincipalType type, Role role) {
 
   /**
    * The grant-based reason this principal can read a source, given the grantors whose access
-   * reaches it (empty when none do). Empty when no grant path reaches the source at all — that
-   * case carries no origin of its own, so the caller decides what it means (a default-allow
-   * policy fallback, or not readable).
+   * reaches it (empty when none do). Empty when no grant path reaches the source at all — that case
+   * carries no origin of its own, so the caller decides what it means (a default-allow policy
+   * fallback, or not readable).
    */
   public Optional<PermissionOrigin> originFor(Set<String> via) {
     if (via.contains(principalId)) {

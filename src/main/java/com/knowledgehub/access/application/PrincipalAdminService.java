@@ -3,7 +3,6 @@ package com.knowledgehub.access.application;
 import com.knowledgehub.access.domain.AccessGraphEdgeKind;
 import com.knowledgehub.access.domain.AccessGraphNodeKind;
 import com.knowledgehub.access.domain.AuthenticatedPrincipal;
-import com.knowledgehub.access.domain.DefaultPolicy;
 import com.knowledgehub.access.domain.PermissionOrigin;
 import com.knowledgehub.access.domain.Principal;
 import com.knowledgehub.access.domain.PrincipalType;
@@ -25,10 +24,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Administers principals and group membership, and resolves a principal's effective permissions
- * and access graph. Grants ({@link GrantAdminService}) and the default policy ({@link
- * PolicyService}) are separate concerns with their own services. All mutating operations here are
- * admin-only at the API boundary; this service assumes the caller is already authorized.
+ * Administers principals and group membership, and resolves a principal's effective permissions and
+ * access graph. Grants ({@link GrantAdminService}) and the default policy ({@link PolicyService})
+ * are separate concerns with their own services. All mutating operations here are admin-only at the
+ * API boundary; this service assumes the caller is already authorized.
  */
 @Service
 public class PrincipalAdminService {
@@ -196,7 +195,8 @@ public class PrincipalAdminService {
                 edges.add(new AccessGraph.Edge(grantorId, sourceId, AccessGraphEdgeKind.GRANT));
               }
             });
-    sourceIds.forEach(sourceId -> nodes.add(new AccessGraph.Node(sourceId, AccessGraphNodeKind.SOURCE)));
+    sourceIds.forEach(
+        sourceId -> nodes.add(new AccessGraph.Node(sourceId, AccessGraphNodeKind.SOURCE)));
 
     return new AccessGraph(principalId, nodes, edges);
   }
@@ -211,7 +211,9 @@ public class PrincipalAdminService {
     Set<String> readable = authorizer.readableSources(authenticated);
     Map<String, Set<String>> grantingPrincipals = grants.grantingPrincipalsFor(principalId);
     List<EffectivePermissions.SourceAccess> sources =
-        readable.stream().map(sourceId -> resolveAccess(principal, sourceId, grantingPrincipals)).toList();
+        readable.stream()
+            .map(sourceId -> resolveAccess(principal, sourceId, grantingPrincipals))
+            .toList();
     return new EffectivePermissions(principalId, systemConfig.defaultPolicy(), sources);
   }
 

@@ -19,8 +19,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 
 /**
- * Retention purges by revocation time, not creation time: a credential created long ago but
- * revoked recently must survive a purge; one revoked long ago must not, regardless of its age.
+ * Retention purges by revocation time, not creation time: a credential created long ago but revoked
+ * recently must survive a purge; one revoked long ago must not, regardless of its age.
  */
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)

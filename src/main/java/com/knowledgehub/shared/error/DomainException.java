@@ -8,9 +8,9 @@ package com.knowledgehub.shared.error;
  * <p>Features extend this with specific types; the type is just a thin wrapper choosing the {@link
  * ErrorCode}. A "not found" from a repository lookup (e.g. {@code SourceNotFoundException}) is an
  * application-layer outcome and lives in that feature's {@code application} package; a genuine
- * domain invariant (e.g. {@code DuplicateSourceException}) lives in {@code domain.exception} —
- * the domain model itself "knows" a duplicate is invalid, but only the application service
- * "knows" a lookup came back empty.
+ * domain invariant (e.g. {@code DuplicateSourceException}) lives in {@code domain.exception} — the
+ * domain model itself "knows" a duplicate is invalid, but only the application service "knows" a
+ * lookup came back empty.
  */
 public class DomainException extends RuntimeException {
 

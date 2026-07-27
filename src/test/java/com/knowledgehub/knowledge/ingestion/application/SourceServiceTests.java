@@ -177,8 +177,7 @@ class SourceServiceTests {
             List.of(spec("fresh").toSource(), spec("stale").toSource(), spec("new").toSource()));
     Instant recent = Instant.now().minus(1, ChronoUnit.HOURS);
     Instant longAgo = Instant.now().minus(30, ChronoUnit.DAYS);
-    when(freshness.lastIndexedAt(any()))
-        .thenReturn(Map.of("fresh", recent, "stale", longAgo));
+    when(freshness.lastIndexedAt(any())).thenReturn(Map.of("fresh", recent, "stale", longAgo));
     SourceService withDefaultStaleness =
         new SourceService(repository, events, freshness, new SourceProperties(null));
 

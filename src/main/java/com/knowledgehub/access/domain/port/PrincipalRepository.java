@@ -49,8 +49,8 @@ public interface PrincipalRepository {
 
   /**
    * Every principal reachable from {@code principalId} by walking {@code MEMBER_OF} outward: the
-   * principal itself, every group it belongs to (directly or transitively), and so on. The node
-   * set for one principal's access-graph view.
+   * principal itself, every group it belongs to (directly or transitively), and so on. The node set
+   * for one principal's access-graph view.
    */
   List<Principal> ancestorsOf(String principalId);
 }

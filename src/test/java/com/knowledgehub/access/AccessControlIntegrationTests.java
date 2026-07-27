@@ -200,7 +200,8 @@ class AccessControlIntegrationTests {
     grant(RESTRICTED_OWNER, SRC_A); // SRC_A now restricted to its owner
     setPolicy("ALLOW");
 
-    // A user with no grants reads every source except the restricted SRC_A, readable only by policy.
+    // A user with no grants reads every source except the restricted SRC_A, readable only by
+    // policy.
     mvc.perform(
             get("/api/v1/admin/principals/" + USER + "/effective-permissions")
                 .header("Authorization", bearer(ADMIN_KEY)))
@@ -293,8 +294,7 @@ class AccessControlIntegrationTests {
             post("/api/v1/admin/grants")
                 .header("Authorization", bearer(ADMIN_KEY))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    "{\"principalId\":\"%s\",\"sourceIds\":[\"%s\"]}".formatted(USER, SRC_A)))
+                .content("{\"principalId\":\"%s\",\"sourceIds\":[\"%s\"]}".formatted(USER, SRC_A)))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("ADMIN_GRANT"));
   }
@@ -304,7 +304,8 @@ class AccessControlIntegrationTests {
     // The bootstrap admin is the only admin in this context; deleting it must be refused so the
     // service never ends up with no one able to administer it until the next restart.
     mvc.perform(
-            delete("/api/v1/admin/principals/" + ADMIN_ID).header("Authorization", bearer(ADMIN_KEY)))
+            delete("/api/v1/admin/principals/" + ADMIN_ID)
+                .header("Authorization", bearer(ADMIN_KEY)))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("LAST_ADMIN"));
   }
@@ -320,8 +321,7 @@ class AccessControlIntegrationTests {
             post("/api/v1/admin/principals/" + USER + "/move")
                 .header("Authorization", bearer(ADMIN_KEY))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    "{\"fromGroupId\":\"%s\",\"toGroupId\":\"%s\"}".formatted(GROUP, GROUP_2)))
+                .content("{\"fromGroupId\":\"%s\",\"toGroupId\":\"%s\"}".formatted(GROUP, GROUP_2)))
         .andExpect(status().isNoContent());
 
     mvc.perform(
@@ -511,8 +511,7 @@ class AccessControlIntegrationTests {
         .andExpect(
             jsonPath("$.principals[?(@.principalId=='" + GROUP + "')].origin", hasItem("DIRECT")))
         .andExpect(
-            jsonPath(
-                "$.principals[?(@.principalId=='" + USER + "')].origin", hasItem("INHERITED")))
+            jsonPath("$.principals[?(@.principalId=='" + USER + "')].origin", hasItem("INHERITED")))
         .andExpect(
             jsonPath(
                 "$.principals[?(@.principalId=='" + ADMIN_ID + "')].origin", hasItem("ADMIN")));

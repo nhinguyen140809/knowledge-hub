@@ -78,10 +78,10 @@ public class SourcePrincipalsService {
 
   /**
    * The subgraph explaining who can read a source: every principal a grant reaches (directly or
-   * through membership), the source itself, and the membership/grant edges among them. The
-   * inverse of {@link PrincipalAdminService#accessGraph}. ADMIN- and POLICY-origin principals have
-   * no edge to draw, so — like the principal-rooted graph never showing a role-bypassed source —
-   * they don't appear here even though {@link #resolve} lists them.
+   * through membership), the source itself, and the membership/grant edges among them. The inverse
+   * of {@link PrincipalAdminService#accessGraph}. ADMIN- and POLICY-origin principals have no edge
+   * to draw, so — like the principal-rooted graph never showing a role-bypassed source — they don't
+   * appear here even though {@link #resolve} lists them.
    */
   @Transactional(readOnly = true)
   public AccessGraph accessGraph(String sourceId) {
@@ -98,7 +98,9 @@ public class SourcePrincipalsService {
     for (String id : reachedIds) {
       Principal principal = byId.get(id);
       AccessGraphNodeKind kind =
-          principal.type() == PrincipalType.GROUP ? AccessGraphNodeKind.GROUP : AccessGraphNodeKind.SUBJECT;
+          principal.type() == PrincipalType.GROUP
+              ? AccessGraphNodeKind.GROUP
+              : AccessGraphNodeKind.SUBJECT;
       nodes.add(new AccessGraph.Node(id, kind));
     }
     nodes.add(new AccessGraph.Node(sourceId, AccessGraphNodeKind.SOURCE));
@@ -126,8 +128,8 @@ public class SourcePrincipalsService {
 
   /**
    * Direct grantors of the source, plus every principal that inherits through one — a downward
-   * {@code MEMBER_OF} walk from each grantor group, the mirror of the upward walk
-   * {@code grantingPrincipalsFor} does from one principal.
+   * {@code MEMBER_OF} walk from each grantor group, the mirror of the upward walk {@code
+   * grantingPrincipalsFor} does from one principal.
    */
   private Map<String, Set<String>> directAndInheritedVia(String sourceId) {
     Set<String> directGrantors = grants.directGrantorsOf(sourceId);

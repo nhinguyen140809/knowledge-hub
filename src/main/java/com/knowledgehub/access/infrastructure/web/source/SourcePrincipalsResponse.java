@@ -6,8 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 /** JSON view of every principal that can read a source, the inverse of effective-permissions. */
-public record SourcePrincipalsResponse(
-    String sourceId, List<PrincipalAccessResponse> principals) {
+public record SourcePrincipalsResponse(String sourceId, List<PrincipalAccessResponse> principals) {
 
   static SourcePrincipalsResponse from(SourcePrincipals resolved) {
     return new SourcePrincipalsResponse(

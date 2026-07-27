@@ -5,10 +5,12 @@ import com.knowledgehub.system.domain.port.KnowledgeGraphMetrics;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Component;
 
-/** Neo4j-backed {@link KnowledgeGraphMetrics}. Three independent counting queries: a fresh
- * top-level aggregation always returns exactly one row (0 when nothing matches), which a chained
- * multi-stage query would not — a plain {@code MATCH} that finds nothing drops every row already
- * flowing through it. */
+/**
+ * Neo4j-backed {@link KnowledgeGraphMetrics}. Three independent counting queries: a fresh top-level
+ * aggregation always returns exactly one row (0 when nothing matches), which a chained multi-stage
+ * query would not — a plain {@code MATCH} that finds nothing drops every row already flowing
+ * through it.
+ */
 @Component
 class Neo4jKnowledgeGraphMetricsAdapter implements KnowledgeGraphMetrics {
 

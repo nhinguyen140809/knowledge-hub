@@ -3,8 +3,8 @@ package com.knowledgehub.knowledge.ingestion.application;
 import java.time.Instant;
 
 /**
- * Freshness roll-up over every configured source: how many are synced, never synced, or stale,
- * and when the most recent sync happened.
+ * Freshness roll-up over every configured source: how many are synced, never synced, or stale, and
+ * when the most recent sync happened.
  *
  * @param total configured sources
  * @param synced sources with at least one successful sync
@@ -13,4 +13,5 @@ import java.time.Instant;
  * @param lastSyncAt the most recent sync instant across all sources, or {@code null} if none has
  *     ever synced
  */
-public record SourceSummary(int total, int synced, int neverSynced, int stale, Instant lastSyncAt) {}
+public record SourceSummary(
+    int total, int synced, int neverSynced, int stale, Instant lastSyncAt) {}

@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Admin API to list credentials across every principal and revoke one by id. Revoke is a
- * soft-delete; the next request using that credential fails authentication. Admin-only; the
- * {@code /api/v1} prefix is added by WebConfig.
+ * soft-delete; the next request using that credential fails authentication. Admin-only; the {@code
+ * /api/v1} prefix is added by WebConfig.
  */
 @RestController
 @RequestMapping("/admin/credentials")

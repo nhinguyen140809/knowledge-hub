@@ -79,7 +79,8 @@ class SystemControllerTests {
 
   @Test
   void returnsKnowledgeStatsAsJson() throws Exception {
-    when(knowledgeStatsService.currentStats()).thenReturn(new KnowledgeStats(1240, 8300, 19400, 1240));
+    when(knowledgeStatsService.currentStats())
+        .thenReturn(new KnowledgeStats(1240, 8300, 19400, 1240));
 
     mockMvc
         .perform(get("/api/v1/system/knowledge-stats"))
