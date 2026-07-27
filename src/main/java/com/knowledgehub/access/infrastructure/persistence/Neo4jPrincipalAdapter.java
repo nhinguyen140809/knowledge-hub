@@ -4,6 +4,7 @@ import com.knowledgehub.access.domain.Principal;
 import com.knowledgehub.access.domain.PrincipalType;
 import com.knowledgehub.access.domain.Role;
 import com.knowledgehub.access.domain.port.PrincipalRepository;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,6 +34,9 @@ class Neo4jPrincipalAdapter implements PrincipalRepository {
   private static final String EXISTS_BY_ROLE =
       "MATCH (p:Principal {role: $role}) RETURN count(p) > 0 AS present";
 
+  private static final String COUNT_BY_ROLE =
+      "MATCH (p:Principal {role: $role}) RETURN count(p) AS total";
+
   private static final String ADD_MEMBER =
       "MATCH (m:Principal {principal_id: $memberId}), (g:Principal {principal_id: $groupId})"
           + " MERGE (m)-[:MEMBER_OF]->(g)";
@@ -44,6 +48,21 @@ class Neo4jPrincipalAdapter implements PrincipalRepository {
   private static final String MEMBERS_OF =
       "MATCH (m:Principal)-[:MEMBER_OF]->(g:Principal {principal_id: $groupId})"
           + " RETURN m.principal_id AS id ORDER BY m.principal_id";
+
+  private static final String WOULD_CREATE_CYCLE =
+      "MATCH (g:Principal {principal_id: $groupId})"
+          + "-[:MEMBER_OF*0..]->(m:Principal {principal_id: $memberId})"
+          + " RETURN count(m) > 0 AS wouldCycle";
+
+  private static final String ANCESTORS_OF =
+      "MATCH (p:Principal {principal_id: $id})-[:MEMBER_OF*0..]->(g:Principal)"
+          + " RETURN DISTINCT g.principal_id AS id, g.type AS type, g.role AS role";
+
+  private static final String MEMBERSHIP_GRAPH =
+      "MATCH (m:Principal)-[:MEMBER_OF]->(g:Principal)"
+          + " WITH g, m ORDER BY m.principal_id"
+          + " RETURN g.principal_id AS groupId, collect(m.principal_id) AS memberIds"
+          + " ORDER BY groupId";
 
   private final Neo4jClient client;
 
@@ -107,6 +126,18 @@ class Neo4jPrincipalAdapter implements PrincipalRepository {
   }
 
   @Override
+  public long countByRole(Role role) {
+    return client
+        .query(COUNT_BY_ROLE)
+        .bind(role.name())
+        .to("role")
+        .fetchAs(Long.class)
+        .mappedBy((t, row) -> row.get("total").asLong())
+        .one()
+        .orElse(0L);
+  }
+
+  @Override
   public void addMember(String groupId, String memberId) {
     client.query(ADD_MEMBER).bindAll(Map.of("groupId", groupId, "memberId", memberId)).run();
   }
@@ -127,6 +158,47 @@ class Neo4jPrincipalAdapter implements PrincipalRepository {
         .all()
         .stream()
         .toList();
+  }
+
+  @Override
+  public boolean wouldCreateCycle(String groupId, String memberId) {
+    return client
+        .query(WOULD_CREATE_CYCLE)
+        .bindAll(Map.of("groupId", groupId, "memberId", memberId))
+        .fetchAs(Boolean.class)
+        .mappedBy((t, row) -> row.get("wouldCycle").asBoolean())
+        .one()
+        .orElse(false);
+  }
+
+  @Override
+  public List<Principal> ancestorsOf(String principalId) {
+    return client
+        .query(ANCESTORS_OF)
+        .bind(principalId)
+        .to("id")
+        .fetchAs(Principal.class)
+        .mappedBy((t, row) -> toPrincipal(row))
+        .all()
+        .stream()
+        .toList();
+  }
+
+  @Override
+  public Map<String, List<String>> membershipGraph() {
+    Map<String, List<String>> membership = new LinkedHashMap<>();
+    client
+        .query(MEMBERSHIP_GRAPH)
+        .fetch()
+        .all()
+        .forEach(
+            row -> membership.put((String) row.get("groupId"), asStrings(row.get("memberIds"))));
+    return membership;
+  }
+
+  @SuppressWarnings("unchecked")
+  private static List<String> asStrings(Object value) {
+    return value == null ? List.of() : (List<String>) value;
   }
 
   private static Principal toPrincipal(Record row) {

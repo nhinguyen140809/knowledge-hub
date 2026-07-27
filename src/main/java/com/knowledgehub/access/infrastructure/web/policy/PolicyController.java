@@ -1,6 +1,6 @@
 package com.knowledgehub.access.infrastructure.web.policy;
 
-import com.knowledgehub.access.application.PrincipalAdminService;
+import com.knowledgehub.access.application.PolicyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -21,22 +21,22 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Access — Policy", description = "Read and set the default read policy")
 public class PolicyController {
 
-  private final PrincipalAdminService principals;
+  private final PolicyService policy;
 
-  public PolicyController(PrincipalAdminService principals) {
-    this.principals = principals;
+  public PolicyController(PolicyService policy) {
+    this.policy = policy;
   }
 
   @GetMapping
   @Operation(summary = "Read the default policy")
   public PolicyResponse get() {
-    return PolicyResponse.of(principals.defaultPolicy());
+    return PolicyResponse.of(policy.defaultPolicy());
   }
 
   @PutMapping
   @Operation(summary = "Set the default policy")
   public PolicyResponse set(@Valid @RequestBody PolicyRequest request) {
-    principals.setDefaultPolicy(request.policy());
+    policy.setDefaultPolicy(request.policy());
     return PolicyResponse.of(request.policy());
   }
 }

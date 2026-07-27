@@ -23,7 +23,9 @@ import com.knowledgehub.retrieval.domain.port.KeywordSearchPort;
 import com.knowledgehub.retrieval.domain.port.RetrievalReadPort;
 import com.knowledgehub.retrieval.infrastructure.cache.RetrievalCache;
 import com.knowledgehub.retrieval.infrastructure.fusion.RrfFusion;
+import com.knowledgehub.retrieval.infrastructure.metrics.RetrievalMetrics;
 import com.knowledgehub.shared.config.RetrievalProperties;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,6 +60,7 @@ class RetrievalServiceTests {
             new AclFilterStage(),
             reader,
             new RetrievalCache(properties),
+            new RetrievalMetrics(new SimpleMeterRegistry()),
             properties,
             Runnable::run);
 

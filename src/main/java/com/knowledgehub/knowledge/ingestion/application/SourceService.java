@@ -1,11 +1,15 @@
 package com.knowledgehub.knowledge.ingestion.application;
 
+import com.knowledgehub.knowledge.ingestion.application.port.SourceFreshness;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
 import com.knowledgehub.knowledge.ingestion.domain.SourceDeleted;
 import com.knowledgehub.knowledge.ingestion.domain.SourceRegistered;
 import com.knowledgehub.knowledge.ingestion.domain.exception.DuplicateSourceException;
 import com.knowledgehub.knowledge.ingestion.domain.port.SourceRepository;
+import com.knowledgehub.shared.config.SourceProperties;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -24,10 +28,18 @@ public class SourceService {
 
   private final SourceRepository repository;
   private final ApplicationEventPublisher events;
+  private final SourceFreshness freshness;
+  private final SourceProperties properties;
 
-  public SourceService(SourceRepository repository, ApplicationEventPublisher events) {
+  public SourceService(
+      SourceRepository repository,
+      ApplicationEventPublisher events,
+      SourceFreshness freshness,
+      SourceProperties properties) {
     this.repository = repository;
     this.events = events;
+    this.freshness = freshness;
+    this.properties = properties;
   }
 
   /**
@@ -50,6 +62,21 @@ public class SourceService {
   @Transactional(readOnly = true)
   public List<Source> list() {
     return repository.findAll();
+  }
+
+  /** The at-a-glance freshness roll-up across every configured source. */
+  @Transactional(readOnly = true)
+  public SourceSummary summary() {
+    List<Source> sources = repository.findAll();
+    Map<String, Instant> updatedAt =
+        freshness.lastIndexedAt(sources.stream().map(Source::sourceId).toList());
+
+    Instant staleCutoff = Instant.now().minus(properties.staleAfter());
+    int stale = (int) updatedAt.values().stream().filter(at -> at.isBefore(staleCutoff)).count();
+    Instant lastSyncAt = updatedAt.values().stream().max(Instant::compareTo).orElse(null);
+
+    return new SourceSummary(
+        sources.size(), updatedAt.size(), sources.size() - updatedAt.size(), stale, lastSyncAt);
   }
 
   /**

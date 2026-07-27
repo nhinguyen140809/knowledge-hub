@@ -41,7 +41,9 @@ public class PrincipalController {
   @Operation(summary = "Create a principal (subject or group)")
   public ResponseEntity<PrincipalResponse> create(
       @Valid @RequestBody CreatePrincipalRequest request) {
-    Principal created = principals.create(request.principalId(), request.type(), request.role());
+    Principal created =
+        principals.create(
+            request.principalId(), request.type(), request.role(), request.parentGroupId());
     URI location =
         ServletUriComponentsBuilder.fromCurrentRequest()
             .path("/{id}")
@@ -54,6 +56,12 @@ public class PrincipalController {
   @Operation(summary = "List all principals")
   public List<PrincipalResponse> list() {
     return principals.list().stream().map(PrincipalResponse::from).toList();
+  }
+
+  @GetMapping("/graph")
+  @Operation(summary = "Every principal plus direct group membership edges, for the tree view")
+  public PrincipalGraphResponse graph() {
+    return PrincipalGraphResponse.from(principals.graph());
   }
 
   @GetMapping("/{id}")
@@ -90,6 +98,14 @@ public class PrincipalController {
     return ResponseEntity.noContent().build();
   }
 
+  @PostMapping("/{memberId}/move")
+  @Operation(summary = "Atomically move a principal between groups")
+  public ResponseEntity<Void> move(
+      @PathVariable String memberId, @Valid @RequestBody MoveRequest request) {
+    principals.move(memberId, request.fromGroupId(), request.toGroupId());
+    return ResponseEntity.noContent().build();
+  }
+
   @PostMapping("/{id}/credentials")
   @Operation(summary = "Issue a named credential (returns the secret once)")
   public IssuedCredentialResponse issueCredential(
@@ -107,5 +123,11 @@ public class PrincipalController {
   @Operation(summary = "Resolve a principal's effective read access")
   public EffectivePermissionsResponse effectivePermissions(@PathVariable String id) {
     return EffectivePermissionsResponse.from(principals.effectivePermissions(id));
+  }
+
+  @GetMapping("/{id}/access-graph")
+  @Operation(summary = "The subgraph explaining one principal's access: membership and grants")
+  public AccessGraphResponse accessGraph(@PathVariable String id) {
+    return AccessGraphResponse.from(principals.accessGraph(id));
   }
 }

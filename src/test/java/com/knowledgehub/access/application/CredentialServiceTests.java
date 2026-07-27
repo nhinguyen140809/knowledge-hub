@@ -8,12 +8,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.knowledgehub.access.domain.Credential;
+import com.knowledgehub.access.domain.OwnedCredential;
 import com.knowledgehub.access.domain.Principal;
 import com.knowledgehub.access.domain.PrincipalType;
 import com.knowledgehub.access.domain.Role;
 import com.knowledgehub.access.domain.exception.DuplicateCredentialNameException;
 import com.knowledgehub.access.domain.port.CredentialRepository;
 import com.knowledgehub.access.domain.port.PrincipalRepository;
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -62,6 +66,15 @@ class CredentialServiceTests {
   @Test
   void revokeDelegatesToTheRepository() {
     service.revoke("cred-1");
-    verify(credentials).revoke("cred-1");
+    verify(credentials).revoke(eq("cred-1"), any());
+  }
+
+  @Test
+  void listAllAttributesEachCredentialToItsOwner() {
+    OwnedCredential owned =
+        new OwnedCredential("p1", new Credential("cred-1", "laptop", false, Instant.now(), null));
+    when(credentials.listAll()).thenReturn(List.of(owned));
+
+    assertThat(service.listAll()).containsExactly(owned);
   }
 }

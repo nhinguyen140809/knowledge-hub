@@ -1,6 +1,7 @@
 package com.knowledgehub.access.infrastructure.persistence;
 
 import com.knowledgehub.access.domain.Credential;
+import com.knowledgehub.access.domain.OwnedCredential;
 import com.knowledgehub.access.domain.Principal;
 import com.knowledgehub.access.domain.PrincipalType;
 import com.knowledgehub.access.domain.Role;
@@ -11,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.neo4j.driver.Record;
 import org.neo4j.driver.Value;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Component;
@@ -50,15 +52,21 @@ class Neo4jCredentialAdapter implements CredentialRepository {
           + " SET c.last_used_at = $when";
 
   private static final String REVOKE =
-      "MATCH (c:Credential {credential_id: $id}) SET c.revoked = true";
+      "MATCH (c:Credential {credential_id: $id}) SET c.revoked = true, c.revoked_at = $revokedAt";
 
   private static final String LIST_BY_PRINCIPAL =
       "MATCH (:Principal {principal_id: $principalId})-[:HAS_CREDENTIAL]->(c:Credential)"
           + " RETURN c.credential_id AS id, c.name AS name, c.revoked AS revoked,"
           + " c.created_at AS createdAt, c.last_used_at AS lastUsedAt ORDER BY c.created_at";
 
+  private static final String LIST_ALL =
+      "MATCH (p:Principal)-[:HAS_CREDENTIAL]->(c:Credential)"
+          + " RETURN p.principal_id AS principalId, c.credential_id AS id, c.name AS name,"
+          + " c.revoked AS revoked, c.created_at AS createdAt, c.last_used_at AS lastUsedAt"
+          + " ORDER BY c.created_at";
+
   private static final String PURGE_REVOKED =
-      "MATCH (c:Credential {revoked: true}) WHERE c.created_at < $cutoff"
+      "MATCH (c:Credential {revoked: true}) WHERE c.revoked_at < $cutoff"
           + " DETACH DELETE c RETURN count(c) AS purged";
 
   private final Neo4jClient client;
@@ -125,8 +133,11 @@ class Neo4jCredentialAdapter implements CredentialRepository {
   }
 
   @Override
-  public void revoke(String credentialId) {
-    client.query(REVOKE).bind(credentialId).to("id").run();
+  public void revoke(String credentialId, Instant revokedAt) {
+    client
+        .query(REVOKE)
+        .bindAll(Map.of("id", credentialId, "revokedAt", revokedAt.toEpochMilli()))
+        .run();
   }
 
   @Override
@@ -150,6 +161,17 @@ class Neo4jCredentialAdapter implements CredentialRepository {
   }
 
   @Override
+  public List<OwnedCredential> listAll() {
+    return client
+        .query(LIST_ALL)
+        .fetchAs(OwnedCredential.class)
+        .mappedBy((t, row) -> toOwnedCredential(row))
+        .all()
+        .stream()
+        .toList();
+  }
+
+  @Override
   public int purgeRevokedBefore(Instant cutoff) {
     Map<String, Object> params = new HashMap<>();
     params.put("cutoff", cutoff.toEpochMilli());
@@ -161,6 +183,17 @@ class Neo4jCredentialAdapter implements CredentialRepository {
         .one()
         .orElse(0L)
         .intValue();
+  }
+
+  private static OwnedCredential toOwnedCredential(Record row) {
+    return new OwnedCredential(
+        row.get("principalId").asString(),
+        new Credential(
+            row.get("id").asString(),
+            row.get("name").asString(null),
+            row.get("revoked").asBoolean(),
+            Instant.ofEpochMilli(row.get("createdAt").asLong()),
+            instantOrNull(row.get("lastUsedAt"))));
   }
 
   private static Instant instantOrNull(Value value) {

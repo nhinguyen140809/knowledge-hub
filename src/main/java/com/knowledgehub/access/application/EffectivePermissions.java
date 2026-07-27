@@ -1,22 +1,26 @@
 package com.knowledgehub.access.application;
 
 import com.knowledgehub.access.domain.DefaultPolicy;
-import java.util.Map;
+import com.knowledgehub.access.domain.PermissionOrigin;
+import java.util.List;
 import java.util.Set;
 
 /**
- * A principal's resolved read access, for inspection and debugging. {@code readableSources} is the
- * exact set the retrieval pre-filter uses; {@code grantedVia} explains, for each explicitly granted
- * source, which principals (the principal itself or a group it belongs to) grant it, so one can see
- * why a source is or is not readable.
+ * A principal's resolved read access, for inspection and debugging. {@code sources} is exactly the
+ * set the retrieval pre-filter uses, each annotated with why it's readable.
  *
  * @param principalId the principal inspected
  * @param defaultPolicy the policy in force
- * @param readableSources the sources the principal may actually read
- * @param grantedVia for each granted source, the granting principals (self or group)
+ * @param sources the sources the principal may read, each with its access origin
  */
 public record EffectivePermissions(
-    String principalId,
-    DefaultPolicy defaultPolicy,
-    Set<String> readableSources,
-    Map<String, Set<String>> grantedVia) {}
+    String principalId, DefaultPolicy defaultPolicy, List<SourceAccess> sources) {
+
+  /**
+   * @param sourceId a source the principal may read
+   * @param origin why it's readable, see {@link PermissionOrigin}
+   * @param via every principal (the principal itself or a group it belongs to) whose grant reaches
+   *     this source; empty for the ADMIN and POLICY origins, which have no grant path
+   */
+  public record SourceAccess(String sourceId, PermissionOrigin origin, Set<String> via) {}
+}

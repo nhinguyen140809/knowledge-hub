@@ -1,6 +1,7 @@
 package com.knowledgehub.access.application;
 
 import com.knowledgehub.access.domain.Credential;
+import com.knowledgehub.access.domain.OwnedCredential;
 import com.knowledgehub.access.domain.exception.DuplicateCredentialNameException;
 import com.knowledgehub.access.domain.port.CredentialRepository;
 import com.knowledgehub.access.domain.port.PrincipalRepository;
@@ -55,7 +56,7 @@ public class CredentialService {
   /** Revokes a credential; the next request using it fails authentication. */
   @Transactional
   public void revoke(String credentialId) {
-    credentials.revoke(credentialId);
+    credentials.revoke(credentialId, Instant.now());
     log.info("Revoked credential {}", credentialId);
   }
 
@@ -66,5 +67,11 @@ public class CredentialService {
       throw new PrincipalNotFoundException(principalId);
     }
     return credentials.listByPrincipal(principalId);
+  }
+
+  /** Lists every credential across every principal, each paired with its owner. */
+  @Transactional(readOnly = true)
+  public List<OwnedCredential> listAll() {
+    return credentials.listAll();
   }
 }

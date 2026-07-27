@@ -2,8 +2,10 @@ package com.knowledgehub.knowledge.ingestion.infrastructure.web;
 
 import com.knowledgehub.knowledge.ingestion.application.SourceSpec;
 import com.knowledgehub.knowledge.ingestion.domain.SourceType;
+import com.knowledgehub.shared.validation.IdFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 
@@ -13,7 +15,7 @@ import java.util.List;
  * human-facing metadata (a short label and a longer explanation).
  */
 public record CreateSourceRequest(
-    @NotBlank String id,
+    @NotBlank @Pattern(regexp = IdFormat.PATTERN, message = IdFormat.MESSAGE) String id,
     @NotNull SourceType type,
     @NotBlank String uriOrPath,
     String ref,

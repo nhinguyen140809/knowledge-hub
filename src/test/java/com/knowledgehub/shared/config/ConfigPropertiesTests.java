@@ -34,6 +34,7 @@ class ConfigPropertiesTests {
     RetrievalProperties retrieval = new RetrievalProperties(null, null, null, null, null, null);
     LinkingProperties linking = new LinkingProperties(null);
     SecurityProperties security = new SecurityProperties(null, null, null);
+    SourceProperties sources = new SourceProperties(null);
 
     // Assert a default *exists* (value present), not the exact number — so tuning a default
     // never breaks this test.
@@ -48,6 +49,7 @@ class ConfigPropertiesTests {
     assertThat(retrieval.cacheTtl()).isNotNull();
     assertThat(linking.confidenceThreshold()).isNotNull();
     assertThat(security.credentialRetentionMonths()).isNotNull();
+    assertThat(sources.staleAfter()).isNotNull();
 
     assertThat(validator.validate(embedding)).isEmpty();
     assertThat(validator.validate(chunk)).isEmpty();
@@ -55,6 +57,7 @@ class ConfigPropertiesTests {
     assertThat(validator.validate(retrieval)).isEmpty();
     assertThat(validator.validate(linking)).isEmpty();
     assertThat(validator.validate(security)).isEmpty();
+    assertThat(validator.validate(sources)).isEmpty();
   }
 
   @Test

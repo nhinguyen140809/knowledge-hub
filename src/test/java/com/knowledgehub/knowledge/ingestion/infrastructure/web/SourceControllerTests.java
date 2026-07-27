@@ -17,10 +17,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.knowledgehub.knowledge.ingestion.application.SourceNotFoundException;
 import com.knowledgehub.knowledge.ingestion.application.SourceService;
 import com.knowledgehub.knowledge.ingestion.application.SourceSpec;
+import com.knowledgehub.knowledge.ingestion.application.SourceSummary;
+import com.knowledgehub.knowledge.ingestion.application.port.SourceFreshness;
 import com.knowledgehub.knowledge.ingestion.domain.Source;
 import com.knowledgehub.knowledge.ingestion.domain.SourceType;
 import com.knowledgehub.knowledge.ingestion.domain.exception.DuplicateSourceException;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +41,8 @@ class SourceControllerTests {
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private SourceService sourceService;
+
+  @MockitoBean private SourceFreshness sourceFreshness;
 
   private static Source gitSource() {
     return new Source(
@@ -201,6 +207,18 @@ class SourceControllerTests {
   }
 
   @Test
+  void listEmbedsUpdatedAtFromFreshness() throws Exception {
+    when(sourceService.list()).thenReturn(List.of(gitSource()));
+    when(sourceFreshness.lastIndexedAt(any()))
+        .thenReturn(Map.of("s1", Instant.parse("2026-07-23T09:15:00Z")));
+
+    mockMvc
+        .perform(get("/api/v1/admin/sources"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].updatedAt").value("2026-07-23T09:15:00Z"));
+  }
+
+  @Test
   void deleteReturns204() throws Exception {
     mockMvc.perform(delete("/api/v1/admin/sources/s1")).andExpect(status().isNoContent());
   }
@@ -213,5 +231,20 @@ class SourceControllerTests {
         .perform(delete("/api/v1/admin/sources/nope"))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("SOURCE_NOT_FOUND"));
+  }
+
+  @Test
+  void summaryReturnsTheFreshnessRollUpAsJson() throws Exception {
+    when(sourceService.summary())
+        .thenReturn(new SourceSummary(12, 10, 1, 1, Instant.parse("2026-07-23T09:15:00Z")));
+
+    mockMvc
+        .perform(get("/api/v1/admin/sources/summary"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(12))
+        .andExpect(jsonPath("$.synced").value(10))
+        .andExpect(jsonPath("$.neverSynced").value(1))
+        .andExpect(jsonPath("$.stale").value(1))
+        .andExpect(jsonPath("$.lastSyncAt").value("2026-07-23T09:15:00Z"));
   }
 }

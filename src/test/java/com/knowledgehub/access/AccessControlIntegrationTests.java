@@ -1,9 +1,8 @@
 package com.knowledgehub.access;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -53,8 +52,10 @@ class AccessControlIntegrationTests {
 
   static final String ADMIN_KEY = "bootstrap-secret";
 
+  private static final String ADMIN_ID = "bootstrap-admin";
   private static final String MEMBER = "acl-member";
   private static final String GROUP = "acl-group";
+  private static final String GROUP_2 = "acl-group-2";
   private static final String USER = "acl-user";
   private static final String RESTRICTED_OWNER = "acl-owner";
   private static final String SRC_A = "acl-src-a";
@@ -83,7 +84,7 @@ class AccessControlIntegrationTests {
 
   @AfterEach
   void tearDown() {
-    for (String id : List.of(MEMBER, GROUP, USER, RESTRICTED_OWNER)) {
+    for (String id : List.of(MEMBER, GROUP, GROUP_2, USER, RESTRICTED_OWNER)) {
       principals.deleteById(id);
     }
     sources.deleteById(SRC_A);
@@ -186,8 +187,10 @@ class AccessControlIntegrationTests {
             get("/api/v1/admin/principals/" + USER + "/effective-permissions")
                 .header("Authorization", bearer(ADMIN_KEY)))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.readableSources", containsInAnyOrder(SRC_A)))
-        .andExpect(jsonPath("$.grantedVia['" + SRC_A + "']", hasItem(GROUP)));
+        .andExpect(jsonPath("$.sources", hasSize(1)))
+        .andExpect(jsonPath("$.sources[0].sourceId").value(SRC_A))
+        .andExpect(jsonPath("$.sources[0].origin").value("INHERITED"))
+        .andExpect(jsonPath("$.sources[0].via", hasItem(GROUP)));
   }
 
   @Test
@@ -197,21 +200,400 @@ class AccessControlIntegrationTests {
     grant(RESTRICTED_OWNER, SRC_A); // SRC_A now restricted to its owner
     setPolicy("ALLOW");
 
-    // A user with no grants reads every source except the restricted SRC_A.
+    // A user with no grants reads every source except the restricted SRC_A, readable only by
+    // policy.
     mvc.perform(
             get("/api/v1/admin/principals/" + USER + "/effective-permissions")
                 .header("Authorization", bearer(ADMIN_KEY)))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.readableSources", hasItem(SRC_B)))
-        .andExpect(jsonPath("$.readableSources", not(hasItem(SRC_A))));
+        .andExpect(jsonPath("$.sources[?(@.sourceId=='" + SRC_B + "')].origin", hasItem("POLICY")))
+        .andExpect(jsonPath("$.sources[?(@.sourceId=='" + SRC_A + "')]", hasSize(0)));
 
-    // The owner still reads the restricted source plus everything else.
+    // The owner still reads the restricted source directly, plus everything else by policy.
     mvc.perform(
             get("/api/v1/admin/principals/" + RESTRICTED_OWNER + "/effective-permissions")
                 .header("Authorization", bearer(ADMIN_KEY)))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.readableSources", hasItem(SRC_A)))
-        .andExpect(jsonPath("$.readableSources", hasItem(SRC_B)));
+        .andExpect(jsonPath("$.sources[?(@.sourceId=='" + SRC_A + "')].origin", hasItem("DIRECT")))
+        .andExpect(jsonPath("$.sources[?(@.sourceId=='" + SRC_B + "')].origin", hasItem("POLICY")));
+  }
+
+  @Test
+  void adminEffectivePermissionsShowOriginAdminWhenNoGrantReachesTheSource() throws Exception {
+    // The bootstrap admin reads every source through role bypass alone: no grant, no group.
+    mvc.perform(
+            get("/api/v1/admin/principals/" + ADMIN_ID + "/effective-permissions")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.sources[?(@.sourceId=='" + SRC_A + "')].origin", hasItem("ADMIN")));
+  }
+
+  @Test
+  void principalsGraphReturnsEveryPrincipalAndDirectMembershipInOneCall() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER");
+    createPrincipal(USER, "SUBJECT", "MEMBER");
+    addMember(GROUP, USER);
+
+    mvc.perform(get("/api/v1/admin/principals/graph").header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.principals[?(@.principalId=='" + GROUP + "')]", hasSize(1)))
+        .andExpect(jsonPath("$.principals[?(@.principalId=='" + USER + "')]", hasSize(1)))
+        .andExpect(jsonPath("$.membership['" + GROUP + "']", hasItem(USER)));
+  }
+
+  @Test
+  void addMemberRejectsAChangeThatWouldCreateACycle() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER");
+    createPrincipal(GROUP_2, "GROUP", "MEMBER");
+    addMember(GROUP, GROUP_2); // GROUP_2 is now nested inside GROUP
+
+    // Nesting GROUP inside GROUP_2 would close the loop GROUP -> GROUP_2 -> GROUP.
+    mvc.perform(
+            post("/api/v1/admin/principals/" + GROUP_2 + "/members")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"memberId\":\"%s\"}".formatted(GROUP)))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("MEMBERSHIP_CYCLE"));
+  }
+
+  @Test
+  void createPrincipalRejectsAGroupWithRoleAdmin() throws Exception {
+    // Role ADMIN is SUBJECT-only: a GROUP has no role inheritance, so ADMIN on one confers
+    // admin on nobody and can only mislead.
+    mvc.perform(
+            post("/api/v1/admin/principals")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"principalId\":\"%s\",\"type\":\"GROUP\",\"role\":\"ADMIN\"}"
+                        .formatted(GROUP)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+  }
+
+  @Test
+  void addMemberRejectsAnAdminPrincipal() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER");
+    createPrincipal(USER, "SUBJECT", "ADMIN");
+
+    mvc.perform(
+            post("/api/v1/admin/principals/" + GROUP + "/members")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"memberId\":\"%s\"}".formatted(USER)))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("ADMIN_MEMBERSHIP"));
+  }
+
+  @Test
+  void grantRejectsAnAdminPrincipal() throws Exception {
+    createPrincipal(USER, "SUBJECT", "ADMIN");
+
+    mvc.perform(
+            post("/api/v1/admin/grants")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"principalId\":\"%s\",\"sourceIds\":[\"%s\"]}".formatted(USER, SRC_A)))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("ADMIN_GRANT"));
+  }
+
+  @Test
+  void deleteRejectsTheLastRemainingAdmin() throws Exception {
+    // The bootstrap admin is the only admin in this context; deleting it must be refused so the
+    // service never ends up with no one able to administer it until the next restart.
+    mvc.perform(
+            delete("/api/v1/admin/principals/" + ADMIN_ID)
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("LAST_ADMIN"));
+  }
+
+  @Test
+  void moveAtomicallyRelocatesAPrincipalBetweenGroups() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER");
+    createPrincipal(GROUP_2, "GROUP", "MEMBER");
+    createPrincipal(USER, "SUBJECT", "MEMBER");
+    addMember(GROUP, USER);
+
+    mvc.perform(
+            post("/api/v1/admin/principals/" + USER + "/move")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"fromGroupId\":\"%s\",\"toGroupId\":\"%s\"}".formatted(GROUP, GROUP_2)))
+        .andExpect(status().isNoContent());
+
+    mvc.perform(
+            get("/api/v1/admin/principals/" + GROUP + "/members")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(0)));
+    mvc.perform(
+            get("/api/v1/admin/principals/" + GROUP_2 + "/members")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasItem(USER)));
+  }
+
+  @Test
+  void moveAddsToTheGroupWhenFromGroupIdIsNull() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER");
+    createPrincipal(USER, "SUBJECT", "MEMBER");
+
+    mvc.perform(
+            post("/api/v1/admin/principals/" + USER + "/move")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"toGroupId\":\"%s\"}".formatted(GROUP)))
+        .andExpect(status().isNoContent());
+
+    mvc.perform(
+            get("/api/v1/admin/principals/" + GROUP + "/members")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasItem(USER)));
+  }
+
+  @Test
+  void moveRejectsAChangeThatWouldCreateACycle() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER");
+    createPrincipal(GROUP_2, "GROUP", "MEMBER");
+    addMember(GROUP, GROUP_2); // GROUP_2 is now nested inside GROUP
+
+    // Moving GROUP into GROUP_2 would close the loop GROUP -> GROUP_2 -> GROUP.
+    mvc.perform(
+            post("/api/v1/admin/principals/" + GROUP + "/move")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"toGroupId\":\"%s\"}".formatted(GROUP_2)))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("MEMBERSHIP_CYCLE"));
+  }
+
+  @Test
+  void moveRejectsAnAdminPrincipal() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER");
+    createPrincipal(USER, "SUBJECT", "ADMIN");
+
+    mvc.perform(
+            post("/api/v1/admin/principals/" + USER + "/move")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"toGroupId\":\"%s\"}".formatted(GROUP)))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("ADMIN_MEMBERSHIP"));
+  }
+
+  @Test
+  void createWithParentGroupIdAddsThePrincipalToTheGroupAtomically() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER");
+
+    mvc.perform(
+            post("/api/v1/admin/principals")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    ("{\"principalId\":\"%s\",\"type\":\"SUBJECT\",\"role\":\"MEMBER\","
+                            + "\"parentGroupId\":\"%s\"}")
+                        .formatted(USER, GROUP)))
+        .andExpect(status().isCreated());
+
+    mvc.perform(
+            get("/api/v1/admin/principals/" + GROUP + "/members")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasItem(USER)));
+  }
+
+  @Test
+  void createWithAnUnknownParentGroupIdIsNotFound() throws Exception {
+    mvc.perform(
+            post("/api/v1/admin/principals")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    ("{\"principalId\":\"%s\",\"type\":\"SUBJECT\",\"role\":\"MEMBER\","
+                            + "\"parentGroupId\":\"does-not-exist\"}")
+                        .formatted(USER)))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("PRINCIPAL_NOT_FOUND"));
+  }
+
+  @Test
+  void createWithAParentGroupIdThatIsASubjectIsRejected() throws Exception {
+    createPrincipal(RESTRICTED_OWNER, "SUBJECT", "MEMBER");
+
+    mvc.perform(
+            post("/api/v1/admin/principals")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    ("{\"principalId\":\"%s\",\"type\":\"SUBJECT\",\"role\":\"MEMBER\","
+                            + "\"parentGroupId\":\"%s\"}")
+                        .formatted(USER, RESTRICTED_OWNER)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+  }
+
+  @Test
+  void createWithParentGroupIdAndRoleAdminIsRejected() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER");
+
+    mvc.perform(
+            post("/api/v1/admin/principals")
+                .header("Authorization", bearer(ADMIN_KEY))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    ("{\"principalId\":\"%s\",\"type\":\"SUBJECT\",\"role\":\"ADMIN\","
+                            + "\"parentGroupId\":\"%s\"}")
+                        .formatted(USER, GROUP)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+  }
+
+  @Test
+  void accessGraphExplainsMembershipAncestryAndGrants() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER"); // eng-team
+    createPrincipal(GROUP_2, "GROUP", "MEMBER"); // support-team
+    createPrincipal(USER, "SUBJECT", "MEMBER"); // bob
+    addMember(GROUP, GROUP_2); // support-team is a member of eng-team
+    addMember(GROUP_2, USER); // bob is a member of support-team
+    grant(GROUP, SRC_A); // eng-team granted SRC_A
+
+    mvc.perform(
+            get("/api/v1/admin/principals/" + USER + "/access-graph")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.focus").value(USER))
+        .andExpect(jsonPath("$.nodes[?(@.id=='" + USER + "')].kind", hasItem("SUBJECT")))
+        .andExpect(jsonPath("$.nodes[?(@.id=='" + GROUP + "')].kind", hasItem("GROUP")))
+        .andExpect(jsonPath("$.nodes[?(@.id=='" + GROUP_2 + "')].kind", hasItem("GROUP")))
+        .andExpect(jsonPath("$.nodes[?(@.id=='" + SRC_A + "')].kind", hasItem("SOURCE")))
+        .andExpect(
+            jsonPath(
+                "$.edges[?(@.from=='" + GROUP + "' && @.to=='" + GROUP_2 + "')].kind",
+                hasItem("MEMBER")))
+        .andExpect(
+            jsonPath(
+                "$.edges[?(@.from=='" + GROUP_2 + "' && @.to=='" + USER + "')].kind",
+                hasItem("MEMBER")))
+        .andExpect(
+            jsonPath(
+                "$.edges[?(@.from=='" + GROUP + "' && @.to=='" + SRC_A + "')].kind",
+                hasItem("GRANT")));
+  }
+
+  @Test
+  void globalCredentialListAttributesEachCredentialToItsOwner() throws Exception {
+    createPrincipal(USER, "SUBJECT", "MEMBER");
+    issueCredential(USER);
+
+    mvc.perform(get("/api/v1/admin/credentials").header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[?(@.principalId=='" + USER + "')].name", hasItem("default")));
+  }
+
+  @Test
+  void sourcePrincipalsExplainsWhoCanReadASource() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER"); // eng-team
+    createPrincipal(GROUP_2, "GROUP", "MEMBER"); // support-team
+    createPrincipal(USER, "SUBJECT", "MEMBER"); // bob
+    addMember(GROUP, GROUP_2); // support-team is a member of eng-team
+    addMember(GROUP_2, USER); // bob is a member of support-team
+    grant(GROUP, SRC_A); // eng-team granted SRC_A
+
+    mvc.perform(
+            get("/api/v1/admin/sources/" + SRC_A + "/principals")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.sourceId").value(SRC_A))
+        .andExpect(
+            jsonPath("$.principals[?(@.principalId=='" + GROUP + "')].origin", hasItem("DIRECT")))
+        .andExpect(
+            jsonPath("$.principals[?(@.principalId=='" + USER + "')].origin", hasItem("INHERITED")))
+        .andExpect(
+            jsonPath(
+                "$.principals[?(@.principalId=='" + ADMIN_ID + "')].origin", hasItem("ADMIN")));
+  }
+
+  @Test
+  void sourcePrincipalsShowsPolicyOriginUnderAllowWithNoGrant() throws Exception {
+    createPrincipal(USER, "SUBJECT", "MEMBER");
+    setPolicy("ALLOW");
+
+    mvc.perform(
+            get("/api/v1/admin/sources/" + SRC_B + "/principals")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(
+            jsonPath("$.principals[?(@.principalId=='" + USER + "')].origin", hasItem("POLICY")));
+  }
+
+  @Test
+  void sourcePrincipalsReturns404ForUnknownSource() throws Exception {
+    mvc.perform(
+            get("/api/v1/admin/sources/does-not-exist/principals")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("SOURCE_NOT_FOUND"));
+  }
+
+  @Test
+  void sourceAccessGraphExplainsMembershipAncestryAndGrants() throws Exception {
+    createPrincipal(GROUP, "GROUP", "MEMBER"); // eng-team
+    createPrincipal(GROUP_2, "GROUP", "MEMBER"); // support-team
+    createPrincipal(USER, "SUBJECT", "MEMBER"); // bob
+    addMember(GROUP, GROUP_2); // support-team is a member of eng-team
+    addMember(GROUP_2, USER); // bob is a member of support-team
+    grant(GROUP, SRC_A); // eng-team granted SRC_A
+
+    mvc.perform(
+            get("/api/v1/admin/sources/" + SRC_A + "/access-graph")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.focus").value(SRC_A))
+        // bootstrap-admin reaches SRC_A only through its role, not a grant, so it has no edge to
+        // draw and is excluded — the same asymmetry the principal-rooted graph already has.
+        .andExpect(jsonPath("$.nodes", hasSize(4)))
+        .andExpect(jsonPath("$.nodes[?(@.id=='" + SRC_A + "')].kind", hasItem("SOURCE")))
+        .andExpect(jsonPath("$.nodes[?(@.id=='" + GROUP + "')].kind", hasItem("GROUP")))
+        .andExpect(jsonPath("$.nodes[?(@.id=='" + GROUP_2 + "')].kind", hasItem("GROUP")))
+        .andExpect(jsonPath("$.nodes[?(@.id=='" + USER + "')].kind", hasItem("SUBJECT")))
+        .andExpect(
+            jsonPath(
+                "$.edges[?(@.from=='" + GROUP + "' && @.to=='" + GROUP_2 + "')].kind",
+                hasItem("MEMBER")))
+        .andExpect(
+            jsonPath(
+                "$.edges[?(@.from=='" + GROUP_2 + "' && @.to=='" + USER + "')].kind",
+                hasItem("MEMBER")))
+        .andExpect(
+            jsonPath(
+                "$.edges[?(@.from=='" + GROUP + "' && @.to=='" + SRC_A + "')].kind",
+                hasItem("GRANT")));
+  }
+
+  @Test
+  void sourceAccessGraphHasOnlyTheSourceNodeWhenNobodyIsGrantedIt() throws Exception {
+    mvc.perform(
+            get("/api/v1/admin/sources/" + SRC_B + "/access-graph")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.focus").value(SRC_B))
+        .andExpect(jsonPath("$.nodes", hasSize(1)))
+        .andExpect(jsonPath("$.nodes[0].id").value(SRC_B))
+        .andExpect(jsonPath("$.nodes[0].kind").value("SOURCE"))
+        .andExpect(jsonPath("$.edges", hasSize(0)));
+  }
+
+  @Test
+  void sourceAccessGraphReturns404ForUnknownSource() throws Exception {
+    mvc.perform(
+            get("/api/v1/admin/sources/does-not-exist/access-graph")
+                .header("Authorization", bearer(ADMIN_KEY)))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("SOURCE_NOT_FOUND"));
   }
 
   // --- helpers ---

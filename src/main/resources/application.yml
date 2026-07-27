@@ -61,6 +61,7 @@ springdoc:
 
 # --- Application toggles (config-as-a-feature) ---
 app:
+  product-name: ${APP_PRODUCT_NAME:}   # operator-facing display name; blank falls back to spring.application.name
   embedding:
     provider: ${EMBEDDING_PROVIDER:api}   # api (remote, needs key) | local (OpenAI-compatible server; use any placeholder key)
     dimension: ${EMBEDDING_DIMENSION:1536}   # MUST match the model (1536 text-embedding-3-small, 1024 voyage-3); sizes the Qdrant collection
@@ -72,6 +73,8 @@ app:
     overlap: ${APP_CHUNK_OVERLAP:64}
   commits:
     history-depth: ${APP_COMMITS_HISTORY_DEPTH:100}   # newest commits indexed per source; 0 disables commit indexing
+  sources:
+    stale-after: ${APP_SOURCES_STALE_AFTER:7d}   # no sync within this window counts as stale in the summary
   retrieval:
     top-k: ${APP_RETRIEVAL_TOP_K:10}
     candidate-k: ${APP_RETRIEVAL_CANDIDATE_K:50}   # candidates each path fetches before fusion

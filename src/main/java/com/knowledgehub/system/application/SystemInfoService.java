@@ -1,7 +1,10 @@
 package com.knowledgehub.system.application;
 
+import com.knowledgehub.shared.config.SystemProperties;
 import com.knowledgehub.system.domain.SystemInfo;
+import com.knowledgehub.system.domain.port.SystemSettings;
 import java.util.List;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -17,11 +20,18 @@ public class SystemInfoService {
 
   private final Environment environment;
   private final ObjectProvider<BuildProperties> buildProperties;
+  private final SystemSettings settings;
+  private final SystemProperties properties;
 
   public SystemInfoService(
-      Environment environment, ObjectProvider<BuildProperties> buildProperties) {
+      Environment environment,
+      ObjectProvider<BuildProperties> buildProperties,
+      SystemSettings settings,
+      SystemProperties properties) {
     this.environment = environment;
     this.buildProperties = buildProperties;
+    this.settings = settings;
+    this.properties = properties;
   }
 
   /** Returns a snapshot of the service's current runtime information. */
@@ -30,13 +40,32 @@ public class SystemInfoService {
     BuildProperties build = buildProperties.getIfAvailable();
     String version = build != null ? build.getVersion() : "unknown";
     List<String> profiles = List.of(environment.getActiveProfiles());
+    String productName = resolveProductName(application);
 
     log.debug(
-        "Reporting system info: application={}, version={}, profiles={}",
+        "Reporting system info: productName={}, application={}, version={}, profiles={}",
+        productName,
         application,
         version,
         profiles);
 
-    return new SystemInfo(application, version, profiles);
+    return new SystemInfo(productName, application, version, profiles);
+  }
+
+  /** Sets the operator-facing product name; it takes effect immediately for later reads. */
+  public void setProductName(String productName) {
+    settings.setProductName(productName);
+  }
+
+  /**
+   * The display product name in precedence order: an operator's stored override, then the
+   * configured {@code app.product-name}, then the technical application name as a last resort.
+   */
+  private String resolveProductName(String application) {
+    return settings
+        .productName()
+        .or(() -> Optional.ofNullable(properties.productName()))
+        .filter(name -> !name.isBlank())
+        .orElse(application);
   }
 }

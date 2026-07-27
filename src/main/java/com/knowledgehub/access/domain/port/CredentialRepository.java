@@ -1,6 +1,7 @@
 package com.knowledgehub.access.domain.port;
 
 import com.knowledgehub.access.domain.Credential;
+import com.knowledgehub.access.domain.OwnedCredential;
 import com.knowledgehub.access.domain.Principal;
 import java.time.Instant;
 import java.util.List;
@@ -27,12 +28,21 @@ public interface CredentialRepository {
   /** Records that the credential with this hash just authenticated a request. */
   void touchLastUsed(String hash, Instant when);
 
-  /** Marks a credential revoked (soft-delete; the node is kept for audit). */
-  void revoke(String credentialId);
+  /**
+   * Marks a credential revoked (soft-delete; the node is kept for audit) and records when, so
+   * retention can be measured from the revocation, not the credential's original creation.
+   */
+  void revoke(String credentialId, Instant revokedAt);
 
   /** Lists a principal's credentials as metadata only (no secret, no hash). */
   List<Credential> listByPrincipal(String principalId);
 
-  /** Hard-deletes revoked credentials whose creation predates the cutoff; returns how many. */
+  /**
+   * Every credential across every principal, each paired with its owner — the single-query
+   * alternative to one {@link #listByPrincipal} call per principal.
+   */
+  List<OwnedCredential> listAll();
+
+  /** Hard-deletes revoked credentials revoked before the cutoff; returns how many. */
   int purgeRevokedBefore(Instant cutoff);
 }
