@@ -1,9 +1,10 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
 import { SidebarProvider } from '@/shared/components/ui/Sidebar'
+import { NAV_ITEMS, SETTINGS_ITEMS } from '@/shared/constants'
 import { findActiveLabel } from '@/shared/lib/navigation.utils'
 import { AppHeader } from './AppHeader'
-import { AppSidebar, NAV_ITEMS } from './AppSidebar'
+import { AppSidebar } from './AppSidebar'
 
 /** Chrome shared by every authenticated screen: a push-style sidebar, a header
  *  with the page title, and an outlet for the routed page. */
@@ -14,7 +15,13 @@ export function AppLayout() {
       <div className="bg-background text-foreground flex h-screen">
         <AppSidebar />
         <div className="flex min-w-0 flex-1 flex-col">
-          <AppHeader title={findActiveLabel(NAV_ITEMS, pathname) || 'Knowledge Hub'} />
+          <AppHeader
+            title={
+              findActiveLabel(NAV_ITEMS, pathname) ||
+              findActiveLabel(SETTINGS_ITEMS, pathname) ||
+              'Knowledge Hub'
+            }
+          />
           {/* Stable gutter: the width never jumps when the scrollbar appears,
               so overflow-measuring children (tab lists) don't flicker. */}
           <main className="flex-1 scrollbar-thin scrollbar-gutter-stable overflow-y-auto p-6">

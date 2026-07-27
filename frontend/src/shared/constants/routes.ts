@@ -4,6 +4,7 @@
 export const ROUTES = {
   dashboard: '/',
   connect: '/connect',
+  connections: '/connections',
   sources: '/sources',
   sourceDetail: (id: string) => `/sources/${encodeURIComponent(id)}`,
   accessPrincipals: '/access/principals',
