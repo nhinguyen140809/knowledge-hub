@@ -1,7 +1,6 @@
 package com.knowledgehub.access.domain.port;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -13,9 +12,6 @@ public interface GrantRepository {
 
   /** Revokes a principal's read access to the given sources. */
   void revoke(String principalId, Collection<String> sourceIds);
-
-  /** The sources a principal lists as directly granted. */
-  List<String> directGrantedSources(String principalId);
 
   /**
    * The sources readable through a principal's own grants and those of every group it belongs to,

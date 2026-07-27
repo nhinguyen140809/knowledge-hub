@@ -5,7 +5,6 @@ import com.knowledgehub.access.domain.exception.AdminGrantException;
 import com.knowledgehub.access.domain.port.GrantRepository;
 import com.knowledgehub.access.domain.port.PrincipalRepository;
 import java.util.Collection;
-import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,12 +33,6 @@ public class GrantAdminService {
   public void revokeGrant(String principalId, Collection<String> sourceIds) {
     get(principalId);
     grants.revoke(principalId, sourceIds);
-  }
-
-  @Transactional(readOnly = true)
-  public List<String> directGrantedSources(String principalId) {
-    get(principalId);
-    return grants.directGrantedSources(principalId);
   }
 
   private Principal get(String principalId) {

@@ -27,10 +27,6 @@ class Neo4jGrantAdapter implements GrantRepository {
       "MATCH (p:Principal {principal_id: $id})-[g:GRANTED]->(s:Source)"
           + " WHERE s.source_id IN $sourceIds DELETE g";
 
-  private static final String GRANTED_SOURCES =
-      "MATCH (p:Principal {principal_id: $id})-[:GRANTED]->(s:Source)"
-          + " RETURN s.source_id AS id ORDER BY id";
-
   private static final String READABLE_FOR =
       "MATCH (p:Principal {principal_id: $id})"
           + " OPTIONAL MATCH (p)-[:MEMBER_OF*0..]->(g:Principal)-[:GRANTED]->(s:Source)"
@@ -73,19 +69,6 @@ class Neo4jGrantAdapter implements GrantRepository {
         .query(REVOKE)
         .bindAll(Map.of("id", principalId, "sourceIds", List.copyOf(sourceIds)))
         .run();
-  }
-
-  @Override
-  public List<String> directGrantedSources(String principalId) {
-    return client
-        .query(GRANTED_SOURCES)
-        .bind(principalId)
-        .to("id")
-        .fetchAs(String.class)
-        .mappedBy((t, row) -> row.get("id").asString())
-        .all()
-        .stream()
-        .toList();
   }
 
   @Override
