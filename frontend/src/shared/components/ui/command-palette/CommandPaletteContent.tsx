@@ -54,14 +54,15 @@ export function CommandPaletteContent({ useItems, onClose }: CommandPaletteConte
 
   // Keyboard nav lives on the input itself: React Aria (under SearchField) stops
   // keydown from bubbling, so a handler on an ancestor never sees the arrows.
-  // Enter runs the active row; the arrows move the highlight.
+  // Enter runs the active row; the arrows move the highlight and wrap at
+  // either end, so Down from the last row reaches the first and vice versa.
   function onKeyDown(e: KeyboardEvent) {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setActive((i) => Math.min(results.length - 1, i + 1))
+      if (results.length > 0) setActive((i) => (i + 1) % results.length)
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
-      setActive((i) => Math.max(0, i - 1))
+      if (results.length > 0) setActive((i) => (i - 1 + results.length) % results.length)
     } else if (e.key === 'Enter') {
       e.preventDefault()
       run(results[active])

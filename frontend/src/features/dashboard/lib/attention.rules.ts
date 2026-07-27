@@ -1,4 +1,4 @@
-import type { Source } from '@/features/sources'
+import type { SourceSummary } from '@/features/sources'
 import type { SystemInfo } from '@/shared/types/system.type'
 import type { DependencyStatus } from '../types/dashboard.type'
 import { NON_PROD_PROFILES } from './health.util'
@@ -19,7 +19,7 @@ export interface AttentionItem {
 export interface AttentionInputs {
   dependencies?: DependencyStatus[]
   systemInfo?: SystemInfo
-  sources?: Source[]
+  sourceSummary?: SourceSummary
 }
 
 /** A single product-policy condition: returns the item to show, or null when
@@ -47,14 +47,14 @@ const dependencyDown: AttentionRule = ({ dependencies }) => {
 
 /** Sources that exist but were never indexed contribute nothing to retrieval —
  *  they look configured but are dead weight until synced. */
-const sourcesNeverSynced: AttentionRule = ({ sources }) => {
-  if (!sources) return null
-  const count = sources.filter((s) => s.updatedAt === null).length
-  if (count === 0) return null
+const sourcesNeverSynced: AttentionRule = ({ sourceSummary }) => {
+  if (!sourceSummary) return null
+  const { neverSynced } = sourceSummary
+  if (neverSynced === 0) return null
   return {
     id: 'sources-unsynced',
     tone: 'warning',
-    message: `${count} ${pluralize(count, 'source has', 'sources have')} never been synced`,
+    message: `${neverSynced} ${pluralize(neverSynced, 'source has', 'sources have')} never been synced`,
   }
 }
 

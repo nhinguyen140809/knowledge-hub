@@ -5,10 +5,11 @@ import type {
   CreateSourceInput,
   Source,
   SourceStatus,
+  SourceSummary,
   SyncResult,
   UpdateSourceInput,
 } from '../types/source.type'
-import { mockSources, mockStatusFor, mockSyncResult } from './sources.mock'
+import { mockSources, mockSourceSummary, mockStatusFor, mockSyncResult } from './sources.mock'
 
 const BASE = '/admin/sources'
 
@@ -69,4 +70,10 @@ export function syncSource(id: string): Promise<SyncResult> {
 export function fetchSourceStatus(id: string): Promise<SourceStatus> {
   if (isMock) return mockResolve(mockStatusFor(id))
   return apiFetch<SourceStatus>(path(id, '/status'))
+}
+
+/** GET /admin/sources/summary — freshness roll-up across every configured source. */
+export function fetchSourceSummary(): Promise<SourceSummary> {
+  if (isMock) return mockResolve(mockSourceSummary)
+  return apiFetch<SourceSummary>(`${BASE}/summary`)
 }
